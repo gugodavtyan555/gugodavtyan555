@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lucky Spin Club</title>
+<meta name="description" content="Գրանցվիր և ստացիր ողջույնի բոնուս։ 18+։ Խաղա պատասխանատու։">
+<style>
+  :root {
+    --bg: #0d0b1a;
+    --bg2: #171330;
+    --card: #1f1a3d;
+    --text: #f4f1ff;
+    --muted: #b3abd6;
+    --gold: #ffc940;
+    --gold2: #ff9f1c;
+    --line: #2f2858;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: radial-gradient(1200px 600px at 50% -10%, #3a1f6e 0%, var(--bg) 60%) fixed, var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Armenian", sans-serif;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; gap: 12px; }
+  .logo { font-weight: 800; font-size: 1.25rem; letter-spacing: .3px; }
+  .logo span { color: var(--gold); }
+  .badge18 { border: 2px solid var(--gold); color: var(--gold); border-radius: 999px; padding: 2px 10px; font-weight: 700; font-size: .85rem; }
+
+  .btn {
+    display: inline-block; text-decoration: none; text-align: center;
+    background: linear-gradient(180deg, var(--gold), var(--gold2));
+    color: #241400; font-weight: 800; font-size: 1.1rem;
+    padding: 16px 34px; border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(255, 170, 40, .35);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(255, 170, 40, .5); }
+  .btn.small { padding: 10px 18px; font-size: .95rem; border-radius: 10px; }
+
+  .hero { text-align: center; padding: 56px 0 40px; }
+  .slots { font-size: clamp(2.6rem, 9vw, 4.2rem); letter-spacing: 8px; margin-bottom: 8px; }
+  .hero h1 { font-size: clamp(1.9rem, 6vw, 3.2rem); line-height: 1.15; margin: 0 0 14px; }
+  .hero h1 em { font-style: normal; color: var(--gold); }
+  .hero p { color: var(--muted); font-size: 1.1rem; max-width: 620px; margin: 0 auto 28px; }
+  .note { color: var(--muted); font-size: .85rem; margin-top: 14px; }
+
+  h2 { text-align: center; font-size: clamp(1.4rem, 4vw, 2rem); margin: 0 0 24px; }
+  section { padding: 40px 0; }
+
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+  .card .ico { font-size: 2rem; }
+  .card h3 { margin: 8px 0 6px; font-size: 1.1rem; }
+  .card p { margin: 0; color: var(--muted); font-size: .95rem; }
+
+  .steps { counter-reset: s; }
+  .steps .card { position: relative; padding-top: 30px; }
+  .steps .card::before {
+    counter-increment: s; content: counter(s);
+    position: absolute; top: -14px; left: 22px;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--gold); color: #241400; font-weight: 800;
+    display: grid; place-items: center;
+  }
+
+  .cta { text-align: center; background: linear-gradient(135deg, #2b1d5c, #4b1f5e); border-radius: 22px; padding: 40px 20px; margin: 20px 0; }
+  .cta p { color: var(--muted); margin: 0 0 22px; }
+
+  .rg { background: var(--bg2); border: 1px solid var(--line); border-radius: 16px; padding: 22px; color: var(--muted); font-size: .95rem; }
+  .rg strong { color: var(--text); }
+
+  footer { color: var(--muted); font-size: .8rem; text-align: center; padding: 30px 0 40px; border-top: 1px solid var(--line); margin-top: 30px; }
+  footer p { margin: 6px 0; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="logo">🎰 Lucky <span>Spin</span> Club</div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span class="badge18">18+</span>
+      <a class="btn small ref" href="#" rel="sponsored noopener" target="_blank">Գրանցվել</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="slots">🍒 7️⃣ 💎</div>
+      <h1>Գրանցվիր և ստացիր<br><em>ողջույնի բոնուս</em></h1>
+      <p>Հարյուրավոր սլոթեր, ռուլետկա, բլեքջեք և կենդանի խաղեր։ Գրանցումը տևում է ընդամենը մեկ րոպե։</p>
+      <a class="btn ref" href="#" rel="sponsored noopener" target="_blank">🎁 Ստանալ բոնուսը</a>
+      <div class="note">Միայն 18 տարեկանից բարձր անձանց համար։ Բոնուսի պայմանները տե՛ս կազինոյի կայքում։</div>
+    </section>
+
+    <section>
+      <h2>Ինչու՞ արժե փորձել</h2>
+      <div class="grid">
+        <div class="card"><div class="ico">🎁</div><h3>Ողջույնի բոնուս</h3><p>Նոր խաղացողների համար հատուկ առաջարկ առաջին դեպոզիտի դեպքում։</p></div>
+        <div class="card"><div class="ico">🎰</div><h3>Մեծ ընտրություն</h3><p>Սլոթեր, սեղանի խաղեր և կենդանի դիլերներով խաղեր։</p></div>
+        <div class="card"><div class="ico">⚡</div><h3>Արագ վճարումներ</h3><p>Հարմար եղանակներով դեպոզիտ և գումարի դուրսբերում։</p></div>
+        <div class="card"><div class="ico">📱</div><h3>Հեռախոսից</h3><p>Խաղա ցանկացած վայրից՝ հեռախոսից կամ համակարգչից։</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Ինչպե՞ս սկսել</h2>
+      <div class="grid steps">
+        <div class="card"><h3>Սեղմիր կոճակը</h3><p>Սեղմիր «Գրանցվել» կոճակը այս էջում։</p></div>
+        <div class="card"><h3>Ստեղծիր հաշիվ</h3><p>Լրացրու գրանցման ձևը կազինոյի պաշտոնական կայքում։</p></div>
+        <div class="card"><h3>Ստացիր բոնուսը</h3><p>Ակտիվացրու ողջույնի առաջարկը և սկսիր խաղալ։</p></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="cta">
+        <h2 style="margin-bottom:10px">Պատրա՞ստ ես</h2>
+        <p>Գրանցվիր հիմա և ստացիր քո բոնուսը։</p>
+        <a class="btn ref" href="#" rel="sponsored noopener" target="_blank">🚀 Գրանցվել հիմա</a>
+      </div>
+    </section>
+
+    <section>
+      <div class="rg">
+        <p><strong>🛡️ Խաղա պատասխանատու։</strong> Խաղը զվարճանք է, ոչ թե գումար վաստակելու միջոց։ Խաղա միայն այն գումարով, որը պատրաստ ես կորցնել։ Սահմանիր ժամանակի և գումարի սահմանաչափեր։ Եթե զգում ես, որ խաղը դառնում է խնդիր, դադար վերցրու և դիմիր մասնագետի օգնությանը։</p>
+        <p style="margin-bottom:0">Արգելվում է 18 տարեկանից ցածր անձանց։ Համոզվիր, որ առցանց խաղերը օրինական են քո երկրում։</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Այս էջը գովազդային է և պարունակում է ռեֆերալ (affiliate) հղումներ։ Գրանցվելու դեպքում կայքի սեփականատերը կարող է վարձատրություն ստանալ։</p>
+    <p>18+ · Խաղա պատասխանատու · © <span id="y"></span> Lucky Spin Club</p>
+  </footer>
+</div>
+
+<script>
+  // ================================================
+  //  ԱՅՍՏԵՂ ՏԵՂԱԴՐԻՐ ՔՈ ՌԵՖԵՐԱԼ ՀՂՈՒՄԸ
+  //  Փոխարինիր ներքևի հղումը քոնով (չակերտների մեջ)
+  // ================================================
+  const REFERRAL_LINK = "https://example.com/?ref=YOUR_CODE";
+
+  document.querySelectorAll("a.ref").forEach(a => a.href = REFERRAL_LINK);
+  document.getElementById("y").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

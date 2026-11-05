@@ -17,11 +17,9 @@ function goal(name, params) {
   try { if (typeof ym === "function") ym(METRIKA_ID, "reachGoal", name, params); } catch (e) {}
 }
 
+// Кнопки «Получить бонус» / «Регистрация» ведут на страницу сравнения казино (kazino.html)
 document.querySelectorAll("a.ref").forEach(a => {
-  a.href = REFERRAL_LINK;
-  a.target = "_blank";
-  a.rel = "sponsored noopener";
-  a.addEventListener("click", () => goal("register_click", { casino: "jozz" }));
+  a.addEventListener("click", () => goal("compare_click"));
 });
 document.querySelectorAll("a.casino-ref").forEach(a => {
   const id = a.dataset.casino;

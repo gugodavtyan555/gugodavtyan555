@@ -157,7 +157,7 @@ async function init(env) {
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT)").run();
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS profiles (user_id INTEGER PRIMARY KEY, name TEXT, phone TEXT)").run();
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS states (user_id INTEGER PRIMARY KEY, step TEXT, data TEXT, updated INTEGER)").run();
-  for (const col of ["phone TEXT", "tg TEXT", "created INTEGER"]) {
+  for (const col of ["phone TEXT", "tg TEXT", "created INTEGER", "client_type TEXT"]) {
     try { await env.DB.prepare(`ALTER TABLE bookings ADD COLUMN ${col}`).run(); } catch (e) { /* already exists */ }
   }
   ready = true;
@@ -201,8 +201,10 @@ function normalizePhone(s) {
   return "+" + d;
 }
 const fmtPhone = (p) => (p && p.startsWith("+374") && p.length === 12 ? `+374 ${p.slice(4, 6)} ${p.slice(6)}` : p || "");
+const CLIENT_TYPES = { regular: "🔁 Մշտական հաճախորդ", new: "🆕 Նոր հաճախորդ" };
 const clientInfo = (r) =>
-  `👤 ${r.user_name}${r.tg ? ` (${r.tg})` : ""}${r.phone ? `\n📞 ${fmtPhone(r.phone)}` : ""}`;
+  `👤 ${r.user_name}${r.tg ? ` (${r.tg})` : ""}${r.phone ? `\n📞 ${fmtPhone(r.phone)}` : ""}` +
+  (CLIENT_TYPES[r.client_type] ? `\n${CLIENT_TYPES[r.client_type]}` : "");
 async function getSetting(env, k) {
   const r = await env.DB.prepare("SELECT v FROM settings WHERE k=?").bind(k).first();
   return r ? r.v : null;
@@ -283,7 +285,7 @@ const PHONE_PROMPT = "📞 Ձեր հեռախոսահամարը\n\nՍեղմեք �
   "կամ գրեք համարը, օրինակ՝ 091 123456";
 
 // Create the booking after the client's details are known.
-async function finalizeBooking(env, user, i, ts, profile) {
+async function finalizeBooking(env, user, i, ts, profile, clientType) {
   const svc = CONFIG.services[i];
   if (!svc) return { ok: false, text: "Ծառայությունը չի գտնվել։ Սկսեք նորից 👇" };
   const key = dayKey(ts), wh = workingHours(key);
@@ -293,12 +295,12 @@ async function finalizeBooking(env, user, i, ts, profile) {
   const tgName = user.username ? "@" + user.username : null;
   const pending = CONFIG.requireApproval;
   const res = await env.DB.prepare(
-    "INSERT INTO bookings (user_id, user_name, phone, tg, service, price, start, end, status, created) " +
-    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO bookings (user_id, user_name, phone, tg, service, price, start, end, status, created, client_type) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
   ).bind(user.id, profile.name, profile.phone, tgName, svc.name, svc.price, sec(ts), sec(ts + svc.duration * MIN),
-    pending ? "pending" : "active", sec(Date.now())).run();
+    pending ? "pending" : "active", sec(Date.now()), clientType || null).run();
   const id = res.meta.last_row_id;
-  const info = `${clientInfo({ user_name: profile.name, phone: profile.phone, tg: tgName })}` +
+  const info = `${clientInfo({ user_name: profile.name, phone: profile.phone, tg: tgName, client_type: clientType })}` +
     `\n✂️ ${svc.name} — ${money(svc.price)}\n🕒 ${fmt(ts)}`;
   const details = `✂️ ${svc.name}\n🕒 ${fmt(ts)}\n📍 ${CONFIG.address}\n👤 ${profile.name}, ${fmtPhone(profile.phone)}`;
   if (pending) {
@@ -337,7 +339,7 @@ async function onInput(env, msg, state, menu) {
     if (user.id !== (await ownerId(env)) && !(await subscriptionActive(env))) {
       return send(env, chat, `😔 Առցանց գրանցումը ժամանակավորապես հասանելի չէ։\nԳրանցվելու համար զանգահարեք՝ ${CONFIG.phone}`, menu);
     }
-    const res = await finalizeBooking(env, user, state.data.svc, state.data.ts, { name: state.data.name, phone });
+    const res = await finalizeBooking(env, user, state.data.svc, state.data.ts, { name: state.data.name, phone }, state.data.ctype);
     await send(env, chat, res.text, menu);
     if (!res.ok && res.svc != null) return send(env, chat, "Ընտրեք այլ ժամ 👇", inline([[btn("📅 Ընտրել ժամ", `svc:${res.svc}`)]]));
   }
@@ -606,7 +608,7 @@ async function onCallback(env, q) {
   }
 
   // Subscription expired: block new bookings (owner can still test).
-  if (["svc", "cal", "day", "slot", "ok", "edit", "back"].includes(kind) && !isOwner && !(await subscriptionActive(env))) {
+  if (["svc", "cal", "day", "slot", "ok", "edit", "ct", "back"].includes(kind) && !isOwner && !(await subscriptionActive(env))) {
     return edit(`😔 Առցանց գրանցումը ժամանակավորապես հասանելի չէ։\nԳրանցվելու համար զանգահարեք՝ ${CONFIG.phone}`);
   }
 
@@ -649,15 +651,27 @@ async function onCallback(env, q) {
   }
 
   if (kind === "ok" || kind === "edit") {
-    const i = +a, ts = +b * 1000;
-    const profile = kind === "ok" ? await getProfile(env, q.from.id) : null;
+    // Mandatory question before finishing: regular or new client? (",e" = then edit name/phone)
+    const e = kind === "edit" ? ":e" : "";
+    return edit(`✂️ ${CONFIG.services[+a].name}\n🕒 ${fmt(+b * 1000)}\n\nԽնդրում ենք նշել 👇`, inline([
+      [btn("🔁 Ես արդեն Ձեր հաճախորդն եմ", `ct:regular:${a}:${b}${e}`)],
+      [btn("🆕 Ես նոր հաճախորդ եմ", `ct:new:${a}:${b}${e}`)],
+      [btn("⬅️ Հետ", `slot:${a}:${b}`)],
+    ]));
+  }
+
+  if (kind === "ct") {
+    const [, ctype, si, sts, editing] = q.data.split(":");
+    const i = +si, ts = +sts * 1000;
+    if (!CLIENT_TYPES[ctype] || !CONFIG.services[i]) return;
+    const profile = editing ? null : await getProfile(env, q.from.id);
     if (!profile) {
       // First booking (or editing details): ask for name, then phone.
-      await setState(env, q.from.id, "name", { svc: i, ts });
-      await edit(`🕒 ${fmt(ts)} — ${CONFIG.services[i].name}\n\nԳրանցումն ավարտելու համար մնաց 2 քայլ 👇`);
+      await setState(env, q.from.id, "name", { svc: i, ts, ctype });
+      await edit(`🕒 ${fmt(ts)} — ${CONFIG.services[i].name}\n${CLIENT_TYPES[ctype]}\n\nԳրանցումն ավարտելու համար մնաց 2 քայլ 👇`);
       return send(env, q.message.chat.id, NAME_PROMPT, NAME_KB);
     }
-    const res = await finalizeBooking(env, q.from, i, ts, profile);
+    const res = await finalizeBooking(env, q.from, i, ts, profile, ctype);
     return edit(res.text, res.ok ? undefined : inline([[btn("⬅️ Ընտրել այլ ժամ", `svc:${i}`)]]));
   }
 

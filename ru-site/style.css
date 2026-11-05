@@ -112,3 +112,8 @@ article .faq h2 { margin-top: 0; }
 img.cover { display: block; width: 100%; max-width: 100%; height: auto; aspect-ratio: 1200 / 630; border-radius: 16px; border: 1px solid var(--line); margin: 6px 0 22px; }
 .lang-bar button.btn.ok { background: linear-gradient(180deg, var(--gold), var(--gold2)); color: #241400; border: 0; font-weight: 800; border-radius: 10px; }
 .casino h2 img.logo { display: block; height: 96px; width: auto; max-width: 100%; border-radius: 12px; border: 1px solid var(--line); }
+.casino .more-link { color: var(--gold); font-size: .95rem; }
+.casino-head img.logo { display: block; height: 110px; width: auto; max-width: 100%; border-radius: 14px; border: 1px solid var(--line); margin: 4px 0 18px; }
+.facts { margin: 0 0 8px; display: grid; gap: 4px; }
+.facts dt { color: var(--muted); font-size: .82rem; text-transform: uppercase; letter-spacing: .6px; margin-top: 10px; }
+.facts dd { margin: 0; color: var(--text); }

@@ -1,0 +1,15 @@
+name = "haven-pins"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[triggers]
+crons = ["0 * * * *"]
+
+[ai]
+binding = "AI"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "haven-pins"
+database_id = "a1289500-cf26-4eff-a821-9a10a33a30dc"

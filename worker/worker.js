@@ -48,6 +48,7 @@ const BTN_CONTACT = "📍 Կապ";
 const MENU = {
   keyboard: [[BTN_BOOK, BTN_MINE], [BTN_PRICES, BTN_CONTACT]],
   resize_keyboard: true,
+  is_persistent: true, // always visible, never collapses
 };
 const BTN_TODAY = "📋 Այսօր";
 const BTN_TOMORROW = "📋 Վաղը";
@@ -56,6 +57,7 @@ const BTN_ADD_ADMIN = "➕ Ավելացնել ադմին";
 const ADMIN_MENU = {
   keyboard: [[BTN_TODAY, BTN_TOMORROW, BTN_WEEK], [BTN_BOOK, BTN_MINE], [BTN_PRICES, BTN_CONTACT], [BTN_ADD_ADMIN]],
   resize_keyboard: true,
+  is_persistent: true,
 };
 const ADMIN_HELP = "👑 Ադմինի վահանակ\n\n" +
   "📋 Այսօր / Վաղը — գրանցումների ցանկը, գումարը և չեղարկման կոճակները\n" +
@@ -686,6 +688,32 @@ async function expirePending(env) {
   }
 }
 
+// Telegram "Menu" button next to the input field: /start and /book for everyone,
+// plus admin commands for admins. Re-synced whenever the admin list changes.
+const COMMANDS_VERSION = 1;
+async function syncCommands(env) {
+  const owner = await ownerId(env), admins = await adminIds(env);
+  const tag = JSON.stringify([COMMANDS_VERSION, owner, admins]);
+  if ((await getSetting(env, "commands_synced")) === tag) return;
+  const base = [
+    { command: "start", description: "🏠 Գլխավոր մենյու" },
+    { command: "book", description: "📅 Գրանցվել" },
+  ];
+  const admin = [
+    ...base,
+    { command: "today", description: "📋 Այսօրվա գրանցումները" },
+    { command: "tomorrow", description: "📋 Վաղվա գրանցումները" },
+    { command: "week", description: "📆 Առաջիկա 7 օրը" },
+  ];
+  const ok = (await tg(env, "setMyCommands", { commands: base })).ok;
+  for (const id of admins) {
+    const cmds = id === owner ? [...admin, { command: "sub", description: "💳 Բաժանորդագրություն" }] : admin;
+    await tg(env, "setMyCommands", { commands: cmds, scope: { type: "chat", chat_id: id } });
+  }
+  await tg(env, "setChatMenuButton", { menu_button: { type: "commands" } });
+  if (ok) await setSetting(env, "commands_synced", tag);
+}
+
 async function sendReminders(env) {
   const now = Date.now();
   const rows = await all(env.DB.prepare(
@@ -779,6 +807,7 @@ export default {
     await init(rawEnv);
     const env = await withToken(rawEnv);
     if (!env.BOT_TOKEN) return;
+    await syncCommands(env);
     await expirePending(env);
     await sendReminders(env);
     await checkSubscription(env);

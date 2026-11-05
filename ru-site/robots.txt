@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://aquamarine-starship-f755cd.netlify.app/sitemap.xml
+Sitemap: https://lucky-spin-ru.netlify.app/sitemap.xml

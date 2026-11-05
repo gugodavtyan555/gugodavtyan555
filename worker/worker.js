@@ -13,7 +13,7 @@ const CONFIG = {
   // Telegram ID-ներ, որոնք ստանում են ծանուցումներ (բոտին գրիր /myid)
   adminIds: [],
   slotMinutes: 30,       // ժամերի քայլը
-  daysAhead: 7,          // քանի օր առաջ կարելի է գրանցվել
+  daysAhead: 365,        // քանի օր առաջ կարելի է գրանցվել (365 = մեկ տարի)
   minLeadMinutes: 30,    // ամենաքիչը քանի րոպե առաջ
   reminderMinutes: 60,   // հիշեցումը՝ քանի րոպե առաջ
   requireApproval: true, // վարսավիրը պետք է հաստատի յուրաքանչյուր գրանցում
@@ -41,6 +41,8 @@ const CONFIG = {
 
 const WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const DAY_NAMES = ["Երկ", "Երք", "Չրք", "Հնգ", "Ուրբ", "Շբթ", "Կիր"];
+const MONTH_NAMES = ["Հունվար", "Փետրվար", "Մարտ", "Ապրիլ", "Մայիս", "Հունիս",
+  "Հուլիս", "Օգոստոս", "Սեպտեմբեր", "Հոկտեմբեր", "Նոյեմբեր", "Դեկտեմբեր"];
 const BTN_BOOK = "📅 Գրանցվել";
 const BTN_MINE = "🗂 Իմ գրանցումները";
 const BTN_PRICES = "💈 Ծառայություններ և գներ";
@@ -141,15 +143,6 @@ function addWorkingMinutes(ts, minutes) {
 // but always at least 30 minutes before the visit.
 function approvalDeadline(createdMs, startMs) {
   return Math.min(addWorkingMinutes(createdMs, CONFIG.approvalTimeoutMinutes), startMs - 30 * MIN);
-}
-
-function bookableDays(now) {
-  const days = [];
-  for (let i = 0; i < CONFIG.daysAhead; i++) {
-    const k = dayKey(now + i * DAY);
-    if (workingHours(k)) days.push(k);
-  }
-  return days;
 }
 
 // ---------------------------------------------------------------- storage (D1)
@@ -533,6 +526,40 @@ async function week(env, chat) {
   return send(env, chat, `📆 Առաջիկա 7 օրը\n\n${lines.join("\n")}\n\nԸնդամենը՝ ${count} գրանցում, ${money(total)}`);
 }
 
+// Month calendar: available days are buttons, others are dots. ◀️ ▶️ switch months.
+const BLANK = "\u2800";
+async function calendarKb(env, i, ym, now) {
+  const svc = CONFIG.services[i];
+  const y = +ym.slice(0, 4), m = +ym.slice(4, 6);
+  const todayKey = dayKey(now), lastKey = dayKey(now + (CONFIG.daysAhead - 1) * DAY);
+  const firstKey = `${ym}01`, days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const monthStart = dayStart(firstKey);
+  const taken = await busy(env, monthStart, monthStart + days * DAY);
+  const rows = [
+    [btn(`${MONTH_NAMES[m - 1]} ${y}`, "x")],
+    ["Եկ", "Եք", "Չք", "Հգ", "Ու", "Շբ", "Կր"].map((d) => btn(d, "x")),
+  ];
+  let row = Array(local(monthStart).wd).fill(btn(BLANK, "x"));
+  for (let d = 1; d <= days; d++) {
+    const key = `${ym}${pad(d)}`;
+    let b;
+    if (key < todayKey || key > lastKey || !workingHours(key)) b = btn("·", "x");
+    else if (!freeSlots(key, svc.duration, taken, now).length) b = btn("✖", "x");
+    else b = btn(String(d), `day:${i}:${key}`);
+    row.push(b);
+    if (row.length === 7) { rows.push(row); row = []; }
+  }
+  if (row.length) rows.push([...row, ...Array(7 - row.length).fill(btn(BLANK, "x"))]);
+  const prev = m === 1 ? `${y - 1}12` : `${y}${pad(m - 1)}`;
+  const next = m === 12 ? `${y + 1}01` : `${y}${pad(m + 1)}`;
+  rows.push([
+    prev >= todayKey.slice(0, 6) ? btn("◀️", `cal:${i}:${prev}`) : btn(BLANK, "x"),
+    btn("⬅️ Ծառայություններ", "back"),
+    `${next}01` <= lastKey ? btn("▶️", `cal:${i}:${next}`) : btn(BLANK, "x"),
+  ]);
+  return inline(rows);
+}
+
 async function onCallback(env, q) {
   await tg(env, "answerCallbackQuery", { callback_query_id: q.id });
   if (!q.message) return;
@@ -567,20 +594,17 @@ async function onCallback(env, q) {
   }
 
   // Subscription expired: block new bookings (owner can still test).
-  if (["svc", "day", "slot", "ok", "edit", "back"].includes(kind) && !isOwner && !(await subscriptionActive(env))) {
+  if (["svc", "cal", "day", "slot", "ok", "edit", "back"].includes(kind) && !isOwner && !(await subscriptionActive(env))) {
     return edit(`😔 Առցանց գրանցումը ժամանակավորապես հասանելի չէ։\nԳրանցվելու համար զանգահարեք՝ ${CONFIG.phone}`);
   }
 
   if (kind === "back") return edit("Ընտրեք ծառայությունը.", servicesKb());
 
-  if (kind === "svc") {
-    const i = +a, rows = [];
-    const days = bookableDays(now);
-    for (let k = 0; k < days.length; k += 3) {
-      rows.push(days.slice(k, k + 3).map((d) => btn(dayLabel(d), `day:${i}:${d}`)));
-    }
-    rows.push([btn("⬅️ Հետ", "back")]);
-    return edit(`${CONFIG.services[i].name}\nԸնտրեք օրը.`, inline(rows));
+  if (kind === "svc" || kind === "cal") {
+    const i = +a;
+    const ym = kind === "cal" ? b : dayKey(now).slice(0, 6);
+    return edit(`${CONFIG.services[i].name}\nԸնտրեք օրը 📅\n\n✖ — ազատ ժամ չկա\n· — փակ է կամ հասանելի չէ`,
+      await calendarKb(env, i, ym, now));
   }
 
   if (kind === "day") {
@@ -591,7 +615,7 @@ async function onCallback(env, q) {
     for (let k = 0; k < slots.length; k += 4) {
       rows.push(slots.slice(k, k + 4).map((t) => btn(hhmm(t), `slot:${i}:${sec(t)}`)));
     }
-    rows.push([btn("⬅️ Այլ օր", `svc:${i}`)]);
+    rows.push([btn("⬅️ Այլ օր", `cal:${i}:${key.slice(0, 6)}`)]);
     return edit(slots.length ? `${svc.name}, ${dayLabel(key)}\nԸնտրեք ժամը.`
       : "Այս օրը ազատ ժամ չկա 😔 Ընտրեք այլ օր։", inline(rows));
   }

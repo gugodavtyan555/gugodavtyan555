@@ -129,8 +129,54 @@ async function init(env) {
     "service TEXT, price INTEGER, start INTEGER, end INTEGER, status TEXT DEFAULT 'active', reminded INTEGER DEFAULT 0)"
   ).run();
   await env.DB.prepare("CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT)").run();
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS profiles (user_id INTEGER PRIMARY KEY, name TEXT, phone TEXT)").run();
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS states (user_id INTEGER PRIMARY KEY, step TEXT, data TEXT, updated INTEGER)").run();
+  for (const col of ["phone TEXT", "tg TEXT"]) {
+    try { await env.DB.prepare(`ALTER TABLE bookings ADD COLUMN ${col}`).run(); } catch (e) { /* already exists */ }
+  }
   ready = true;
 }
+
+// Client contact details, asked once and remembered.
+async function getProfile(env, userId) {
+  return env.DB.prepare("SELECT name, phone FROM profiles WHERE user_id=?").bind(userId).first();
+}
+async function saveProfile(env, userId, name, phone) {
+  await env.DB.prepare("INSERT INTO profiles (user_id, name, phone) VALUES (?, ?, ?) " +
+    "ON CONFLICT(user_id) DO UPDATE SET name=excluded.name, phone=excluded.phone").bind(userId, name, phone).run();
+}
+// Conversation state while collecting name/phone (expires after 30 minutes).
+async function getState(env, userId) {
+  const r = await env.DB.prepare("SELECT * FROM states WHERE user_id=? AND updated>?")
+    .bind(userId, sec(Date.now() - 30 * MIN)).first();
+  return r ? { step: r.step, data: JSON.parse(r.data) } : null;
+}
+async function setState(env, userId, step, data) {
+  await env.DB.prepare("INSERT INTO states (user_id, step, data, updated) VALUES (?, ?, ?, ?) " +
+    "ON CONFLICT(user_id) DO UPDATE SET step=excluded.step, data=excluded.data, updated=excluded.updated")
+    .bind(userId, step, JSON.stringify(data), sec(Date.now())).run();
+}
+async function clearState(env, userId) {
+  await env.DB.prepare("DELETE FROM states WHERE user_id=?").bind(userId).run();
+}
+
+function normalizeName(s) {
+  const name = String(s || "").replace(/\s+/g, " ").trim();
+  return /^\p{L}[\p{L}'’\-]+( [\p{L}'’\-]+){0,2}$/u.test(name) && name.length <= 50 ? name : null;
+}
+// Armenian numbers: 091123456, 91 123456, +374 91 123456. Foreign: + and 10–15 digits.
+function normalizePhone(s) {
+  const raw = String(s || "").trim();
+  let d = raw.replace(/\D/g, "");
+  if (raw.startsWith("00")) d = d.slice(2);
+  if (d.length === 9 && d[0] === "0") d = "374" + d.slice(1);
+  else if (d.length === 8) d = "374" + d;
+  if (d.startsWith("374") ? d.length !== 11 : d.length < 10 || d.length > 15) return null;
+  return "+" + d;
+}
+const fmtPhone = (p) => (p && p.startsWith("+374") && p.length === 12 ? `+374 ${p.slice(4, 6)} ${p.slice(6)}` : p || "");
+const clientInfo = (r) =>
+  `👤 ${r.user_name}${r.tg ? ` (${r.tg})` : ""}${r.phone ? `\n📞 ${fmtPhone(r.phone)}` : ""}`;
 async function getSetting(env, k) {
   const r = await env.DB.prepare("SELECT v FROM settings WHERE k=?").bind(k).first();
   return r ? r.v : null;
@@ -199,9 +245,60 @@ const send = (env, chatId, text, markup) =>
 const btn = (text, data) => ({ text, callback_data: data });
 const inline = (rows) => ({ inline_keyboard: rows });
 
-function userLabel(u) {
-  const name = [u.first_name, u.last_name].filter(Boolean).join(" ") || "Հաճախորդ";
-  return u.username ? `${name} (@${u.username})` : name;
+const BTN_SEND_PHONE = "📱 Ուղարկել իմ համարը";
+const BTN_STOP = "❌ Չեղարկել գրանցումը";
+const NAME_KB = { keyboard: [[BTN_STOP]], resize_keyboard: true };
+const PHONE_KB = {
+  keyboard: [[{ text: BTN_SEND_PHONE, request_contact: true }], [BTN_STOP]],
+  resize_keyboard: true,
+};
+const NAME_PROMPT = "✍️ Գրեք Ձեր անունը և ազգանունը\n(ազգանունը պարտադիր չէ)\n\nՕրինակ՝ Անի Պետրոսյան";
+const PHONE_PROMPT = "📞 Ձեր հեռախոսահամարը\n\nՍեղմեք ներքևի «📱 Ուղարկել իմ համարը» կոճակը " +
+  "կամ գրեք համարը, օրինակ՝ 091 123456";
+
+// Create the booking after the client's details are known.
+async function finalizeBooking(env, user, i, ts, profile) {
+  const svc = CONFIG.services[i];
+  if (!svc) return { ok: false, text: "Ծառայությունը չի գտնվել։ Սկսեք նորից 👇" };
+  const key = dayKey(ts), wh = workingHours(key);
+  // Re-check: someone may have taken the slot meanwhile.
+  const free = wh && freeSlots(key, svc.duration, await busy(env, wh[0], wh[1]), Date.now()).includes(ts);
+  if (!free) return { ok: false, text: "Այս ժամն արդեն զբաղված է 😔 Ընտրեք այլ ժամ։", svc: i };
+  const tgName = user.username ? "@" + user.username : null;
+  await env.DB.prepare(
+    "INSERT INTO bookings (user_id, user_name, phone, tg, service, price, start, end) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind(user.id, profile.name, profile.phone, tgName, svc.name, svc.price, sec(ts), sec(ts + svc.duration * MIN)).run();
+  await notifyAdmins(env, `🆕 Նոր գրանցում\n${clientInfo({ user_name: profile.name, phone: profile.phone, tg: tgName })}` +
+    `\n✂️ ${svc.name} — ${money(svc.price)}\n🕒 ${fmt(ts)}`);
+  return {
+    ok: true,
+    text: `✅ Դուք գրանցված եք\n\n✂️ ${svc.name}\n🕒 ${fmt(ts)}\n📍 ${CONFIG.address}\n` +
+      `👤 ${profile.name}, ${fmtPhone(profile.phone)}\n\nԿհիշեցնենք ${CONFIG.reminderMinutes} րոպե առաջ։`,
+  };
+}
+
+// Text typed while the bot waits for name or phone.
+async function onInput(env, msg, state, menu) {
+  const chat = msg.chat.id, user = msg.from;
+  if (state.step === "name") {
+    const name = normalizeName(msg.text);
+    if (!name) return send(env, chat, "Խնդրում ենք գրել միայն անունը և ազգանունը (տառերով)։\n\nՕրինակ՝ Անի Պետրոսյան", NAME_KB);
+    await setState(env, user.id, "phone", { ...state.data, name });
+    return send(env, chat, `Շնորհակալություն, ${name.split(" ")[0]} 🙂\n\n${PHONE_PROMPT}`, PHONE_KB);
+  }
+  if (state.step === "phone") {
+    const phone = normalizePhone(msg.contact ? msg.contact.phone_number : msg.text);
+    if (!phone) return send(env, chat, "Համարը սխալ է 🤔 Գրեք այսպես՝ 091 123456 կամ սեղմեք ներքևի կոճակը։", PHONE_KB);
+    await saveProfile(env, user.id, state.data.name, phone);
+    await clearState(env, user.id);
+    if (state.data.ts == null) return send(env, chat, "✅ Տվյալները պահպանված են։", menu);
+    if (user.id !== (await ownerId(env)) && !(await subscriptionActive(env))) {
+      return send(env, chat, `😔 Առցանց գրանցումը ժամանակավորապես հասանելի չէ։\nԳրանցվելու համար զանգահարեք՝ ${CONFIG.phone}`, menu);
+    }
+    const res = await finalizeBooking(env, user, state.data.svc, state.data.ts, { name: state.data.name, phone });
+    await send(env, chat, res.text, menu);
+    if (!res.ok && res.svc != null) return send(env, chat, "Ընտրեք այլ ժամ 👇", inline([[btn("📅 Ընտրել ժամ", `svc:${res.svc}`)]]));
+  }
 }
 async function notifyAdmins(env, text) {
   for (const id of await adminIds(env)) await send(env, id, text);
@@ -216,6 +313,18 @@ async function onMessage(env, msg) {
   const isAdmin = (await adminIds(env)).includes(user.id);
   const isOwner = user.id === (await ownerId(env));
   const menu = isOwner ? OWNER_MENU : isAdmin ? ADMIN_MENU : MENU;
+
+  // Waiting for name/phone? Any menu button or command interrupts it.
+  const state = await getState(env, user.id);
+  if (state) {
+    const isButton = text.startsWith("/") || [...MENU.keyboard.flat(), ...OWNER_MENU.keyboard.flat()].includes(text);
+    if (text === BTN_STOP) {
+      await clearState(env, user.id);
+      return send(env, chat, "Գրանցումը չեղարկվեց։", menu);
+    }
+    if (msg.contact || !isButton) return onInput(env, msg, state, menu);
+    await clearState(env, user.id);
+  }
 
   if (isOwner && (cmd === "/sub" || text === BTN_SUB)) return subStatus(env, chat);
   if (isAdmin) {
@@ -296,7 +405,7 @@ async function schedule(env, chat, offsetDays) {
   const rows = await bookingsBetween(env, start, start + DAY);
   if (!rows.length) return send(env, chat, `📋 ${dayLabel(key)}՝ գրանցումներ չկան։`);
   const total = rows.reduce((s, r) => s + r.price, 0);
-  const lines = rows.map((r) => `🕒 ${hhmm(r.start * 1000)} — ${r.service} (${money(r.price)})\n     👤 ${r.user_name}`);
+  const lines = rows.map((r) => `🕒 ${hhmm(r.start * 1000)} — ${r.service} (${money(r.price)})\n${clientInfo(r)}`);
   const kb = rows.map((r) => [btn(`❌ Չեղարկել ${hhmm(r.start * 1000)}`, `acancel:${r.id}`)]);
   return send(env, chat,
     `📋 ${dayLabel(key)}\n${rows.length} գրանցում, ընդամենը՝ ${money(total)}\n\n${lines.join("\n\n")}`, inline(kb));
@@ -400,7 +509,7 @@ async function onCallback(env, q) {
   }
 
   // Subscription expired: block new bookings (owner can still test).
-  if (["svc", "day", "slot", "ok", "back"].includes(kind) && !isOwner && !(await subscriptionActive(env))) {
+  if (["svc", "day", "slot", "ok", "edit", "back"].includes(kind) && !isOwner && !(await subscriptionActive(env))) {
     return edit(`😔 Առցանց գրանցումը ժամանակավորապես հասանելի չէ։\nԳրանցվելու համար զանգահարեք՝ ${CONFIG.phone}`);
   }
 
@@ -431,26 +540,24 @@ async function onCallback(env, q) {
 
   if (kind === "slot") {
     const i = +a, ts = +b * 1000, svc = CONFIG.services[i];
-    return edit(`Հաստատե՞լ գրանցումը\n\n✂️ ${svc.name} — ${money(svc.price)}\n🕒 ${fmt(ts)}`,
-      inline([[btn("✅ Հաստատել", `ok:${i}:${b}`), btn("⬅️ Հետ", `svc:${i}`)]]));
+    const profile = await getProfile(env, q.from.id);
+    const who = profile ? `\n👤 ${profile.name}, ${fmtPhone(profile.phone)}` : "";
+    const rows = [[btn("✅ Հաստատել", `ok:${i}:${b}`), btn("⬅️ Հետ", `svc:${i}`)]];
+    if (profile) rows.push([btn("✏️ Փոխել անունը/համարը", `edit:${i}:${b}`)]);
+    return edit(`Հաստատե՞լ գրանցումը\n\n✂️ ${svc.name} — ${money(svc.price)}\n🕒 ${fmt(ts)}${who}`, inline(rows));
   }
 
-  if (kind === "ok") {
-    const i = +a, ts = +b * 1000, svc = CONFIG.services[i];
-    const key = dayKey(ts), wh = workingHours(key);
-    // Re-check: someone may have taken the slot meanwhile.
-    const free = wh && freeSlots(key, svc.duration, await busy(env, wh[0], wh[1]), now).includes(ts);
-    if (!free) {
-      return edit("Այս ժամն արդեն զբաղված է 😔 Ընտրեք այլ ժամ։",
-        inline([[btn("⬅️ Ընտրել այլ ժամ", `svc:${i}`)]]));
+  if (kind === "ok" || kind === "edit") {
+    const i = +a, ts = +b * 1000;
+    const profile = kind === "ok" ? await getProfile(env, q.from.id) : null;
+    if (!profile) {
+      // First booking (or editing details): ask for name, then phone.
+      await setState(env, q.from.id, "name", { svc: i, ts });
+      await edit(`🕒 ${fmt(ts)} — ${CONFIG.services[i].name}\n\nԳրանցումն ավարտելու համար մնաց 2 քայլ 👇`);
+      return send(env, q.message.chat.id, NAME_PROMPT, NAME_KB);
     }
-    const who = userLabel(q.from);
-    await env.DB.prepare(
-      "INSERT INTO bookings (user_id, user_name, service, price, start, end) VALUES (?, ?, ?, ?, ?, ?)"
-    ).bind(q.from.id, who, svc.name, svc.price, sec(ts), sec(ts + svc.duration * MIN)).run();
-    await edit(`✅ Դուք գրանցված եք\n\n✂️ ${svc.name}\n🕒 ${fmt(ts)}\n📍 ${CONFIG.address}\n\n` +
-      `Կհիշեցնենք ${CONFIG.reminderMinutes} րոպե առաջ։`);
-    return notifyAdmins(env, `🆕 Նոր գրանցում\n👤 ${who}\n✂️ ${svc.name} — ${money(svc.price)}\n🕒 ${fmt(ts)}`);
+    const res = await finalizeBooking(env, q.from, i, ts, profile);
+    return edit(res.text, res.ok ? undefined : inline([[btn("⬅️ Ընտրել այլ ժամ", `svc:${i}`)]]));
   }
 
   if (kind === "acancel" || kind === "acx" || kind === "anop") {
@@ -458,7 +565,7 @@ async function onCallback(env, q) {
     if (kind === "anop") return edit("👌 Գրանցումը մնաց ակտիվ։");
     const row = await env.DB.prepare("SELECT * FROM bookings WHERE id=? AND status='active'").bind(+a).first();
     if (!row) return edit("Այս գրանցումն արդեն ակտիվ չէ։");
-    const info = `✂️ ${row.service}\n🕒 ${fmt(row.start * 1000)}\n👤 ${row.user_name}`;
+    const info = `✂️ ${row.service}\n🕒 ${fmt(row.start * 1000)}\n${clientInfo(row)}`;
     if (kind === "acancel") {
       return edit(`Չեղարկե՞լ այս գրանցումը։ Հաճախորդը կստանա ծանուցում։\n\n${info}`,
         inline([[btn("✅ Այո, չեղարկել", `acx:${row.id}`), btn("⬅️ Ոչ", "anop")]]));
@@ -476,7 +583,7 @@ async function onCallback(env, q) {
     if (!row) return edit("Այս գրանցումն այլևս ակտիվ չէ։");
     await env.DB.prepare("UPDATE bookings SET status='cancelled' WHERE id=?").bind(row.id).run();
     await edit(`❌ Գրանցումը չեղարկված է (${row.service}, ${fmt(row.start * 1000)})`);
-    return notifyAdmins(env, `❌ Չեղարկում\n👤 ${row.user_name}\n✂️ ${row.service}\n🕒 ${fmt(row.start * 1000)}`);
+    return notifyAdmins(env, `❌ Չեղարկում\n${clientInfo(row)}\n✂️ ${row.service}\n🕒 ${fmt(row.start * 1000)}`);
   }
 }
 

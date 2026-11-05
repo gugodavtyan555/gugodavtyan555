@@ -528,6 +528,7 @@ async function week(env, chat) {
 
 // Month calendar: available days are buttons, others are dots. ◀️ ▶️ switch months.
 const BLANK = "\u2800";
+const strike = (s) => [...s].map((c) => c + "\u0336").join(""); // 1̶2̶ — crossed out
 async function calendarKb(env, i, ym, now) {
   const svc = CONFIG.services[i];
   const y = +ym.slice(0, 4), m = +ym.slice(4, 6);
@@ -543,8 +544,10 @@ async function calendarKb(env, i, ym, now) {
   for (let d = 1; d <= days; d++) {
     const key = `${ym}${pad(d)}`;
     let b;
-    if (key < todayKey || key > lastKey || !workingHours(key)) b = btn("·", "x");
-    else if (!freeSlots(key, svc.duration, taken, now).length) b = btn("✖", "x");
+    if (key < todayKey) b = btn("·", "past");
+    else if (key > lastKey) b = btn("·", "x");
+    else if (!workingHours(key)) b = btn("🔒", "closed");
+    else if (!freeSlots(key, svc.duration, taken, now).length) b = btn(strike(String(d)), "busyday");
     else b = btn(String(d), `day:${i}:${key}`);
     row.push(b);
     if (row.length === 7) { rows.push(row); row = []; }
@@ -561,7 +564,16 @@ async function calendarKb(env, i, ym, now) {
 }
 
 async function onCallback(env, q) {
-  await tg(env, "answerCallbackQuery", { callback_query_id: q.id });
+  // Tapping a busy/closed day or time shows a small popup instead of doing nothing.
+  const ALERTS = {
+    busyday: "❌ Այս օրը բոլոր ժամերը զբաղված են։ Ընտրեք այլ օր։",
+    busy: "❌ Այս ժամը զբաղված է։ Ընտրեք այլ ժամ։",
+    closed: "🔒 Այս օրը վարսավիրանոցը փակ է։",
+    past: "Այս օրն արդեն անցել է։",
+  };
+  const alert = ALERTS[(q.data || "").split(":")[0]];
+  await tg(env, "answerCallbackQuery", { callback_query_id: q.id, ...(alert && { text: alert, show_alert: true }) });
+  if (alert) return;
   if (!q.message) return;
   const edit = (text, markup) => tg(env, "editMessageText", {
     chat_id: q.message.chat.id, message_id: q.message.message_id, text,
@@ -603,20 +615,27 @@ async function onCallback(env, q) {
   if (kind === "svc" || kind === "cal") {
     const i = +a;
     const ym = kind === "cal" ? b : dayKey(now).slice(0, 6);
-    return edit(`${CONFIG.services[i].name}\nԸնտրեք օրը 📅\n\n✖ — ազատ ժամ չկա\n· — փակ է կամ հասանելի չէ`,
+    return edit(`${CONFIG.services[i].name}\nԸնտրեք օրը 📅\n\n${strike("12")} — զբաղված է\n🔒 — փակ է`,
       await calendarKb(env, i, ym, now));
   }
 
   if (kind === "day") {
     const i = +a, key = b, svc = CONFIG.services[i];
     const wh = workingHours(key);
-    const slots = wh ? freeSlots(key, svc.duration, await busy(env, wh[0], wh[1]), now) : [];
+    // All upcoming times of the day: free ones are buttons, busy ones are crossed out.
+    const taken = wh ? await busy(env, wh[0], wh[1]) : [];
+    const free = new Set(wh ? freeSlots(key, svc.duration, taken, now) : []);
+    const earliest = now + CONFIG.minLeadMinutes * MIN;
+    const times = [];
+    if (wh) for (let t = wh[0]; t + svc.duration * MIN <= wh[1]; t += CONFIG.slotMinutes * MIN) if (t >= earliest) times.push(t);
     const rows = [];
-    for (let k = 0; k < slots.length; k += 4) {
-      rows.push(slots.slice(k, k + 4).map((t) => btn(hhmm(t), `slot:${i}:${sec(t)}`)));
+    for (let k = 0; k < times.length; k += 4) {
+      rows.push(times.slice(k, k + 4).map((t) => free.has(t)
+        ? btn(hhmm(t), `slot:${i}:${sec(t)}`)
+        : btn(strike(hhmm(t)), "busy")));
     }
     rows.push([btn("⬅️ Այլ օր", `cal:${i}:${key.slice(0, 6)}`)]);
-    return edit(slots.length ? `${svc.name}, ${dayLabel(key)}\nԸնտրեք ժամը.`
+    return edit(free.size ? `${svc.name}, ${dayLabel(key)}\nԸնտրեք ժամը.\n\n${strike("10:00")} — զբաղված է`
       : "Այս օրը ազատ ժամ չկա 😔 Ընտրեք այլ օր։", inline(rows));
   }
 

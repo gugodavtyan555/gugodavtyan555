@@ -4,15 +4,29 @@
 const REFERRAL_LINK = "https://jozz-promo1.com/alt/jozz/registration?b9dab0004f88cec80c2544d65b8c71ad";
 const METRIKA_ID = 114096229;
 
-function goal(name) {
-  try { if (typeof ym === "function") ym(METRIKA_ID, "reachGoal", name); } catch (e) {}
+// Партнёрские ссылки для страницы сравнения (kazino.html)
+const CASINO_LINKS = {
+  jozz: REFERRAL_LINK,
+  playfortuna: "https://fortuna-promo1.com/alt/playfortuna/registration?3f8ed9bbea3359cd978fd69d234c9bf0",
+};
+
+function goal(name, params) {
+  try { if (typeof ym === "function") ym(METRIKA_ID, "reachGoal", name, params); } catch (e) {}
 }
 
 document.querySelectorAll("a.ref").forEach(a => {
   a.href = REFERRAL_LINK;
   a.target = "_blank";
   a.rel = "sponsored noopener";
-  a.addEventListener("click", () => goal("register_click"));
+  a.addEventListener("click", () => goal("register_click", { casino: "jozz" }));
+});
+document.querySelectorAll("a.casino-ref").forEach(a => {
+  const id = a.dataset.casino;
+  if (!CASINO_LINKS[id]) return;
+  a.href = CASINO_LINKS[id];
+  a.target = "_blank";
+  a.rel = "sponsored noopener";
+  a.addEventListener("click", () => goal("register_click", { casino: id }));
 });
 document.querySelectorAll('a[href^="https://t.me/luckyspinclub_ru"]').forEach(a => {
   a.addEventListener("click", () => goal("telegram_click"));

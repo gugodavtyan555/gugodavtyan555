@@ -24,12 +24,16 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎰</text></svg>">
 <!-- Yandex.Metrika counter -->
 <script>
+window.lscLoadMetrika = function () {
+if (window.lscMetrikaLoaded) return; window.lscMetrikaLoaded = true;
 (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
 m[i].l=1*new Date();
 for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
 k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
 (window, document, "script", "https://mc.yandex.ru/metrika/tag.js?id=114096229", "ym");
 ym(114096229, "init", {ssr:true, clickmap:true, accurateTrackBounce:true, trackLinks:true});
+};
+try { if (localStorage.getItem("lsc_consent") === "yes") window.lscLoadMetrika(); } catch (e) {}
 </script>
 <!-- /Yandex.Metrika counter -->
 <link rel="stylesheet" href="../style.css">
@@ -57,6 +61,7 @@ ym(114096229, "init", {ssr:true, clickmap:true, accurateTrackBounce:true, trackL
 <h2>Yandex Metrica</h2>
 <p>Usamos o Yandex Metrica para estatísticas de visitas. Ele usa cookies e coleta dados pseudonimizados: endereço IP, tipo de dispositivo e navegador, páginas que você abre, de onde você veio e cliques em botões (por exemplo, ir para a página de comparação ou para o site de um cassino). Isso nos ajuda a entender quais conteúdos são úteis e a melhorar o site. A Yandex trata esses dados conforme a sua <a href="https://yandex.com/legal/confidential/" target="_blank" rel="noopener">política de privacidade</a>.</p>
 <p>Você pode impedir essa coleta: apague ou bloqueie cookies nas configurações do navegador, use um bloqueador ou <a href="https://yandex.com/support/metrica/general/opt-out.html" target="_blank" rel="noopener">desative o Metrica conforme as instruções da Yandex</a>. O site continuará funcionando.</p>
+<p><strong>Consentimento.</strong> O Metrica só é ativado depois que você toca em “Aceitar” no aviso de cookies. Se tocar em “Recusar”, nenhuma estatística é coletada. Você pode mudar sua escolha a qualquer momento: <a href="#" class="cookie-reset">alterar configurações de cookies</a>.</p>
 <h2>Armazenamento local do navegador</h2>
 <p>Se você fechar a sugestão de idioma, o site guarda isso no armazenamento local do seu navegador para não mostrá-la de novo. Esses dados não são enviados para nós.</p>
 <h2>Hospedagem</h2>

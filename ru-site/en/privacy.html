@@ -24,12 +24,16 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎰</text></svg>">
 <!-- Yandex.Metrika counter -->
 <script>
+window.lscLoadMetrika = function () {
+if (window.lscMetrikaLoaded) return; window.lscMetrikaLoaded = true;
 (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
 m[i].l=1*new Date();
 for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
 k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
 (window, document, "script", "https://mc.yandex.ru/metrika/tag.js?id=114096229", "ym");
 ym(114096229, "init", {ssr:true, clickmap:true, accurateTrackBounce:true, trackLinks:true});
+};
+try { if (localStorage.getItem("lsc_consent") === "yes") window.lscLoadMetrika(); } catch (e) {}
 </script>
 <!-- /Yandex.Metrika counter -->
 <link rel="stylesheet" href="../style.css">
@@ -57,6 +61,7 @@ ym(114096229, "init", {ssr:true, clickmap:true, accurateTrackBounce:true, trackL
 <h2>Yandex Metrica</h2>
 <p>We use Yandex Metrica for visitor statistics. It uses cookies and collects pseudonymous data: IP address, device and browser type, pages you open, where you came from, and button clicks (for example, going to the comparison page or a casino website). This helps us understand which content is useful and improve the site. Yandex processes this data under the <a href="https://yandex.com/legal/confidential/" target="_blank" rel="noopener">Yandex privacy policy</a>.</p>
 <p>You can stop this data collection: delete or block cookies in your browser settings, use a content blocker, or <a href="https://yandex.com/support/metrica/general/opt-out.html" target="_blank" rel="noopener">opt out of Metrica as described by Yandex</a>. The site will keep working.</p>
+<p><strong>Consent.</strong> Metrica only starts after you tap “Accept” in the cookie notice. If you tap “Decline”, no statistics are collected. You can change your choice at any time: <a href="#" class="cookie-reset">change cookie settings</a>.</p>
 <h2>Browser local storage</h2>
 <p>If you close the language suggestion bar, the site remembers this in your browser's local storage so it does not show it again. This data is not sent to us.</p>
 <h2>Hosting</h2>

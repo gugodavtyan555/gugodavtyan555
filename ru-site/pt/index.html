@@ -24,12 +24,16 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎰</text></svg>">
 <!-- Yandex.Metrika counter -->
 <script>
+window.lscLoadMetrika = function () {
+if (window.lscMetrikaLoaded) return; window.lscMetrikaLoaded = true;
 (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
 m[i].l=1*new Date();
 for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
 k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
 (window, document, "script", "https://mc.yandex.ru/metrika/tag.js?id=114096229", "ym");
 ym(114096229, "init", {ssr:true, clickmap:true, accurateTrackBounce:true, trackLinks:true});
+};
+try { if (localStorage.getItem("lsc_consent") === "yes") window.lscLoadMetrika(); } catch (e) {}
 </script>
 <!-- /Yandex.Metrika counter -->
 <link rel="stylesheet" href="../style.css">
@@ -62,8 +66,11 @@ ym(114096229, "init", {ssr:true, clickmap:true, accurateTrackBounce:true, trackL
     <section id="articles"><h2>Artigos úteis</h2><div class="grid">
 <a class="card" href="articles/kak-poluchit-bonus.html"><div class="ico">🎁</div><h3>Como pegar o bônus de boas-vindas</h3><p>Passo a passo: cadastro, primeiro depósito e ativação.</p></a>
 <a class="card" href="articles/chto-takoe-vejdzher.html"><div class="ico">🔁</div><h3>O que é rollover</h3><p>Como o rollover é calculado e como não perder o bônus.</p></a>
+<a class="card" href="articles/frispiny.html"><div class="ico">🌀</div><h3>Giros grátis</h3><p>O que são giros grátis e como consegui-los.</p></a>
 <a class="card" href="articles/kak-rabotayut-sloty.html"><div class="ico">🎰</div><h3>Como funcionam os caça-níqueis</h3><p>RTP, volatilidade e gerador de números aleatórios explicados.</p></a>
+<a class="card" href="articles/kriptokazino.html"><div class="ico">🪙</div><h3>Cassino cripto</h3><p>Como jogar com criptomoedas: carteira, redes, taxas e riscos.</p></a>
 <a class="card" href="articles/kak-vyvesti-dengi.html"><div class="ico">💸</div><h3>Como sacar os ganhos</h3><p>Verificação, prazos e por que os saques atrasam.</p></a>
+<a class="card" href="articles/slovar-kazino.html"><div class="ico">📖</div><h3>Glossário de cassino</h3><p>RTP, rollover, wild, scatter, cashback e outros termos explicados.</p></a>
 <a class="card" href="articles/otvetstvennaya-igra.html"><div class="ico">🛡️</div><h3>Jogo responsável</h3><p>Como se divertir sem perder o controle.</p></a>
     </div></section>
     <section><div class="rg"><p><strong>🛡️ Jogue com responsabilidade.</strong> Jogo é diversão, não uma forma de ganhar dinheiro. Jogue apenas com dinheiro que você pode perder. Defina limites de tempo e de dinheiro. Se o jogo virar um problema, faça uma pausa e procure ajuda.</p><p style="margin-bottom:0">Proibido para menores de 18 anos. Verifique se cassinos online são permitidos no seu país.</p></div></section>

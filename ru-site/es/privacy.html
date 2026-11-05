@@ -24,12 +24,16 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎰</text></svg>">
 <!-- Yandex.Metrika counter -->
 <script>
+window.lscLoadMetrika = function () {
+if (window.lscMetrikaLoaded) return; window.lscMetrikaLoaded = true;
 (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
 m[i].l=1*new Date();
 for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
 k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
 (window, document, "script", "https://mc.yandex.ru/metrika/tag.js?id=114096229", "ym");
 ym(114096229, "init", {ssr:true, clickmap:true, accurateTrackBounce:true, trackLinks:true});
+};
+try { if (localStorage.getItem("lsc_consent") === "yes") window.lscLoadMetrika(); } catch (e) {}
 </script>
 <!-- /Yandex.Metrika counter -->
 <link rel="stylesheet" href="../style.css">
@@ -57,6 +61,7 @@ ym(114096229, "init", {ssr:true, clickmap:true, accurateTrackBounce:true, trackL
 <h2>Yandex Metrica</h2>
 <p>Usamos Yandex Metrica para las estadísticas de visitas. Utiliza cookies y recopila datos seudonimizados: dirección IP, tipo de dispositivo y navegador, páginas que abres, de dónde llegaste y clics en botones (por ejemplo, ir a la página de comparación o a la web de un casino). Esto nos ayuda a saber qué contenido es útil y a mejorar el sitio. Yandex trata estos datos según su <a href="https://yandex.com/legal/confidential/" target="_blank" rel="noopener">política de privacidad</a>.</p>
 <p>Puedes impedir esta recopilación: borra o bloquea las cookies en la configuración del navegador, usa un bloqueador o <a href="https://yandex.com/support/metrica/general/opt-out.html" target="_blank" rel="noopener">desactiva Metrica según las instrucciones de Yandex</a>. El sitio seguirá funcionando.</p>
+<p><strong>Consentimiento.</strong> Metrica solo se activa después de que pulses «Aceptar» en el aviso de cookies. Si pulsas «Rechazar», no se recopilan estadísticas. Puedes cambiar tu decisión en cualquier momento: <a href="#" class="cookie-reset">cambiar la configuración de cookies</a>.</p>
 <h2>Almacenamiento local del navegador</h2>
 <p>Si cierras la sugerencia de idioma, el sitio lo recuerda en el almacenamiento local de tu navegador para no volver a mostrarla. Estos datos no se nos envían.</p>
 <h2>Alojamiento</h2>

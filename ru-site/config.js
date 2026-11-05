@@ -34,10 +34,51 @@ document.querySelectorAll('a[href^="https://t.me/luckyspinclub_ru"]').forEach(a 
 });
 document.querySelectorAll(".year").forEach(el => el.textContent = new Date().getFullYear());
 
+// Согласие на cookie (Яндекс Метрика включается только после «Принять»)
+var LSC_CONSENT = null;
+try { LSC_CONSENT = localStorage.getItem("lsc_consent"); } catch (e) {}
+(function () {
+  var lang = document.documentElement.lang || "ru";
+  var T = {
+    ru: ["Мы используем cookie Яндекс Метрики, чтобы понимать, какие статьи полезны. Без вашего согласия статистика не собирается.", "Принять", "Отклонить", "Подробнее"],
+    en: ["We use Yandex Metrica cookies to understand which articles are useful. No statistics are collected without your consent.", "Accept", "Decline", "Details"],
+    es: ["Usamos cookies de Yandex Metrica para saber qué artículos son útiles. Sin tu consentimiento no se recopilan estadísticas.", "Aceptar", "Rechazar", "Más información"],
+    pt: ["Usamos cookies do Yandex Metrica para entender quais artigos são úteis. Sem o seu consentimento, nenhuma estatística é coletada.", "Aceitar", "Recusar", "Saiba mais"]
+  }[lang] || null;
+  var root = (document.currentScript && document.currentScript.src) ? document.currentScript.src.replace(/config\.js.*$/, "") : "/";
+  document.querySelectorAll("a.cookie-reset").forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      e.preventDefault();
+      try { localStorage.removeItem("lsc_consent"); } catch (err) {}
+      location.reload();
+    });
+  });
+  if (LSC_CONSENT || !T) return;
+  var bar = document.createElement("div");
+  bar.className = "lang-bar cookie-bar";
+  bar.innerHTML = '<span></span><a class="more"></a><button type="button" class="btn ok"></button><button type="button" class="no"></button>';
+  bar.querySelector("span").textContent = T[0];
+  var more = bar.querySelector("a.more");
+  more.textContent = T[3];
+  more.href = root + (lang === "ru" ? "" : lang + "/") + "privacy.html";
+  bar.querySelector(".ok").textContent = T[1];
+  bar.querySelector(".no").textContent = T[2];
+  function choose(v) {
+    LSC_CONSENT = v;
+    try { localStorage.setItem("lsc_consent", v); } catch (e) {}
+    bar.remove();
+    if (v === "yes" && window.lscLoadMetrika) window.lscLoadMetrika();
+  }
+  bar.querySelector(".ok").addEventListener("click", function () { choose("yes"); });
+  bar.querySelector(".no").addEventListener("click", function () { choose("no"); });
+  document.body.appendChild(bar);
+})();
+
 // Предложить версию сайта на языке браузера (без автоматического перехода)
 (function () {
   try {
     if (document.documentElement.lang !== "ru") return;
+    if (!LSC_CONSENT) return; // сначала выбор по cookie, чтобы панели не перекрывались
     if (localStorage.getItem("langBarClosed")) return;
   } catch (e) {}
   var texts = {

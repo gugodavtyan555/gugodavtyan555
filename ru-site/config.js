@@ -8,6 +8,7 @@ const METRIKA_ID = 114096229;
 const CASINO_LINKS = {
   jozz: REFERRAL_LINK,
   playfortuna: "https://fortuna-promo1.com/alt/playfortuna/registration?3f8ed9bbea3359cd978fd69d234c9bf0",
+  booi: "https://booi-promo.com/alt/booi/sign-up?f8729271ae45ec45d6eb84a67f64af27",
 };
 
 function goal(name, params) {

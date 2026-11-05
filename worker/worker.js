@@ -17,6 +17,8 @@ const CONFIG = {
   minLeadMinutes: 30,    // ամենաքիչը քանի րոպե առաջ
   reminderMinutes: 60,   // հիշեցումը՝ քանի րոպե առաջ
   tzOffsetMinutes: 240,  // Երևան = UTC+4
+  subscriptionPrice: 10000, // ամսական վճարը քեզ
+  paymentInfo: "Վճարման մանրամասների համար կապվեք ադմինի հետ։", // օր.՝ "Idram ID՝ 123456789"
   hours: {               // null = փակ է
     mon: ["10:00", "20:00"],
     tue: ["10:00", "20:00"],
@@ -58,6 +60,10 @@ const ADMIN_HELP = "👑 Ադմինի վահանակ\n\n" +
   "📆 Շաբաթ — առաջիկա 7 օրվա ամփոփումը\n" +
   "➕ Ավելացնել ադմին — հղում վարսավիրանոցի տիրոջ կամ վարպետի համար\n\n" +
   "🆕 Ամեն նոր գրանցման և չեղարկման մասին ծանուցումը կգա այստեղ։";
+const BTN_SUB = "💳 Բաժանորդագրություն";
+const OWNER_MENU = { ...ADMIN_MENU, keyboard: [...ADMIN_MENU.keyboard, [BTN_SUB]] };
+const OWNER_HELP = ADMIN_HELP + "\n\n💳 Բաժանորդագրություն — միայն դու ես տեսնում։ " +
+  "Երկարացնում կամ անջատում ես բոտը, եթե վարսավիրանոցը չի վճարել։";
 const MIN = 60_000;
 const DAY = 86_400_000;
 
@@ -79,6 +85,7 @@ function dayStart(key) {
 }
 const dayLabel = (key) => { const l = local(dayStart(key)); return `${DAY_NAMES[l.wd]} ${pad(l.d)}.${pad(l.m)}`; };
 const hhmm = (ts) => { const l = local(ts); return `${pad(l.H)}:${pad(l.M)}`; };
+const fmtDate = (ts) => { const l = local(ts); return `${pad(l.d)}.${pad(l.m)}.${l.y}`; };
 const fmt = (ts) => `${dayLabel(dayKey(ts))}, ${hhmm(ts)}`;
 const money = (n) => `${n.toLocaleString("en-US").replace(/,/g, " ")} ֏`;
 
@@ -140,6 +147,31 @@ async function adminIds(env) {
 async function withToken(env) {
   return { ...env, BOT_TOKEN: env.BOT_TOKEN || (await getSetting(env, "bot_token")) };
 }
+// The bot owner (you) — the first person who became admin via /setup.
+async function ownerId(env) {
+  let o = await getSetting(env, "owner_id");
+  if (!o) {
+    const ids = JSON.parse((await getSetting(env, "admin_ids")) || "[]");
+    if (!ids.length) return null;
+    o = String(ids[0]);
+    await setSetting(env, "owner_id", o);
+  }
+  return +o;
+}
+// Admins of the barbershop (everyone except the owner).
+async function shopAdmins(env) {
+  const owner = await ownerId(env);
+  return (await adminIds(env)).filter((id) => id !== owner);
+}
+// Subscription end in ms, or null = no limit (demo bot).
+async function paidUntil(env) {
+  const v = await getSetting(env, "paid_until");
+  return v ? +v : null;
+}
+async function subscriptionActive(env) {
+  const pu = await paidUntil(env);
+  return pu === null || Date.now() < pu;
+}
 const newCode = () => crypto.randomUUID().replace(/-/g, "").slice(0, 12);
 const sec = (ms) => Math.floor(ms / 1000);
 const all = async (stmt) => (await stmt.all()).results;
@@ -182,8 +214,10 @@ async function onMessage(env, msg) {
   const chat = msg.chat.id, text = (msg.text || "").trim(), user = msg.from;
   const cmd = text.split(/[\s@]/)[0];
   const isAdmin = (await adminIds(env)).includes(user.id);
-  const menu = isAdmin ? ADMIN_MENU : MENU;
+  const isOwner = user.id === (await ownerId(env));
+  const menu = isOwner ? OWNER_MENU : isAdmin ? ADMIN_MENU : MENU;
 
+  if (isOwner && (cmd === "/sub" || text === BTN_SUB)) return subStatus(env, chat);
   if (isAdmin) {
     if (cmd === "/today" || text === BTN_TODAY) return schedule(env, chat, 0);
     if (cmd === "/tomorrow" || text === BTN_TOMORROW) return schedule(env, chat, 1);
@@ -205,12 +239,24 @@ async function onMessage(env, msg) {
       if (!ids.includes(user.id)) ids.push(user.id);
       await setSetting(env, "admin_ids", JSON.stringify(ids));
       await setSetting(env, "admin_code", newCode()); // one-time link
-      return send(env, chat, ADMIN_HELP, ADMIN_MENU);
+      const owner = (await ownerId(env)) || user.id; // first admin owns the bot
+      if (owner === user.id) await setSetting(env, "owner_id", String(user.id));
+      return send(env, chat, owner === user.id ? OWNER_HELP : ADMIN_HELP, owner === user.id ? OWNER_MENU : ADMIN_MENU);
     }
-    if (isAdmin) return send(env, chat, ADMIN_HELP, ADMIN_MENU);
-    return send(env, chat, `Բարի գալուստ ${CONFIG.name} 💈\n\nԱյստեղ կարող եք գրանցվել մի քանի վայրկյանում։`, MENU);
+    if (isAdmin) return send(env, chat, isOwner ? OWNER_HELP : ADMIN_HELP, menu);
   }
   if (cmd === "/myid") return send(env, chat, `Ձեր ID-ն՝ ${user.id}`);
+
+  // Subscription expired: no new bookings (the owner can still test everything).
+  if (!isOwner && !(await subscriptionActive(env))) {
+    return send(env, chat, isAdmin
+      ? `⛔ Բաժանորդագրությունն ավարտվել է, բոտը նոր գրանցումներ չի ընդունում։\n\n` +
+        `Վերականգնելու համար վճարեք ${money(CONFIG.subscriptionPrice)}։\n${CONFIG.paymentInfo}`
+      : `😔 Առցանց գրանցումը ժամանակավորապես հասանելի չէ։\nԳրանցվելու համար զանգահարեք՝ ${CONFIG.phone}`, menu);
+  }
+  if (cmd === "/start") {
+    return send(env, chat, `Բարի գալուստ ${CONFIG.name} 💈\n\nԱյստեղ կարող եք գրանցվել մի քանի վայրկյանում։`, MENU);
+  }
   if (cmd === "/book" || text === BTN_BOOK) return send(env, chat, "Ընտրեք ծառայությունը.", servicesKb());
   if (text === BTN_PRICES) {
     const lines = CONFIG.services.map((s) => `• ${s.name} — ${money(s.price)} (${s.duration} րոպե)`);
@@ -256,6 +302,53 @@ async function schedule(env, chat, offsetDays) {
     `📋 ${dayLabel(key)}\n${rows.length} գրանցում, ընդամենը՝ ${money(total)}\n\n${lines.join("\n\n")}`, inline(kb));
 }
 
+async function subText(env) {
+  const pu = await paidUntil(env), now = Date.now();
+  let state;
+  if (pu === null) state = "♾ Առանց սահմանի (ցուցադրական ռեժիմ)";
+  else if (now < pu) state = `✅ Ակտիվ է մինչև ${fmtDate(pu)} (${Math.ceil((pu - now) / DAY)} օր)`;
+  else state = `⛔ Անջատված է (${fmtDate(pu)}-ից)։ Հաճախորդները չեն կարող գրանցվել։`;
+  const admins = await shopAdmins(env);
+  return {
+    text: `💳 Բաժանորդագրություն — ${CONFIG.name}\n\n${state}\n\n` +
+      `Ամսական վճար՝ ${money(CONFIG.subscriptionPrice)}\n` +
+      `Վարսավիրանոցի ադմիններ՝ ${admins.length ? admins.length : "դեռ չկան (➕ Ավելացնել ադմին)"}\n\n` +
+      "Երբ վճարում են, սեղմիր «+1 ամիս»։ Ժամկետից 3 օր առաջ և ավարտվելու օրը վարսավիրանոցն ավտոմատ կստանա հիշեցում։",
+    kb: inline([
+      [btn("➕ 1 ամիս", "sub:add:30"), btn("➕ 3 ամիս", "sub:add:90")],
+      [btn("⛔ Անջատել հիմա", "sub:off"), btn("♾ Առանց սահմանի", "sub:inf")],
+    ]),
+  };
+}
+async function subStatus(env, chat) {
+  const s = await subText(env);
+  return send(env, chat, s.text, s.kb);
+}
+
+// Warn the barbershop 3 days before and when the subscription ends (once per stage).
+async function checkSubscription(env) {
+  const pu = await paidUntil(env);
+  if (pu === null) return;
+  const now = Date.now();
+  const stage = now >= pu ? "expired" : pu - now <= 3 * DAY ? "soon" : null;
+  if (!stage) return;
+  const tag = `${pu}:${stage}`;
+  if ((await getSetting(env, "sub_warned")) === tag) return;
+  await setSetting(env, "sub_warned", tag);
+  const pay = `վճարեք ${money(CONFIG.subscriptionPrice)}։\n${CONFIG.paymentInfo}`;
+  const shopText = stage === "soon"
+    ? `⚠️ Բոտի բաժանորդագրությունն ավարտվում է ${fmtDate(pu)}-ին։\nՈրպեսզի այն շարունակի ընդունել գրանցումներ, ${pay}`
+    : `⛔ Բոտի բաժանորդագրությունն ավարտվել է։ Հաճախորդներն այլևս չեն կարող գրանցվել։\nՎերականգնելու համար ${pay}`;
+  for (const id of await shopAdmins(env)) await send(env, id, shopText);
+  const owner = await ownerId(env);
+  if (owner) {
+    await send(env, owner, stage === "soon"
+      ? `💳 ${CONFIG.name}. բաժանորդագրությունն ավարտվում է ${fmtDate(pu)}-ին։ Վարսավիրանոցը ստացել է հիշեցում։`
+      : `⛔ ${CONFIG.name}. բաժանորդագրությունն ավարտվեց, բոտը նոր գրանցումներ չի ընդունում։\n` +
+        `Երբ վճարեն, սեղմիր ${BTN_SUB} → «+1 ամիս»։`);
+  }
+}
+
 async function week(env, chat) {
   const first = dayStart(dayKey(Date.now()));
   const rows = await bookingsBetween(env, first, first + 7 * DAY);
@@ -282,6 +375,34 @@ async function onCallback(env, q) {
   });
   const [kind, a, b] = (q.data || "").split(":");
   const now = Date.now();
+  const isOwner = q.from.id === (await ownerId(env));
+
+  if (kind === "sub") {
+    if (!isOwner) return;
+    const pu = await paidUntil(env);
+    if (a === "add") {
+      const until = Math.max(now, pu || now) + +b * DAY;
+      await setSetting(env, "paid_until", String(until));
+      for (const id of await shopAdmins(env)) {
+        await send(env, id, `✅ Վճարումը ստացված է, շնորհակալություն։\nԲոտը ակտիվ է մինչև ${fmtDate(until)}։`);
+      }
+    } else if (a === "off") {
+      await setSetting(env, "paid_until", String(now));
+      for (const id of await shopAdmins(env)) {
+        await send(env, id, `⛔ Բաժանորդագրությունը դադարեցված է, բոտը նոր գրանցումներ չի ընդունում։\n` +
+          `Վերականգնելու համար վճարեք ${money(CONFIG.subscriptionPrice)}։\n${CONFIG.paymentInfo}`);
+      }
+    } else if (a === "inf") {
+      await env.DB.prepare("DELETE FROM settings WHERE k='paid_until'").run();
+    }
+    const s = await subText(env);
+    return edit(s.text, s.kb);
+  }
+
+  // Subscription expired: block new bookings (owner can still test).
+  if (["svc", "day", "slot", "ok", "back"].includes(kind) && !isOwner && !(await subscriptionActive(env))) {
+    return edit(`😔 Առցանց գրանցումը ժամանակավորապես հասանելի չէ։\nԳրանցվելու համար զանգահարեք՝ ${CONFIG.phone}`);
+  }
 
   if (kind === "back") return edit("Ընտրեք ծառայությունը.", servicesKb());
 
@@ -451,6 +572,8 @@ export default {
   async scheduled(event, rawEnv) {
     await init(rawEnv);
     const env = await withToken(rawEnv);
-    if (env.BOT_TOKEN) await sendReminders(env);
+    if (!env.BOT_TOKEN) return;
+    await sendReminders(env);
+    await checkSubscription(env);
   },
 };

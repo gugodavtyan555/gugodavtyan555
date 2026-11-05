@@ -2,3 +2,4 @@ bot/config.json
 *.db
 __pycache__/
 mek-dram.zip
+node_modules/

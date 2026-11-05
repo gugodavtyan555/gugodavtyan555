@@ -1,3 +1,5 @@
+import { qrPng } from "./qrpng.js";
+
 // 💈 Հերթագրման Telegram բոտ՝ Cloudflare Workers-ի համար (անվճար, 24/7)։
 //
 // Կարգավորումներ Cloudflare-ում (տե՛ս worker/README.md).
@@ -56,14 +58,16 @@ const BTN_TODAY = "📋 Այսօր";
 const BTN_TOMORROW = "📋 Վաղը";
 const BTN_WEEK = "📆 Շաբաթ";
 const BTN_ADD_ADMIN = "➕ Ավելացնել ադմին";
+const BTN_LINK = "🔗 Հղում և QR կոդ";
 const ADMIN_MENU = {
-  keyboard: [[BTN_TODAY, BTN_TOMORROW, BTN_WEEK], [BTN_BOOK, BTN_MINE], [BTN_PRICES, BTN_CONTACT], [BTN_ADD_ADMIN]],
+  keyboard: [[BTN_TODAY, BTN_TOMORROW, BTN_WEEK], [BTN_BOOK, BTN_MINE], [BTN_PRICES, BTN_CONTACT], [BTN_LINK, BTN_ADD_ADMIN]],
   resize_keyboard: true,
   is_persistent: true,
 };
 const ADMIN_HELP = "👑 Ադմինի վահանակ\n\n" +
   "📋 Այսօր / Վաղը — գրանցումների ցանկը, գումարը և չեղարկման կոճակները\n" +
   "📆 Շաբաթ — առաջիկա 7 օրվա ամփոփումը\n" +
+  "🔗 Հղում և QR կոդ — ուղարկեք հաճախորդներին, որ գրանցվեն\n" +
   "➕ Ավելացնել ադմին — հղում վարսավիրանոցի տիրոջ կամ վարպետի համար\n\n" +
   "🆕 Ամեն նոր գրանցման և չեղարկման մասին ծանուցումը կգա այստեղ։";
 const BTN_SUB = "💳 Բաժանորդագրություն";
@@ -268,6 +272,17 @@ async function tg(env, method, body) {
   if (!data.ok) console.log("telegram error", method, JSON.stringify(data));
   return data;
 }
+// Multipart upload (photos). `fields` values that are objects are sent as JSON.
+async function tgUpload(env, method, fields, fileField, bytes, filename, type) {
+  const base = env.API_BASE || "https://api.telegram.org";
+  const form = new FormData();
+  for (const [k, v] of Object.entries(fields)) form.append(k, typeof v === "object" ? JSON.stringify(v) : String(v));
+  form.append(fileField, new Blob([bytes], { type }), filename);
+  const r = await fetch(`${base}/bot${env.BOT_TOKEN}/${method}`, { method: "POST", body: form });
+  const data = await r.json().catch(() => ({ ok: false }));
+  if (!data.ok) console.log("telegram error", method, JSON.stringify(data));
+  return data;
+}
 const send = (env, chatId, text, markup) =>
   tg(env, "sendMessage", { chat_id: chatId, text, ...(markup && { reply_markup: markup }) });
 const btn = (text, data) => ({ text, callback_data: data });
@@ -378,6 +393,7 @@ async function onMessage(env, msg) {
     if (cmd === "/today" || text === BTN_TODAY) return schedule(env, chat, 0);
     if (cmd === "/tomorrow" || text === BTN_TOMORROW) return schedule(env, chat, 1);
     if (cmd === "/week" || text === BTN_WEEK) return week(env, chat);
+    if (cmd === "/link" || text === BTN_LINK) return sendLink(env, chat);
     if (cmd === "/addadmin" || text === BTN_ADD_ADMIN) {
       const code = newCode();
       await setSetting(env, "admin_code", code);
@@ -509,6 +525,30 @@ async function checkSubscription(env) {
       : `⛔ ${CONFIG.name}. բաժանորդագրությունն ավարտվեց, բոտը նոր գրանցումներ չի ընդունում։\n` +
         `Երբ վճարեն, սեղմիր ${BTN_SUB} → «+1 ամիս»։`);
   }
+}
+
+// Link + QR code the barbershop shares with its clients.
+async function sendLink(env, chat) {
+  let username = await getSetting(env, "bot_username");
+  if (!username) {
+    const me = await tg(env, "getMe", {});
+    if (!me.ok) return send(env, chat, "Չհաջողվեց ստանալ բոտի հղումը, փորձեք մի փոքր ուշ։");
+    username = me.result.username;
+    await setSetting(env, "bot_username", username);
+  }
+  const link = `https://t.me/${username}`;
+  const invite = `Գրանցվեք ${CONFIG.name}-ում առցանց՝ 24/7 💈`;
+  const share = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(invite)}`;
+  await send(env, chat,
+    `🔗 Ձեր հաճախորդների գրանցման հղումը\n\n${link}\n\n` +
+    "Ուղարկեք այն հաճախորդներին WhatsApp-ով, Viber-ով կամ Instagram-ով, կամ դրեք Instagram-ի էջի նկարագրության մեջ։ " +
+    "Հղումը սեղմելով՝ հաճախորդը կբացի բոտը և կգրանցվի։\n\nՆերքևում QR կոդն է՝ տպելու և վարսավիրանոցում փակցնելու համար 👇",
+    inline([[{ text: "📤 Կիսվել Telegram-ով", url: share }]]));
+  const png = await qrPng(link);
+  return tgUpload(env, "sendPhoto", {
+    chat_id: chat,
+    caption: `📱 Սկանավորեք և գրանցվեք\n${CONFIG.name}\n${link}`,
+  }, "photo", png, "qr.png", "image/png");
 }
 
 async function week(env, chat) {
@@ -747,7 +787,7 @@ async function expirePending(env) {
 
 // Telegram "Menu" button next to the input field: /start and /book for everyone,
 // plus admin commands for admins. Re-synced whenever the admin list changes.
-const COMMANDS_VERSION = 1;
+const COMMANDS_VERSION = 2;
 async function syncCommands(env) {
   const owner = await ownerId(env), admins = await adminIds(env);
   const tag = JSON.stringify([COMMANDS_VERSION, owner, admins]);
@@ -761,6 +801,7 @@ async function syncCommands(env) {
     { command: "today", description: "📋 Այսօրվա գրանցումները" },
     { command: "tomorrow", description: "📋 Վաղվա գրանցումները" },
     { command: "week", description: "📆 Առաջիկա 7 օրը" },
+    { command: "link", description: "🔗 Հղում և QR կոդ հաճախորդների համար" },
   ];
   const ok = (await tg(env, "setMyCommands", { commands: base })).ok;
   for (const id of admins) {

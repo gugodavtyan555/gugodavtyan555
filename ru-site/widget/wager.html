@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Калькулятор вейджера — Lucky Spin Club</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://lucky-spin-ru.netlify.app/kalkulyator.html">
+<link rel="stylesheet" href="../style.css">
+<style>body{background:var(--bg);padding:12px} .calc{margin:0} .w-credit{text-align:center;font-size:.85rem;margin:10px 0 0} .w-credit a{color:var(--gold)}</style>
+</head>
+<body>
+<div class="w-lang" data-l="ru" hidden><form class="calc" data-wager-calc data-lang="ru" onsubmit="return false">
+  <div class="calc-grid">
+    <label>Бонус, ₽<input name="bonus" type="number" inputmode="decimal" min="0" value="5000"></label>
+    <label>Депозит, ₽<input name="deposit" type="number" inputmode="decimal" min="0" value="5000"></label>
+    <label>Вейджер (x)<input name="wager" type="number" inputmode="decimal" min="0" value="35"></label>
+    <label>Вейджер считается от<select name="base"><option value="bonus">только бонуса</option><option value="both">бонуса + депозита</option></select></label>
+    <label>RTP игры, %<input name="rtp" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="96"></label>
+    <label>Ставка за спин, ₽<input name="bet" type="number" inputmode="decimal" min="0" value="100"></label>
+    <label>Вклад игры в отыгрыш, %<input name="contrib" type="number" inputmode="decimal" min="0" max="100" value="100"></label>
+  </div>
+  <div class="calc-out" aria-live="polite">
+    <div><span>Нужно поставить</span><b data-out="turnover">—</b></div>
+    <div><span>Это примерно</span><b data-out="spins">—</b></div>
+    <div><span>Ожидаемый проигрыш при отыгрыше</span><b data-out="loss">—</b></div>
+    <div><span>Ожидаемый результат бонуса</span><b data-out="ev">—</b></div>
+  </div>
+  <p class="calc-verdict" data-out="verdict"></p>
+</form><p class="w-credit"><a href="https://lucky-spin-ru.netlify.app/kalkulyator.html" target="_blank" rel="noopener">Калькулятор вейджера — Lucky Spin Club</a></p></div><div class="w-lang" data-l="es" hidden><form class="calc" data-wager-calc data-lang="es" onsubmit="return false">
+  <div class="calc-grid">
+    <label>Bono, $<input name="bonus" type="number" inputmode="decimal" min="0" value="100"></label>
+    <label>Depósito, $<input name="deposit" type="number" inputmode="decimal" min="0" value="100"></label>
+    <label>Requisito (x)<input name="wager" type="number" inputmode="decimal" min="0" value="35"></label>
+    <label>El requisito se calcula sobre<select name="base"><option value="bonus">solo el bono</option><option value="both">bono + depósito</option></select></label>
+    <label>RTP del juego, %<input name="rtp" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="96"></label>
+    <label>Apuesta por giro, $<input name="bet" type="number" inputmode="decimal" min="0" value="1"></label>
+    <label>Contribución del juego, %<input name="contrib" type="number" inputmode="decimal" min="0" max="100" value="100"></label>
+  </div>
+  <div class="calc-out" aria-live="polite">
+    <div><span>Hay que apostar</span><b data-out="turnover">—</b></div>
+    <div><span>Son aproximadamente</span><b data-out="spins">—</b></div>
+    <div><span>Pérdida esperada al cumplirlo</span><b data-out="loss">—</b></div>
+    <div><span>Resultado esperado del bono</span><b data-out="ev">—</b></div>
+  </div>
+  <p class="calc-verdict" data-out="verdict"></p>
+</form><p class="w-credit"><a href="https://lucky-spin-ru.netlify.app/es/kalkulyator.html" target="_blank" rel="noopener">Calculadora de requisito de apuesta — Lucky Spin Club</a></p></div><div class="w-lang" data-l="pt" hidden><form class="calc" data-wager-calc data-lang="pt" onsubmit="return false">
+  <div class="calc-grid">
+    <label>Bônus, R$<input name="bonus" type="number" inputmode="decimal" min="0" value="500"></label>
+    <label>Depósito, R$<input name="deposit" type="number" inputmode="decimal" min="0" value="500"></label>
+    <label>Rollover (x)<input name="wager" type="number" inputmode="decimal" min="0" value="35"></label>
+    <label>O rollover é calculado sobre<select name="base"><option value="bonus">só o bônus</option><option value="both">bônus + depósito</option></select></label>
+    <label>RTP do jogo, %<input name="rtp" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="96"></label>
+    <label>Aposta por giro, R$<input name="bet" type="number" inputmode="decimal" min="0" value="5"></label>
+    <label>Contribuição do jogo, %<input name="contrib" type="number" inputmode="decimal" min="0" max="100" value="100"></label>
+  </div>
+  <div class="calc-out" aria-live="polite">
+    <div><span>É preciso apostar</span><b data-out="turnover">—</b></div>
+    <div><span>São cerca de</span><b data-out="spins">—</b></div>
+    <div><span>Perda esperada no rollover</span><b data-out="loss">—</b></div>
+    <div><span>Resultado esperado do bônus</span><b data-out="ev">—</b></div>
+  </div>
+  <p class="calc-verdict" data-out="verdict"></p>
+</form><p class="w-credit"><a href="https://lucky-spin-ru.netlify.app/pt/kalkulyator.html" target="_blank" rel="noopener">Calculadora de rollover — Lucky Spin Club</a></p></div>
+<script>
+(function(){var l=new URLSearchParams(location.search).get("lang")||"ru";if(["ru","es","pt"].indexOf(l)<0)l="ru";
+document.documentElement.lang=l;document.querySelectorAll(".w-lang").forEach(function(d){if(d.getAttribute("data-l")===l)d.hidden=false;else d.remove();});})();
+</script>
+<script src="../calc.js"></script>
+</body>
+</html>

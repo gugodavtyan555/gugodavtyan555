@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora de requisito de apuesta: cuánto apostar y si conviene el bono | Lucky Spin Club</title>
+<meta name="description" content="Calculadora gratuita del requisito de apuesta: introduce bono, requisito y RTP y descubre cuánto apostar, cuántos giros, la pérdida esperada y si el bono conviene. 18+">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://lucky-spin-ru.netlify.app/es/kalkulyator.html">
+<meta property="og:url" content="https://lucky-spin-ru.netlify.app/es/kalkulyator.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Calculadora de requisito de apuesta: cuánto apostar y si conviene el bono | Lucky Spin Club">
+<meta property="og:description" content="Calculadora gratuita del requisito de apuesta: introduce bono, requisito y RTP y descubre cuánto apostar, cuántos giros, la pérdida esperada y si el bono conviene. 18+">
+<meta property="og:locale" content="es_ES">
+<link rel="alternate" hreflang="ru" href="https://lucky-spin-ru.netlify.app/kalkulyator.html">
+<link rel="alternate" hreflang="es" href="https://lucky-spin-ru.netlify.app/es/kalkulyator.html">
+<link rel="alternate" hreflang="pt" href="https://lucky-spin-ru.netlify.app/pt/kalkulyator.html">
+<link rel="alternate" hreflang="x-default" href="https://lucky-spin-ru.netlify.app/kalkulyator.html">
+<meta property="og:image" content="https://lucky-spin-ru.netlify.app/og-es.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎰</text></svg>">
+<!-- Yandex.Metrika counter -->
+<script>
+window.lscLoadMetrika = function () {
+if (window.lscMetrikaLoaded) return; window.lscMetrikaLoaded = true;
+(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+m[i].l=1*new Date();
+for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+(window, document, "script", "https://mc.yandex.ru/metrika/tag.js?id=114096229", "ym");
+ym(114096229, "init", {ssr:true, clickmap:true, accurateTrackBounce:true, trackLinks:true});
+};
+try { if (localStorage.getItem("lsc_consent") === "yes") window.lscLoadMetrika(); } catch (e) {}
+</script>
+<!-- /Yandex.Metrika counter -->
+<link rel="stylesheet" href="../style.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cómo se calcula el requisito de apuesta?", "acceptedAnswer": {"@type": "Answer", "text": "Multiplica la base (bono o bono + depósito) por el requisito. Por ejemplo, un bono de 100 $ con x35 son 3500 $ en apuestas. Si el juego no cuenta al 100 %, divide por su contribución."}}, {"@type": "Question", "name": "¿Qué requisito de apuesta es bueno?", "acceptedAnswer": {"@type": "Answer", "text": "Cuanto más bajo, mejor. Hasta x20 suele considerarse suave, x35–x40 medio y x50 o más, duro. También importa sobre qué se calcula y cuántos días hay."}}, {"@type": "Question", "name": "¿Puedo fiarme del cálculo?", "acceptedAnswer": {"@type": "Answer", "text": "La calculadora muestra el valor medio esperado según el RTP. En la práctica el resultado puede variar mucho por el azar, así que es una referencia, no una predicción."}}]}</script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="index.html">🎰 Lucky <span>Spin</span> Club</a>
+    <nav>
+      <a class="link" href="kazino.html">Casinos</a>
+      <a class="link" href="index.html#articles">Artículos</a>
+      <span class="langs"><a href="../kalkulyator.html" hreflang="ru">RU</a><a href="../en/index.html" hreflang="en">EN</a><a href="../es/kalkulyator.html" hreflang="es" aria-current="true">ES</a><a href="../pt/kalkulyator.html" hreflang="pt">PT</a></span>
+      <span class="badge18">18+</span>
+      <a class="btn ref small" href="kazino.html">Registrarse</a>
+    </nav>
+  </header>
+  <main>
+    <article>
+      <div class="crumbs"><a href="index.html">Inicio</a> / Calculadora</div>
+      <h1>Calculadora de requisito de apuesta</h1>
+      <p>Introduce las condiciones del bono y la calculadora te dirá cuánto hay que apostar, cuántos giros son y cuánto «se come» en promedio el requisito. Así sabes si el bono conviene antes de depositar.</p>
+    </article>
+    <form class="calc" data-wager-calc data-lang="es" onsubmit="return false">
+  <div class="calc-grid">
+    <label>Bono, $<input name="bonus" type="number" inputmode="decimal" min="0" value="100"></label>
+    <label>Depósito, $<input name="deposit" type="number" inputmode="decimal" min="0" value="100"></label>
+    <label>Requisito (x)<input name="wager" type="number" inputmode="decimal" min="0" value="35"></label>
+    <label>El requisito se calcula sobre<select name="base"><option value="bonus">solo el bono</option><option value="both">bono + depósito</option></select></label>
+    <label>RTP del juego, %<input name="rtp" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="96"></label>
+    <label>Apuesta por giro, $<input name="bet" type="number" inputmode="decimal" min="0" value="1"></label>
+    <label>Contribución del juego, %<input name="contrib" type="number" inputmode="decimal" min="0" max="100" value="100"></label>
+  </div>
+  <div class="calc-out" aria-live="polite">
+    <div><span>Hay que apostar</span><b data-out="turnover">—</b></div>
+    <div><span>Son aproximadamente</span><b data-out="spins">—</b></div>
+    <div><span>Pérdida esperada al cumplirlo</span><b data-out="loss">—</b></div>
+    <div><span>Resultado esperado del bono</span><b data-out="ev">—</b></div>
+  </div>
+  <p class="calc-verdict" data-out="verdict"></p>
+</form>
+    <p class="note calc-note">Cálculo simplificado: muestra el valor medio y no tiene en cuenta la variación de resultados, la apuesta máxima, el límite de retiro ni el plazo. Lee siempre las condiciones del bono en la web del casino.</p>
+    <article>
+      <h2>Cómo se calcula</h2>
+      <ul><li>Total a apostar = base del requisito × requisito ÷ contribución del juego. La base es el bono o bono + depósito, según las condiciones.</li><li>Pérdida esperada = total a apostar × (1 − RTP). Con RTP del 96 %, en promedio se pierde el 4 % de todas las apuestas.</li><li>Resultado esperado = bono − pérdida esperada. Si es negativo, cumplir el requisito cuesta en promedio más que el propio bono.</li></ul>
+      <h2>Ejemplo</h2>
+      <p>Bono de 100 $, requisito x35 sobre el bono, tragamonedas con RTP del 96 %. Hay que apostar 3500 $. La pérdida esperada es el 4 % de 3500, es decir, 140 $. Es más que el bono, así que en promedio no conviene. Con x20 el total es 2000 $, la pérdida esperada 80 $ y el bono queda en positivo.</p>
+      <p>Más sobre el requisito de apuesta en <a href="articles/chto-takoe-vejdzher.html">«Qué es el requisito de apuesta»</a>.</p>
+      <div class="box"><p>¿Quieres elegir un casino con condiciones adecuadas?</p><a class="btn ref" href="kazino.html">Comparar casinos</a><div class="note">18+</div></div>
+      <h2>Añade la calculadora a tu sitio</h2>
+      <p>Copia el código y pégalo en tu sitio o foro: la calculadora funcionará gratis.</p>
+      <textarea id="embed-code" class="embed-code" readonly rows="4">&lt;iframe src=&quot;https://lucky-spin-ru.netlify.app/widget/wager.html?lang=es&quot; width=&quot;100%&quot; height=&quot;560&quot; style=&quot;border:0;max-width:640px&quot; loading=&quot;lazy&quot; title=&quot;Calculadora de requisito de apuesta — Lucky Spin Club&quot;&gt;&lt;/iframe&gt;
+&lt;p&gt;&lt;a href=&quot;https://lucky-spin-ru.netlify.app/es/kalkulyator.html&quot;&gt;Calculadora de requisito de apuesta — Lucky Spin Club&lt;/a&gt;&lt;/p&gt;</textarea>
+      <button type="button" class="btn small" data-copy-embed data-done="Copiado ✓">Copiar código</button>
+      <section class="faq">
+<h2>Preguntas frecuentes</h2>
+<details><summary>¿Cómo se calcula el requisito de apuesta?</summary><p>Multiplica la base (bono o bono + depósito) por el requisito. Por ejemplo, un bono de 100 $ con x35 son 3500 $ en apuestas. Si el juego no cuenta al 100 %, divide por su contribución.</p></details>
+<details><summary>¿Qué requisito de apuesta es bueno?</summary><p>Cuanto más bajo, mejor. Hasta x20 suele considerarse suave, x35–x40 medio y x50 o más, duro. También importa sobre qué se calcula y cuántos días hay.</p></details>
+<details><summary>¿Puedo fiarme del cálculo?</summary><p>La calculadora muestra el valor medio esperado según el RTP. En la práctica el resultado puede variar mucho por el azar, así que es una referencia, no una predicción.</p></details>
+</section>
+    </article>
+<script src="../calc.js"></script>
+  </main>
+  <footer>
+    <p>Este sitio es informativo y publicitario y contiene enlaces de afiliado (referidos). Si te registras a través de ellos, el propietario del sitio puede recibir una comisión.</p>
+    <p>El juego es solo para mayores de 18 años. Asegúrate de que los casinos online sean legales en tu país. Consulta las condiciones de los bonos en la web del casino.</p>
+    <p>18+ · <a href="articles/otvetstvennaya-igra.html">Juego responsable</a> · <a href="o-sajte.html">Sobre el sitio</a> · <a href="privacy.html">Privacidad</a> · © <span class="year"></span> Lucky Spin Club</p>
+  </footer>
+</div>
+<script src="../config.js"></script>
+</body>
+</html>

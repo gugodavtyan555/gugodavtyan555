@@ -1,7 +1,7 @@
 // 💈 Հերթագրման Telegram բոտ՝ Cloudflare Workers-ի համար (անվճար, 24/7)։
 //
 // Կարգավորումներ Cloudflare-ում (տե՛ս worker/README.md).
-//   • Secret  BOT_TOKEN — BotFather-ի տոկենը
+//   • BotFather-ի տոկենը՝ /setup էջում (կամ Secret BOT_TOKEN)
 //   • D1 binding  DB — տվյալների բազա
 //   • Cron trigger «ամեն րոպե» — հիշեցումների համար
 //
@@ -108,8 +108,26 @@ async function init(env) {
     "CREATE TABLE IF NOT EXISTS bookings (id INTEGER PRIMARY KEY, user_id INTEGER, user_name TEXT, " +
     "service TEXT, price INTEGER, start INTEGER, end INTEGER, status TEXT DEFAULT 'active', reminded INTEGER DEFAULT 0)"
   ).run();
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT)").run();
   ready = true;
 }
+async function getSetting(env, k) {
+  const r = await env.DB.prepare("SELECT v FROM settings WHERE k=?").bind(k).first();
+  return r ? r.v : null;
+}
+async function setSetting(env, k, v) {
+  await env.DB.prepare("INSERT INTO settings (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v=excluded.v")
+    .bind(k, v).run();
+}
+async function adminIds(env) {
+  const extra = JSON.parse((await getSetting(env, "admin_ids")) || "[]");
+  return [...new Set([...CONFIG.adminIds, ...extra])];
+}
+// Token comes from the BOT_TOKEN secret, or from the /setup form (stored in D1).
+async function withToken(env) {
+  return { ...env, BOT_TOKEN: env.BOT_TOKEN || (await getSetting(env, "bot_token")) };
+}
+const newCode = () => crypto.randomUUID().replace(/-/g, "").slice(0, 12);
 const sec = (ms) => Math.floor(ms / 1000);
 const all = async (stmt) => (await stmt.all()).results;
 
@@ -141,7 +159,7 @@ function userLabel(u) {
   return u.username ? `${name} (@${u.username})` : name;
 }
 async function notifyAdmins(env, text) {
-  for (const id of CONFIG.adminIds) await send(env, id, text);
+  for (const id of await adminIds(env)) await send(env, id, text);
 }
 const servicesKb = () =>
   inline(CONFIG.services.map((s, i) => [btn(`${s.name} — ${money(s.price)}`, `svc:${i}`)]));
@@ -152,7 +170,26 @@ async function onMessage(env, msg) {
   const cmd = text.split(/[\s@]/)[0];
 
   if (cmd === "/start") {
+    const payload = text.split(/\s+/)[1] || "";
+    const code = await getSetting(env, "admin_code");
+    if (code && payload === `admin_${code}`) {
+      const ids = JSON.parse((await getSetting(env, "admin_ids")) || "[]");
+      if (!ids.includes(user.id)) ids.push(user.id);
+      await setSetting(env, "admin_ids", JSON.stringify(ids));
+      await setSetting(env, "admin_code", newCode()); // one-time link
+      return send(env, chat, "✅ Դուք ադմին եք։ Նոր գրանցումների ծանուցումները կգան այստեղ։\n\n" +
+        "/today — այսօրվա գրանցումները\n/tomorrow — վաղվա գրանցումները\n" +
+        "/addadmin — հղում ևս մեկ ադմինի համար (օր.՝ վարսավիրանոցի տիրոջ)", MENU);
+    }
     return send(env, chat, `Բարի գալուստ ${CONFIG.name} 💈\n\nԱյստեղ կարող եք գրանցվել մի քանի վայրկյանում։`, MENU);
+  }
+  if (cmd === "/addadmin") {
+    if (!(await adminIds(env)).includes(user.id)) return;
+    const code = newCode();
+    await setSetting(env, "admin_code", code);
+    const me = await tg(env, "getMe", {});
+    return send(env, chat, "Ուղարկեք այս հղումը նոր ադմինին (մեկանգամյա է).\n" +
+      `https://t.me/${me.result && me.result.username}?start=admin_${code}`);
   }
   if (cmd === "/myid") return send(env, chat, `Ձեր ID-ն՝ ${user.id}`);
   if (cmd === "/today" || cmd === "/tomorrow") return schedule(env, chat, user, cmd === "/today" ? 0 : 1);
@@ -183,7 +220,7 @@ async function onMessage(env, msg) {
 }
 
 async function schedule(env, chat, user, offsetDays) {
-  if (!CONFIG.adminIds.includes(user.id)) return;
+  if (!(await adminIds(env)).includes(user.id)) return;
   const key = dayKey(Date.now() + offsetDays * DAY);
   const start = dayStart(key);
   const rows = await all(env.DB.prepare(
@@ -288,32 +325,62 @@ function page(text, status = 200) {
     { status, headers: { "content-type": "text/html; charset=utf-8" } });
 }
 
-async function setup(env, origin) {
-  if (!env.BOT_TOKEN) return page("❌ BOT_TOKEN secret-ը չկա։ Ավելացրու այն Settings → Variables and Secrets բաժնում։");
-  if (!env.DB) return page("❌ DB binding-ը չկա։ Ավելացրու D1 բազան Settings → Bindings բաժնում՝ DB անունով։");
-  await init(env);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const TOKEN_FORM = `<h2>💈 Բոտի միացում</h2>
+<form method="post" action="/setup">
+<p>Տեղադրիր BotFather-ի տոկենը.</p>
+<input name="token" autocomplete="off" placeholder="123456789:AA..." style="width:100%;font-size:18px;padding:12px;box-sizing:border-box">
+<p><button style="font-size:18px;padding:12px 20px;width:100%">Միացնել</button></p>
+</form>`;
+
+async function connect(env, origin) {
   const me = await tg(env, "getMe", {});
-  if (!me.ok) return page("❌ Տոկենը սխալ է։ Ստուգիր BOT_TOKEN-ը։");
+  if (!me.ok) return { error: "❌ Տոկենը սխալ է։ Պատճենիր այն BotFather-ից ամբողջությամբ։" };
   const hook = await tg(env, "setWebhook", {
     url: `${origin}/webhook`, secret_token: await webhookSecret(env),
     allowed_updates: ["message", "callback_query"],
   });
-  if (!hook.ok) return page("❌ Webhook-ը չմիացավ․ " + (hook.description || ""));
-  return page(`✅ Պատրաստ է։ Բոտը՝ <a href="https://t.me/${me.result.username}">@${me.result.username}</a><br>` +
-    `Բացիր այն Telegram-ում և գրիր /start`);
+  if (!hook.ok) return { error: "❌ Webhook-ը չմիացավ․ " + esc(hook.description || "") };
+  return { username: me.result.username };
+}
+
+async function setup(request, rawEnv, origin) {
+  if (!rawEnv.DB) return page("❌ DB binding-ը չկա։ Ավելացրու D1 բազան Settings → Bindings բաժնում՝ DB անունով։");
+  await init(rawEnv);
+  const env = await withToken(rawEnv);
+
+  if (!env.BOT_TOKEN) {
+    if (request.method !== "POST") return page(TOKEN_FORM);
+    const token = String((await request.formData()).get("token") || "").trim();
+    if (!/^\d+:[\w-]{20,}$/.test(token)) return page("❌ Սա տոկեն չի նմանվում։<br><br>" + TOKEN_FORM);
+    const res = await connect({ ...env, BOT_TOKEN: token }, origin);
+    if (res.error) return page(res.error + "<br><br>" + TOKEN_FORM);
+    await setSetting(env, "bot_token", token);
+    const code = newCode();
+    await setSetting(env, "admin_code", code);
+    const link = `https://t.me/${res.username}?start=admin_${code}`;
+    return page(`<h2>✅ Բոտը միացված է</h2><p>Վերջին քայլ. սեղմիր կոճակը, որ դառնաս բոտի ադմինը և ստանաս գրանցումների ծանուցումները։</p>` +
+      `<p><a href="${link}" style="display:block;text-align:center;background:#e8590c;color:#fff;padding:14px;border-radius:10px;text-decoration:none">Դառնալ ադմին Telegram-ում</a></p>`);
+  }
+
+  const res = await connect(env, origin);
+  if (res.error) return page(res.error);
+  return page(`✅ Բոտն աշխատում է՝ <a href="https://t.me/${res.username}">@${res.username}</a>`);
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, rawEnv) {
     const url = new URL(request.url);
-    if (url.pathname === "/setup") return setup(env, url.origin);
+    if (url.pathname === "/setup") return setup(request, rawEnv, url.origin);
     if (url.pathname === "/webhook" && request.method === "POST") {
-      if (request.headers.get("X-Telegram-Bot-Api-Secret-Token") !== await webhookSecret(env)) {
+      await init(rawEnv);
+      const env = await withToken(rawEnv);
+      if (!env.BOT_TOKEN || request.headers.get("X-Telegram-Bot-Api-Secret-Token") !== await webhookSecret(env)) {
         return new Response("forbidden", { status: 403 });
       }
       const update = await request.json();
       try {
-        await init(env);
         if (update.message) await onMessage(env, update.message);
         else if (update.callback_query) await onCallback(env, update.callback_query);
       } catch (e) {
@@ -321,11 +388,12 @@ export default {
       }
       return new Response("ok");
     }
-    return page(`💈 ${CONFIG.name} բոտն աշխատում է։ Առաջին անգամ բացիր <a href="/setup">/setup</a>։`);
+    return page(`💈 ${esc(CONFIG.name)} բոտն աշխատում է։ Առաջին անգամ բացիր <a href="/setup">/setup</a>։`);
   },
 
-  async scheduled(event, env) {
-    await init(env);
-    await sendReminders(env);
+  async scheduled(event, rawEnv) {
+    await init(rawEnv);
+    const env = await withToken(rawEnv);
+    if (env.BOT_TOKEN) await sendReminders(env);
   },
 };

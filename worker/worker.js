@@ -45,6 +45,19 @@ const MENU = {
   keyboard: [[BTN_BOOK, BTN_MINE], [BTN_PRICES, BTN_CONTACT]],
   resize_keyboard: true,
 };
+const BTN_TODAY = "📋 Այսօր";
+const BTN_TOMORROW = "📋 Վաղը";
+const BTN_WEEK = "📆 Շաբաթ";
+const BTN_ADD_ADMIN = "➕ Ավելացնել ադմին";
+const ADMIN_MENU = {
+  keyboard: [[BTN_TODAY, BTN_TOMORROW, BTN_WEEK], [BTN_BOOK, BTN_MINE], [BTN_PRICES, BTN_CONTACT], [BTN_ADD_ADMIN]],
+  resize_keyboard: true,
+};
+const ADMIN_HELP = "👑 Ադմինի վահանակ\n\n" +
+  "📋 Այսօր / Վաղը — գրանցումների ցանկը, գումարը և չեղարկման կոճակները\n" +
+  "📆 Շաբաթ — առաջիկա 7 օրվա ամփոփումը\n" +
+  "➕ Ավելացնել ադմին — հղում վարսավիրանոցի տիրոջ կամ վարպետի համար\n\n" +
+  "🆕 Ամեն նոր գրանցման և չեղարկման մասին ծանուցումը կգա այստեղ։";
 const MIN = 60_000;
 const DAY = 86_400_000;
 
@@ -168,6 +181,21 @@ const servicesKb = () =>
 async function onMessage(env, msg) {
   const chat = msg.chat.id, text = (msg.text || "").trim(), user = msg.from;
   const cmd = text.split(/[\s@]/)[0];
+  const isAdmin = (await adminIds(env)).includes(user.id);
+  const menu = isAdmin ? ADMIN_MENU : MENU;
+
+  if (isAdmin) {
+    if (cmd === "/today" || text === BTN_TODAY) return schedule(env, chat, 0);
+    if (cmd === "/tomorrow" || text === BTN_TOMORROW) return schedule(env, chat, 1);
+    if (cmd === "/week" || text === BTN_WEEK) return week(env, chat);
+    if (cmd === "/addadmin" || text === BTN_ADD_ADMIN) {
+      const code = newCode();
+      await setSetting(env, "admin_code", code);
+      const me = await tg(env, "getMe", {});
+      return send(env, chat, "Ուղարկեք այս հղումը նոր ադմինին (օր.՝ վարսավիրանոցի տիրոջը կամ վարպետին)։ " +
+        "Հղումը մեկանգամյա է.\n\n" + `https://t.me/${me.result && me.result.username}?start=admin_${code}`);
+    }
+  }
 
   if (cmd === "/start") {
     const payload = text.split(/\s+/)[1] || "";
@@ -177,22 +205,12 @@ async function onMessage(env, msg) {
       if (!ids.includes(user.id)) ids.push(user.id);
       await setSetting(env, "admin_ids", JSON.stringify(ids));
       await setSetting(env, "admin_code", newCode()); // one-time link
-      return send(env, chat, "✅ Դուք ադմին եք։ Նոր գրանցումների ծանուցումները կգան այստեղ։\n\n" +
-        "/today — այսօրվա գրանցումները\n/tomorrow — վաղվա գրանցումները\n" +
-        "/addadmin — հղում ևս մեկ ադմինի համար (օր.՝ վարսավիրանոցի տիրոջ)", MENU);
+      return send(env, chat, ADMIN_HELP, ADMIN_MENU);
     }
+    if (isAdmin) return send(env, chat, ADMIN_HELP, ADMIN_MENU);
     return send(env, chat, `Բարի գալուստ ${CONFIG.name} 💈\n\nԱյստեղ կարող եք գրանցվել մի քանի վայրկյանում։`, MENU);
   }
-  if (cmd === "/addadmin") {
-    if (!(await adminIds(env)).includes(user.id)) return;
-    const code = newCode();
-    await setSetting(env, "admin_code", code);
-    const me = await tg(env, "getMe", {});
-    return send(env, chat, "Ուղարկեք այս հղումը նոր ադմինին (մեկանգամյա է).\n" +
-      `https://t.me/${me.result && me.result.username}?start=admin_${code}`);
-  }
   if (cmd === "/myid") return send(env, chat, `Ձեր ID-ն՝ ${user.id}`);
-  if (cmd === "/today" || cmd === "/tomorrow") return schedule(env, chat, user, cmd === "/today" ? 0 : 1);
   if (cmd === "/book" || text === BTN_BOOK) return send(env, chat, "Ընտրեք ծառայությունը.", servicesKb());
   if (text === BTN_PRICES) {
     const lines = CONFIG.services.map((s) => `• ${s.name} — ${money(s.price)} (${s.duration} րոպե)`);
@@ -209,27 +227,50 @@ async function onMessage(env, msg) {
     const rows = await all(env.DB.prepare(
       "SELECT * FROM bookings WHERE user_id=? AND status='active' AND start>=? ORDER BY start"
     ).bind(user.id, sec(Date.now())));
-    if (!rows.length) return send(env, chat, "Դուք ակտիվ գրանցումներ չունեք։", MENU);
+    if (!rows.length) return send(env, chat, "Դուք ակտիվ գրանցումներ չունեք։", menu);
     for (const r of rows) {
       await send(env, chat, `✂️ ${r.service}\n🕒 ${fmt(r.start * 1000)}`,
         inline([[btn("❌ Չեղարկել", `cancel:${r.id}`)]]));
     }
     return;
   }
-  return send(env, chat, "Ընտրեք ներքևի ընտրացանկից 👇", MENU);
+  return send(env, chat, "Ընտրեք ներքևի ընտրացանկից 👇", menu);
 }
 
-async function schedule(env, chat, user, offsetDays) {
-  if (!(await adminIds(env)).includes(user.id)) return;
+// Admin views. Callers must check admin rights first.
+async function bookingsBetween(env, start, end) {
+  return all(env.DB.prepare(
+    "SELECT * FROM bookings WHERE status='active' AND start>=? AND start<? ORDER BY start"
+  ).bind(sec(start), sec(end)));
+}
+
+async function schedule(env, chat, offsetDays) {
   const key = dayKey(Date.now() + offsetDays * DAY);
   const start = dayStart(key);
-  const rows = await all(env.DB.prepare(
-    "SELECT * FROM bookings WHERE status='active' AND start>=? AND start<? ORDER BY start"
-  ).bind(sec(start), sec(start + DAY)));
-  if (!rows.length) return send(env, chat, `${dayLabel(key)}՝ գրանցումներ չկան։`);
+  const rows = await bookingsBetween(env, start, start + DAY);
+  if (!rows.length) return send(env, chat, `📋 ${dayLabel(key)}՝ գրանցումներ չկան։`);
   const total = rows.reduce((s, r) => s + r.price, 0);
-  const lines = rows.map((r) => `${hhmm(r.start * 1000)} — ${r.service} — ${r.user_name}`);
-  return send(env, chat, `📋 ${dayLabel(key)} (${rows.length} գրանցում, ${money(total)})\n\n${lines.join("\n")}`);
+  const lines = rows.map((r) => `🕒 ${hhmm(r.start * 1000)} — ${r.service} (${money(r.price)})\n     👤 ${r.user_name}`);
+  const kb = rows.map((r) => [btn(`❌ Չեղարկել ${hhmm(r.start * 1000)}`, `acancel:${r.id}`)]);
+  return send(env, chat,
+    `📋 ${dayLabel(key)}\n${rows.length} գրանցում, ընդամենը՝ ${money(total)}\n\n${lines.join("\n\n")}`, inline(kb));
+}
+
+async function week(env, chat) {
+  const first = dayStart(dayKey(Date.now()));
+  const rows = await bookingsBetween(env, first, first + 7 * DAY);
+  const lines = [];
+  let count = 0, total = 0;
+  for (let i = 0; i < 7; i++) {
+    const key = dayKey(first + i * DAY + 12 * 3600_000);
+    const day = rows.filter((r) => dayKey(r.start * 1000) === key);
+    const sum = day.reduce((s, r) => s + r.price, 0);
+    count += day.length; total += sum;
+    lines.push(workingHours(key)
+      ? `${dayLabel(key)} — ${day.length} գրանցում, ${money(sum)}`
+      : `${dayLabel(key)} — փակ է`);
+  }
+  return send(env, chat, `📆 Առաջիկա 7 օրը\n\n${lines.join("\n")}\n\nԸնդամենը՝ ${count} գրանցում, ${money(total)}`);
 }
 
 async function onCallback(env, q) {
@@ -289,6 +330,22 @@ async function onCallback(env, q) {
     await edit(`✅ Դուք գրանցված եք\n\n✂️ ${svc.name}\n🕒 ${fmt(ts)}\n📍 ${CONFIG.address}\n\n` +
       `Կհիշեցնենք ${CONFIG.reminderMinutes} րոպե առաջ։`);
     return notifyAdmins(env, `🆕 Նոր գրանցում\n👤 ${who}\n✂️ ${svc.name} — ${money(svc.price)}\n🕒 ${fmt(ts)}`);
+  }
+
+  if (kind === "acancel" || kind === "acx" || kind === "anop") {
+    if (!(await adminIds(env)).includes(q.from.id)) return;
+    if (kind === "anop") return edit("👌 Գրանցումը մնաց ակտիվ։");
+    const row = await env.DB.prepare("SELECT * FROM bookings WHERE id=? AND status='active'").bind(+a).first();
+    if (!row) return edit("Այս գրանցումն արդեն ակտիվ չէ։");
+    const info = `✂️ ${row.service}\n🕒 ${fmt(row.start * 1000)}\n👤 ${row.user_name}`;
+    if (kind === "acancel") {
+      return edit(`Չեղարկե՞լ այս գրանցումը։ Հաճախորդը կստանա ծանուցում։\n\n${info}`,
+        inline([[btn("✅ Այո, չեղարկել", `acx:${row.id}`), btn("⬅️ Ոչ", "anop")]]));
+    }
+    await env.DB.prepare("UPDATE bookings SET status='cancelled' WHERE id=?").bind(row.id).run();
+    await send(env, row.user_id, `❌ Ձեր գրանցումը չեղարկվել է ${CONFIG.name}-ի կողմից\n\n✂️ ${row.service}\n` +
+      `🕒 ${fmt(row.start * 1000)}\n\nԽնդրում ենք ընտրել այլ ժամ 👇`, MENU);
+    return edit(`❌ Չեղարկված է, հաճախորդը տեղեկացված է\n\n${info}`);
   }
 
   if (kind === "cancel") {

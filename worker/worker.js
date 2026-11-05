@@ -347,8 +347,11 @@ async function onInput(env, msg, state, menu) {
     if (!res.ok && res.svc != null) return send(env, chat, "Ընտրեք այլ ժամ 👇", inline([[btn("📅 Ընտրել ժամ", `svc:${res.svc}`)]]));
   }
 }
+// Booking notifications go to the barbershop's admins only, not to the owner.
+// While the barbershop has no admin yet (demo bot), the owner gets them so requests are not lost.
 async function notifyAdmins(env, text, markup) {
-  for (const id of await adminIds(env)) await send(env, id, text, markup);
+  const shop = await shopAdmins(env);
+  for (const id of shop.length ? shop : await adminIds(env)) await send(env, id, text, markup);
 }
 const servicesKb = () =>
   inline(CONFIG.services.map((s, i) => [btn(`${s.name} — ${money(s.price)}`, `svc:${i}`)]));

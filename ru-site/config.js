@@ -35,3 +35,36 @@ document.querySelectorAll('a[href^="https://t.me/luckyspinclub_ru"]').forEach(a 
   a.addEventListener("click", () => goal("telegram_click"));
 });
 document.querySelectorAll(".year").forEach(el => el.textContent = new Date().getFullYear());
+
+// Предложить версию сайта на языке браузера (без автоматического перехода)
+(function () {
+  try {
+    if (document.documentElement.lang !== "ru") return;
+    if (localStorage.getItem("langBarClosed")) return;
+  } catch (e) {}
+  var texts = {
+    en: ["This site is available in English", "Open in English"],
+    es: ["Este sitio está disponible en español", "Abrir en español"],
+    pt: ["Este site está disponível em português", "Abrir em português"]
+  };
+  var langs = navigator.languages || [navigator.language || ""];
+  var pick = null;
+  for (var i = 0; i < langs.length; i++) {
+    var l = (langs[i] || "").slice(0, 2).toLowerCase();
+    if (l === "ru") return;
+    if (texts[l]) { pick = l; break; }
+  }
+  if (!pick) return;
+  var link = document.querySelector('.langs a[hreflang="' + pick + '"]');
+  if (!link) return;
+  var bar = document.createElement("div");
+  bar.className = "lang-bar";
+  bar.innerHTML = '<span></span><a class="btn"></a><button type="button" aria-label="Close">✕</button>';
+  bar.querySelector("span").textContent = texts[pick][0];
+  var a = bar.querySelector("a"); a.href = link.href; a.textContent = texts[pick][1];
+  bar.querySelector("button").addEventListener("click", function () {
+    bar.remove();
+    try { localStorage.setItem("langBarClosed", "1"); } catch (e) {}
+  });
+  document.body.appendChild(bar);
+})();

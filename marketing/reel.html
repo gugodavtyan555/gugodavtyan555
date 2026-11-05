@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face { font-family: "NSA"; font-weight: 400; src: url(node_modules/@fontsource/noto-sans-armenian/files/noto-sans-armenian-armenian-400-normal.woff2); }
+  @font-face { font-family: "NSA"; font-weight: 700; src: url(node_modules/@fontsource/noto-sans-armenian/files/noto-sans-armenian-armenian-700-normal.woff2); }
+  @font-face { font-family: "NSA"; font-weight: 900; src: url(node_modules/@fontsource/noto-sans-armenian/files/noto-sans-armenian-armenian-900-normal.woff2); }
+  @font-face { font-family: "MS"; font-weight: 900; src: url(node_modules/@fontsource/montserrat/files/montserrat-latin-900-normal.woff2); }
+  @font-face { font-family: "MS"; font-weight: 800; src: url(node_modules/@fontsource/montserrat/files/montserrat-latin-800-normal.woff2); }
+
+  :root { --bg: #0e0e12; --card: #1b1b22; --text: #f6f3ee; --muted: #a6a3ad; --accent: #ff7a2e; --accent2: #ffb347; --ok: #3ddc84; --red: #ff4d4d; --tg: #2aabee; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--bg); }
+  body { font-family: "MS", "NSA", "Noto Color Emoji", sans-serif; color: var(--text); position: relative; }
+  .stage { position: absolute; inset: 0; overflow: hidden; }
+
+  /* background: soft glow + diagonal barber stripes */
+  .glow { position: absolute; width: 1400px; height: 1400px; border-radius: 50%; filter: blur(120px); opacity: .35; }
+  .g1 { background: var(--accent); left: -500px; top: -400px; }
+  .g2 { background: #6a3cff; right: -600px; bottom: -500px; opacity: .25; }
+  .stripes { position: absolute; left: -200px; right: -200px; height: 70px; top: 1700px;
+    background: repeating-linear-gradient(-45deg, var(--accent) 0 40px, #fff 40px 80px, #2d5bff 80px 120px, #fff 120px 160px);
+    opacity: .9; transform: rotate(-4deg); }
+  .stripes.top { top: 110px; transform: rotate(-4deg); }
+
+  .el { position: absolute; left: 80px; right: 140px; opacity: 0; will-change: transform, opacity; }
+  .center { text-align: center; left: 90px; right: 90px; }
+  h1 { font-weight: 900; font-size: 112px; line-height: 1.05; letter-spacing: -1px; }
+  h2 { font-weight: 900; font-size: 84px; line-height: 1.1; }
+  .big { font-weight: 900; font-size: 130px; line-height: 1; }
+  .acc { color: var(--accent); }
+  .ok { color: var(--ok); }
+  .muted { color: var(--muted); }
+  .pill { display: inline-block; background: var(--accent); color: #111; font-weight: 900; padding: 14px 34px; border-radius: 100px; font-size: 48px; }
+
+  .problem { background: var(--card); border: 2px solid #2b2b35; border-radius: 34px; padding: 34px 40px; font-size: 54px; font-weight: 700; display: flex; gap: 26px; align-items: center; }
+  .problem .x { font-size: 64px; }
+  .benefit { font-size: 54px; line-height: 1.15; font-weight: 700; display: flex; gap: 24px; align-items: center; }
+  .benefit b { color: var(--ok); font-size: 64px; }
+
+  /* phone mockup */
+  .phone { position: absolute; left: 50%; top: 470px; width: 760px; height: 1100px; margin-left: -380px; border-radius: 80px;
+    background: #050507; border: 14px solid #2a2a33; box-shadow: 0 40px 120px rgba(0,0,0,.6), 0 0 0 3px #3a3a46; overflow: hidden; opacity: 0; }
+  .phone .bar { height: 150px; background: #17212b; display: flex; align-items: flex-end; padding: 0 34px 22px; gap: 22px; }
+  .avatar { width: 78px; height: 78px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), #ff4d8d); display: grid; place-items: center; font-size: 42px; }
+  .bar .nm { font-family: "MS", "NSA", "Noto Color Emoji"; font-weight: 800; font-size: 36px; color: #fff; }
+  .bar .st { font-size: 26px; color: #7fa7c6; }
+  .chat { position: absolute; top: 150px; left: 0; right: 0; bottom: 0; background: #0e1621; padding: 30px 26px; }
+  .msg { position: absolute; left: 26px; right: 26px; opacity: 0; }
+  .bubble { background: #182533; color: #fff; border-radius: 26px 26px 26px 8px; padding: 22px 26px; font-family: "MS", "NSA", "Noto Color Emoji"; font-size: 36px; line-height: 1.35; display: inline-block; max-width: 100%; }
+  .bubble.me { background: #2b5278; border-radius: 26px 26px 8px 26px; float: right; }
+  .btns { display: grid; gap: 8px; margin-top: 8px; }
+  .b { background: #22303f; color: #fff; border-radius: 14px; padding: 16px 8px; text-align: center; font-family: "MS", "NSA", "Noto Color Emoji"; font-size: 30px; font-weight: 700; position: relative; }
+  .b.hl { background: #2f6ea5; }
+  .b.okb { background: #1f6e43; } .b.nob { background: #6e2a2a; }
+  .cal { grid-template-columns: repeat(7, 1fr); }
+  .cal .b { padding: 14px 0; font-size: 28px; }
+  .cal .h { background: none; color: #7fa7c6; font-size: 22px; padding: 6px 0; }
+  .times { grid-template-columns: repeat(4, 1fr); }
+  .strike { color: #6d7a88; text-decoration: line-through; text-decoration-thickness: 3px; }
+  .tap { position: absolute; width: 110px; height: 110px; border-radius: 50%; background: rgba(255,255,255,.35); border: 4px solid #fff; opacity: 0; pointer-events: none; z-index: 5; }
+
+  .cap { position: absolute; left: 70px; right: 70px; top: 250px; text-align: center; font-weight: 900; font-size: 64px; line-height: 1.15; opacity: 0; font-family: "MS", "NSA", "Noto Color Emoji"; }
+  .cap .n { display: inline-block; background: var(--accent); color: #111; border-radius: 50%; width: 84px; height: 84px; line-height: 84px; margin-right: 18px; font-family: "MS"; }
+
+  .handle { font-size: 56px; font-weight: 700; color: var(--muted); }
+  .progress { position: absolute; left: 0; bottom: 0; height: 10px; background: var(--accent); width: 0; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="glow g1" id="g1"></div><div class="glow g2" id="g2"></div>
+  <div class="stripes top" id="st1"></div>
+  <div class="stripes" id="st2"></div>
+
+  <!-- S1 hook -->
+  <div class="el" id="s1a" style="top:420px"><span class="pill">ՎԱՐՍԱՎԻՐՆԵՐ 💈</span></div>
+  <div class="el" id="s1b" style="top:560px"><h1>Դեռ գրանցո՞ւմ եք<br><span class="acc">զանգերով</span><br>և տետրով 📒</h1></div>
+
+  <!-- S2 problems -->
+  <div class="el" id="s2t" style="top:330px"><h2>Ծանո՞թ է 👇</h2></div>
+  <div class="el" id="s2a" style="top:540px"><div class="problem"><span class="x">📞</span><span>Զանգ՝ հենց սանրվածքի ժամին</span></div></div>
+  <div class="el" id="s2b" style="top:760px"><div class="problem"><span class="x">😤</span><span>Հաճախորդը մոռանում է գալ</span></div></div>
+  <div class="el" id="s2c" style="top:980px"><div class="problem"><span class="x">🌙</span><span>Գիշերը գրողին ոչ ոք չի պատասխանում</span></div></div>
+
+  <!-- S3 solution -->
+  <div class="el center" id="s3a" style="top:470px"><h2 class="muted">Լուծումը 👇</h2></div>
+  <div class="el center" id="s3b" style="top:640px"><h1 style="font-size:96px">Telegram <span class="acc">բոտ</span>,<br>որը գրանցում է<br>Ձեր փոխարեն</h1></div>
+  <div class="el center" id="s3c" style="top:1130px"><span class="pill">24/7 · առանց զանգի</span></div>
+
+  <!-- S4 demo -->
+  <div class="cap" id="cap1"><span class="n">1</span>Հաճախորդն ընտրում է ծառայությունը</div>
+  <div class="cap" id="cap2"><span class="n">2</span>Օրը՝ օրացույցից</div>
+  <div class="cap" id="cap3"><span class="n">3</span>Ազատ ժամը</div>
+  <div class="cap" id="cap4"><span class="n">4</span>Դուք հաստատում եք մեկ սեղմումով</div>
+  <div class="cap" id="cap5"><span class="n">5</span>Բոտը հիշեցնում է այցի մասին</div>
+
+  <div class="phone" id="phone">
+    <div class="bar"><div class="avatar">💈</div><div><div class="nm">Barbershop</div><div class="st">bot</div></div></div>
+    <div class="chat">
+      <div class="msg" id="m1" style="top:30px">
+        <div class="bubble">Ընտրեք ծառայությունը ✂️</div>
+        <div class="btns">
+          <div class="b">Տղամարդու սանրվածք — 4 000 ֏</div>
+          <div class="b" id="svcBtn">Սանրվածք + մորուք — 6 000 ֏</div>
+          <div class="b">Մորուքի ձևավորում — 2 500 ֏</div>
+          <div class="b">Մանկական սանրվածք — 3 000 ֏</div>
+        </div>
+      </div>
+      <div class="msg" id="m2" style="top:30px">
+        <div class="bubble">Ընտրեք օրը 📅</div>
+        <div class="btns"><div class="b">Նոյեմբեր 2026</div></div>
+        <div class="btns cal">
+          <div class="b h">Եկ</div><div class="b h">Եք</div><div class="b h">Չք</div><div class="b h">Հգ</div><div class="b h">Ու</div><div class="b h">Շբ</div><div class="b h">Կր</div>
+          <div class="b">9</div><div class="b">10</div><div class="b strike">11</div><div class="b" id="dayBtn">12</div><div class="b">13</div><div class="b strike">14</div><div class="b">🔒</div>
+          <div class="b">16</div><div class="b">17</div><div class="b">18</div><div class="b">19</div><div class="b strike">20</div><div class="b">21</div><div class="b">🔒</div>
+          <div class="b">23</div><div class="b">24</div><div class="b">25</div><div class="b">26</div><div class="b">27</div><div class="b">28</div><div class="b">🔒</div>
+        </div>
+      </div>
+      <div class="msg" id="m3" style="top:30px">
+        <div class="bubble">Հնգ 12.11 · Ընտրեք ժամը 🕒</div>
+        <div class="btns times">
+          <div class="b strike">10:00</div><div class="b strike">10:30</div><div class="b">11:00</div><div class="b">11:30</div>
+          <div class="b strike">12:00</div><div class="b">12:30</div><div class="b" id="timeBtn">13:00</div><div class="b">13:30</div>
+          <div class="b">14:00</div><div class="b strike">14:30</div><div class="b strike">15:00</div><div class="b">15:30</div>
+          <div class="b">16:00</div><div class="b">16:30</div><div class="b">17:00</div><div class="b">17:30</div>
+        </div>
+        <div class="msg" id="m3b" style="top:520px; left:0; right:0">
+          <div class="bubble">⏳ Հայտն ուղարկված է<br>✂️ Սանրվածք + մորուք<br>🕒 Հնգ 12.11, 13:00</div>
+        </div>
+      </div>
+      <div class="msg" id="m4" style="top:30px">
+        <div class="bubble">🔔 <b>Նոր հայտ</b><br>👤 Անի Պետրոսյան<br>📞 +374 91 12 34 56<br>🆕 Նոր հաճախորդ<br>✂️ Սանրվածք + մորուք<br>🕒 Հնգ 12.11, 13:00</div>
+        <div class="btns" style="grid-template-columns:1fr 1fr">
+          <div class="b okb" id="okBtn">✅ Հաստատել</div><div class="b nob">❌ Մերժել</div>
+        </div>
+        <div class="msg" id="m4b" style="top:560px; left:0; right:0"><div class="bubble">✅ Հաստատված է, հաճախորդը տեղեկացված է</div></div>
+      </div>
+      <div class="msg" id="m5" style="top:30px">
+        <div class="bubble">✅ Ձեր գրանցումը հաստատված է<br>✂️ Սանրվածք + մորուք<br>🕒 Հնգ 12.11, 13:00</div>
+        <div class="msg" id="m5b" style="top:260px; left:0; right:0"><div class="bubble">⏰ <b>Հիշեցում</b><br>1 ժամից Ձեր այցն է 💈<br>🕒 13:00 · Աբովյան 1</div></div>
+      </div>
+      <div class="tap" id="tap"></div>
+    </div>
+  </div>
+
+  <!-- S5 benefits -->
+  <div class="el" id="s5t" style="top:330px"><h2>Ի՞նչ եք ստանում</h2></div>
+  <div class="el" id="s5a" style="top:520px"><div class="benefit"><b>✓</b>Առանց զանգերի</div></div>
+  <div class="el" id="s5b" style="top:670px"><div class="benefit"><b>✓</b>Քիչ բաց թողած այցեր</div></div>
+  <div class="el" id="s5c" style="top:820px"><div class="benefit"><b>✓</b>Գրանցում 24/7</div></div>
+  <div class="el" id="s5d" style="top:970px"><div class="benefit"><b>✓</b>Հիշեցում հաճախորդին</div></div>
+  <div class="el" id="s5e" style="top:1120px"><div class="benefit"><b>✓</b>QR կոդ վարսավիրանոցում</div></div>
+
+  <!-- S6 CTA -->
+  <div class="el center" id="s6a" style="top:380px"><div class="big">1-ին ամիսը</div></div>
+  <div class="el center" id="s6b" style="top:540px"><div class="big acc">ԱՆՎՃԱՐ 🎁</div></div>
+  <div class="el center" id="s6c" style="top:760px"><h2 class="muted" style="font-size:56px">հետո՝ 10 000 ֏/ամիս</h2></div>
+  <div class="el center" id="s6d" style="top:960px"><h2>Միացնում ենք<br><span class="acc">1 օրում</span> ⚡</h2></div>
+  <div class="el center" id="s6e" style="top:1250px"><span class="pill" style="font-size:58px">Գրեք DM-ով «ԲՈՏ» 👇</span></div>
+
+  <div class="progress" id="progress"></div>
+</div>
+
+<script>
+const DUR = 30;
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const easeOut = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const easeBack = (x) => { x = clamp(x); const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+
+// in/out animation: slide up + fade (or pop)
+function show(id, t, tin, tout, kind = "up", d = 0.45) {
+  const el = $(id);
+  let o = 0, tr = "";
+  if (t >= tin && t < tout + d) {
+    const pin = (t - tin) / d, pout = (t - tout) / d;
+    if (t < tout) {
+      o = easeOut(pin);
+      if (kind === "up") tr = `translateY(${(1 - easeOut(pin)) * 80}px)`;
+      else if (kind === "pop") tr = `scale(${0.6 + 0.4 * easeBack(pin)})`;
+      else if (kind === "left") tr = `translateX(${(1 - easeOut(pin)) * -160}px)`;
+    } else {
+      o = 1 - easeOut(pout);
+      tr = `translateY(${-easeOut(pout) * 60}px)`;
+    }
+  }
+  el.style.opacity = o;
+  el.style.transform = tr;
+}
+
+function tapAt(t, targetId, tTap) {
+  const tap = $("tap");
+  const p = (t - tTap) / 0.55;
+  const target = $(targetId);
+  if (p < 0 || p > 1 || !target || target.closest(".msg").style.opacity < 0.5) return false;
+  const chat = tap.parentElement.getBoundingClientRect();
+  const r = target.getBoundingClientRect();
+  const sc = 1 / 1; // phone not scaled
+  tap.style.left = (r.left - chat.left + r.width / 2 - 55) + "px";
+  tap.style.top = (r.top - chat.top + r.height / 2 - 55) + "px";
+  tap.style.opacity = p < 0.6 ? 1 : 1 - (p - 0.6) / 0.4;
+  tap.style.transform = `scale(${0.5 + p * 0.7})`;
+  target.classList.toggle("hl", p > 0.15);
+  return true;
+}
+
+function render(t) {
+  // background motion
+  $("g1").style.transform = `translate(${Math.sin(t / 3) * 80}px, ${Math.cos(t / 4) * 60}px)`;
+  $("g2").style.transform = `translate(${Math.cos(t / 3.5) * 90}px, ${Math.sin(t / 5) * 70}px)`;
+  $("st1").style.backgroundPosition = `${t * 120}px 0`;
+  $("st2").style.backgroundPosition = `${-t * 120}px 0`;
+  $("progress").style.width = (t / DUR * 100) + "%";
+
+  // S1 hook 0–3.6
+  show("s1a", t, 0.1, 3.4, "pop");
+  show("s1b", t, 0.45, 3.4, "up");
+  // S2 problems 3.6–8
+  show("s2t", t, 3.7, 7.8);
+  show("s2a", t, 4.1, 7.8, "left");
+  show("s2b", t, 4.9, 7.8, "left");
+  show("s2c", t, 5.7, 7.8, "left");
+  // S3 solution 8.1–11
+  show("s3a", t, 8.2, 10.8);
+  show("s3b", t, 8.6, 10.8, "pop");
+  show("s3c", t, 9.4, 10.8, "pop");
+
+  // S4 demo 11.1–22.2
+  const ph = $("phone");
+  const pIn = easeOut((t - 11.1) / 0.6), pOut = easeOut((t - 22.0) / 0.5);
+  ph.style.opacity = t < 11.1 ? 0 : t < 22.0 ? pIn : 1 - pOut;
+  ph.style.transform = `translateY(${(1 - pIn) * 200 - pOut * 120}px)`;
+  show("cap1", t, 11.2, 13.4); show("m1", t, 11.4, 13.4, "up", 0.3);
+  show("cap2", t, 13.6, 15.6); show("m2", t, 13.6, 15.6, "up", 0.3);
+  show("cap3", t, 15.8, 17.9); show("m3", t, 15.8, 17.9, "up", 0.3); show("m3b", t, 17.0, 17.9, "pop", 0.3);
+  show("cap4", t, 18.1, 20.1); show("m4", t, 18.1, 20.1, "up", 0.3); show("m4b", t, 19.4, 20.1, "pop", 0.3);
+  show("cap5", t, 20.3, 22.0); show("m5", t, 20.3, 22.0, "up", 0.3); show("m5b", t, 20.9, 22.0, "pop", 0.3);
+  $("tap").style.opacity = 0;
+  tapAt(t, "svcBtn", 12.5) || tapAt(t, "dayBtn", 14.8) || tapAt(t, "timeBtn", 16.6) || tapAt(t, "okBtn", 18.9);
+
+  // S5 benefits 22.4–26.4
+  show("s5t", t, 22.4, 26.3);
+  ["s5a", "s5b", "s5c", "s5d", "s5e"].forEach((id, k) => show(id, t, 22.8 + k * 0.45, 26.3, "left"));
+
+  // S6 CTA 26.5–30
+  show("s6a", t, 26.5, 99, "pop");
+  show("s6b", t, 26.8, 99, "pop");
+  const pulse = t > 27.5 ? 1 + Math.sin((t - 27.5) * 6) * 0.03 : 1;
+  if (t > 27.4) $("s6b").style.transform = `scale(${pulse})`;
+  show("s6c", t, 27.4, 99);
+  show("s6d", t, 28.0, 99);
+  show("s6e", t, 28.5, 99, "pop");
+}
+window.render = render;
+window.DUR = DUR;
+render(0);
+</script>
+</body>
+</html>

@@ -10,6 +10,7 @@ const CASINO_LINKS = {
   playfortuna: "https://fortuna-promo1.com/alt/playfortuna/registration?3f8ed9bbea3359cd978fd69d234c9bf0",
   booi: "https://booi-promo.com/alt/booi/sign-up?f8729271ae45ec45d6eb84a67f64af27",
   winity: "https://winity.one/alt/winity/sign-up?08219d77a748266687fdd0015d6001c6",
+  spincrypto: "https://spincrypto-redirect.com/ru/registration/?b22ef87c356509c5b863b1c20f804df1",
 };
 
 function goal(name, params) {

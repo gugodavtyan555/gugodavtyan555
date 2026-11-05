@@ -29,17 +29,17 @@
 ### 5. Միացրու բազան
 Worker → **Settings** → **Bindings** → **Add binding** → **D1 database** → Variable name՝ **`DB`** (մեծատառ) → ընտրիր `barber-bot` → **Add/Deploy**։
 
-### 7. Միացրու հիշեցումները
+### 6. Միացրու հիշեցումները
 Worker → **Settings** → **Trigger Events** (կամ **Triggers**) → **Add** → **Cron Triggers** → ընտրիր **Every minute** (կամ գրիր `* * * * *`) → **Add**։
 
-### 8. Միացրու բոտը Telegram-ին
+### 7. Միացրու բոտը Telegram-ին
 Worker-ի էջում կա հասցե՝ `barber-bot.ՔՈ-ԱՆՈՒՆԸ.workers.dev`։ Բացիր այն Safari-ում՝ վերջում ավելացնելով **`/setup`**.
 
 `https://barber-bot.ՔՈ-ԱՆՈՒՆԸ.workers.dev/setup`
 
 Տեղադրիր BotFather-ի տոկենը դաշտում → **Միացնել** → սեղմիր **«Դառնալ ադմին Telegram-ում»** → Telegram-ում սեղմիր **Start**։ Հիմա նոր գրանցումների ծանուցումները կգան քեզ, իսկ `/today` և `/tomorrow` հրամաններով կտեսնես գրանցումների ցանկը։
 
-### 9. Ստուգիր
+### 8. Ստուգիր
 Telegram-ում բացիր բոտդ → **📅 Գրանցվել** → գրանցվիր քեզ մոտ։ 🎉
 
 ---

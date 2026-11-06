@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hraver · Հրավերի կառուցիչ</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f3ee;--ink:#2d2621;--muted:#857a71;--accent:#b08d57;--line:#e3dbcf}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans Armenian",system-ui,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:20px 16px 80px}
+h1{font-size:24px}
+fieldset{border:1px solid var(--line);border-radius:14px;background:#fff;margin:0 0 16px;padding:16px}
+legend{font-weight:600;padding:0 6px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.place{border-top:1px dashed var(--line);margin-top:12px;padding-top:4px}
+button,.btn{background:var(--accent);color:#fff;border:none;border-radius:999px;padding:11px 20px;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;margin:4px 4px 0 0}
+.ghost{background:#fff;color:var(--accent);border:1.5px solid var(--accent)}
+#out{position:sticky;bottom:0;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 -6px 20px rgba(0,0,0,.06)}
+#link{font-size:12px;word-break:break-all;color:var(--muted);max-height:60px;overflow:auto}
+small{color:var(--muted)}
+@media(max-width:520px){.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Հրավերի կառուցիչ</h1>
+<p><small>Լրացրու հաճախորդի տվյալները → «Ստանալ հղումը» → ուղարկիր հղումը հաճախորդին։ Սերվեր պետք չէ. բոլոր տվյալները պահվում են հենց հղման մեջ։</small></p>
+
+<form id="f">
+<fieldset><legend>Հիմնական</legend>
+  <div class="row">
+    <div><label>Տեսակ</label><select name="type">
+      <option>Հարսանյաց հրավեր</option><option>Նշանադրություն</option><option>Կնունք</option>
+      <option>Ծննդյան տարեդարձ</option><option>Հոբելյան</option><option>Կորպորատիվ միջոցառում</option></select></div>
+    <div><label>Ձևավորում</label><select name="theme">
+      <option value="classic">Դասական (ոսկեգույն)</option><option value="garden">Այգի (կանաչ)</option>
+      <option value="rose">Վարդագույն</option><option value="night">Գիշերային (մուգ)</option></select></div>
+  </div>
+  <div class="row">
+    <div><label>Անուն 1 (կամ միակ անունը)</label><input name="n1" value="Արամ" required></div>
+    <div><label>Անուն 2 (կարելի է թողնել դատարկ)</label><input name="n2" value="Անի"></div>
+  </div>
+  <label>Ամսաթիվ և ժամ</label><input type="datetime-local" name="date" value="2027-06-12T15:00" required>
+  <label>Տեքստ</label><textarea name="text" rows="3">Մեր կյանքի ամենագեղեցիկ օրը մենք ցանկանում ենք կիսել Ձեզ հետ։ Սիրով հրավիրում ենք Ձեզ մեր հարսանյաց արարողությանը։</textarea>
+  <label>Լուսանկարի հղում (ըստ ցանկության)</label><input name="photo" placeholder="https://...jpg">
+  <label>Երաժշտության հղում՝ mp3 (ըստ ցանկության)</label><input name="music" placeholder="https://...mp3">
+</fieldset>
+
+<fieldset><legend>Վայրեր</legend><div id="places"></div>
+  <button type="button" class="ghost" id="addPlace">+ Ավելացնել վայր</button></fieldset>
+
+<fieldset><legend>Օրվա ծրագիրը</legend>
+  <small>Ամեն տողում՝ ժամ և նկարագրություն, օրինակ՝ «18:00 Խնջույքի մեկնարկ»</small>
+  <textarea name="timeline" rows="4">15:00 Պսակադրություն
+17:00 Ֆոտոսեսիա
+18:00 Խնջույքի մեկնարկ
+21:00 Տորթ</textarea></fieldset>
+
+<fieldset><legend>Դրես-կոդ</legend>
+  <input name="dress" value="Խնդրում ենք ընտրել պաստելային երանգներ">
+  <label>Գույներ (ստորակետով)</label><input name="colors" value="#e8d7c3, #c9b79c, #9fae9a, #f4e1e1"></fieldset>
+
+<fieldset><legend>Պատասխաններ (RSVP)</legend>
+  <div class="row">
+    <div><label>Ուր գան պատասխանները</label><select name="rsvpType"><option value="wa">WhatsApp</option><option value="tg">Telegram</option></select></div>
+    <div><label>Հեռախոս (374...) կամ Telegram @username</label><input name="rsvp" value="37400000000"></div>
+  </div>
+  <label>Պատասխանել մինչև</label><input type="date" name="rsvpBy" value="2027-05-20">
+  <small>Դատարկ թողնելու դեպքում RSVP բաժինը չի ցուցադրվի։</small></fieldset>
+</form>
+
+<div id="out">
+  <button id="gen">Ստանալ հղումը</button>
+  <a class="btn ghost" id="prev" target="_blank">Դիտել</a>
+  <button class="ghost" id="copy">Պատճենել</button>
+  <div id="link"></div>
+</div>
+</div>
+
+<script>
+const pl = document.getElementById("places");
+function addPlace(p={}){
+  const d = document.createElement("div"); d.className="place";
+  d.innerHTML = `<div class="row"><div><label>Ժամ</label><input data-k="time"></div><div><label>Վերնագիր</label><input data-k="title" placeholder="Պսակադրություն"></div></div>
+  <label>Վայրի անվանում</label><input data-k="name"><label>Հասցե</label><input data-k="addr">
+  <label>Google Maps հղում (ըստ ցանկության)</label><input data-k="map">
+  <button type="button" class="ghost">Ջնջել</button>`;
+  d.querySelectorAll("input").forEach(i=>i.value=p[i.dataset.k]||"");
+  d.querySelector("button").onclick=()=>d.remove();
+  pl.appendChild(d);
+}
+addPlace({time:"15:00",title:"Պսակադրություն",name:"Սուրբ Աննա եկեղեցի",addr:"Երևան, Աբովյան 22"});
+addPlace({time:"18:00",title:"Հարսանյաց խնջույք",name:"«Արարատ» ռեստորանային համալիր",addr:"Երևան"});
+document.getElementById("addPlace").onclick=()=>addPlace();
+
+function build(){
+  const f = new FormData(document.getElementById("f")), o = {};
+  for(const k of ["type","theme","n1","n2","date","text","photo","music","dress","rsvpType","rsvp","rsvpBy"]) o[k]=(f.get(k)||"").trim();
+  o.colors = (f.get("colors")||"").split(",").map(s=>s.trim()).filter(Boolean);
+  o.timeline = (f.get("timeline")||"").split("\n").map(s=>s.trim()).filter(Boolean).map(s=>{const m=s.match(/^(\S+)\s+(.*)$/);return m?[m[1],m[2]]:["",s]});
+  o.places = [...pl.children].map(d=>{const p={};d.querySelectorAll("input").forEach(i=>p[i.dataset.k]=i.value.trim());return p}).filter(p=>p.name||p.title);
+  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+  return new URL("i.html", location.href).href + "#d=" + encodeURIComponent(b64);
+}
+const out = document.getElementById("link"), prev = document.getElementById("prev");
+document.getElementById("gen").onclick = () => { const u=build(); out.textContent=u; prev.href=u; };
+document.getElementById("copy").onclick = async () => { const u=build(); out.textContent=u; prev.href=u;
+  try{ await navigator.clipboard.writeText(u); out.textContent="✅ Պատճենված է\n"+u; }catch(e){} };
+document.getElementById("gen").click();
+</script>
+</body>
+</html>

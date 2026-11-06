@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hraver · Էլեկտրոնային հրավերներ</title>
+<meta name="description" content="Գեղեցիկ էլեկտրոնային հրավերներ հարսանիքի, կնունքի և ծննդյան տարեդարձի համար։ Պատրաստ է 24 ժամում։">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@300;400;600&family=Noto+Serif+Armenian:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fbf7f1;--ink:#2f2622;--muted:#857a71;--accent:#b08d57;--soft:#f1e7d8;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans Armenian",system-ui,sans-serif;font-weight:300;line-height:1.6}
+.serif{font-family:"Noto Serif Armenian",Georgia,serif}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 0}
+.logo{font-size:24px;font-weight:700;color:var(--accent)}
+nav a{color:var(--ink);text-decoration:none;margin-left:16px;font-weight:400}
+.btn{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;border-radius:999px;padding:13px 26px;font-weight:600}
+.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:center;padding:40px 0 60px}
+.hero h1{font-size:clamp(32px,6vw,52px);line-height:1.15;margin:0 0 16px}
+.hero p{font-size:18px;color:var(--muted);margin:0 0 24px}
+.phone{width:260px;height:520px;margin:0 auto;border-radius:38px;border:10px solid #2f2622;overflow:hidden;background:#fff;box-shadow:0 30px 60px rgba(0,0,0,.18)}
+.phone iframe{width:100%;height:100%;border:0}
+section{padding:56px 0}
+h2{font-family:"Noto Serif Armenian",serif;font-size:32px;text-align:center;margin:0 0 30px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.card{background:var(--card);border-radius:18px;padding:22px;box-shadow:0 4px 20px rgba(0,0,0,.05)}
+.card h3{margin:6px 0;font-weight:600}
+.card p{margin:0;color:var(--muted)}
+.ico{font-size:28px}
+.demo{text-align:center;text-decoration:none;color:var(--ink)}
+.demo .sw{height:140px;border-radius:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;font-family:"Noto Serif Armenian",serif;font-size:22px}
+.price{text-align:center}
+.price .sum{font-size:34px;font-family:"Noto Serif Armenian",serif;color:var(--accent);margin:8px 0}
+.price ul{list-style:none;padding:0;text-align:left;margin:16px 0 20px}
+.price li{padding:5px 0;border-bottom:1px solid var(--soft)}
+.price li::before{content:"✓ ";color:var(--accent);font-weight:600}
+.price.top{outline:2px solid var(--accent)}
+.steps{counter-reset:s}
+.steps .card::before{counter-increment:s;content:counter(s);display:inline-flex;width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;align-items:center;justify-content:center;font-weight:600}
+details{background:var(--card);border-radius:14px;padding:16px 18px;margin-bottom:10px}
+summary{font-weight:600;cursor:pointer}
+.cta{background:var(--ink);color:#fff;border-radius:24px;text-align:center;padding:44px 20px;margin:20px 0 50px}
+.cta h2{color:#fff}
+footer{text-align:center;color:var(--muted);font-size:13px;padding:20px 0 40px}
+@media(max-width:760px){.hero{grid-template-columns:1fr;text-align:center}nav a:not(.btn){display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="logo serif">Hraver</div>
+<nav><a href="#demo">Ձևանմուշներ</a><a href="#price">Գներ</a><a href="#faq">Հարցեր</a><a class="btn" href="#order" style="padding:9px 18px">Պատվիրել</a></nav></header>
+
+<div class="hero">
+  <div>
+    <h1 class="serif">Էլեկտրոնային հրավեր, որը հյուրերը կհիշեն</h1>
+    <p>Հարսանիք, կնունք, ծննդյան օր։ Ուղարկեք մեկ հղում WhatsApp-ով, Viber-ով կամ Telegram-ով՝ հետհաշվարկով, քարտեզով, երաժշտությամբ և հյուրերի պատասխաններով։ Պատրաստ է 24 ժամում։</p>
+    <a class="btn" href="#order">Պատվիրել հրավեր</a> <a class="btn ghost" href="i.html" target="_blank">Դիտել օրինակը</a>
+  </div>
+  <div class="phone"><iframe src="i.html" title="Հրավերի օրինակ" loading="lazy"></iframe></div>
+</div>
+</div>
+
+<section style="background:#fff"><div class="wrap">
+<h2>Ինչ կա հրավերում</h2>
+<div class="grid">
+  <div class="card"><div class="ico">✉️</div><h3>Բացվող ծրար</h3><p>Հյուրը սեղմում է կնիքին, և հրավերը բացվում է անիմացիայով։</p></div>
+  <div class="card"><div class="ico">⏳</div><h3>Հետհաշվարկ</h3><p>Օրեր, ժամեր, րոպեներ մինչև մեծ օրը։ Մեկ սեղմումով՝ օրացույցում։</p></div>
+  <div class="card"><div class="ico">📍</div><h3>Քարտեզ</h3><p>Եկեղեցու և ռեստորանի հասցեները՝ Google Maps-ի հղումով։</p></div>
+  <div class="card"><div class="ico">✅</div><h3>Պատասխաններ</h3><p>Հյուրերը նշում են՝ կգա՞ն և քանի հոգով։ Պատասխանը գալիս է Ձեր WhatsApp-ին։</p></div>
+  <div class="card"><div class="ico">🎵</div><h3>Երաժշտություն</h3><p>Ձեր ընտրած երգը հնչում է հրավերը բացելիս։</p></div>
+  <div class="card"><div class="ico">👗</div><h3>Դրես-կոդ և ծրագիր</h3><p>Օրվա ծրագիրը և գունային պալիտրան՝ հյուրերի համար։</p></div>
+</div></div></section>
+
+<section id="demo"><div class="wrap">
+<h2>Ձևանմուշներ</h2>
+<div class="grid">
+  <a class="card demo" href="i.html?theme=classic" target="_blank"><div class="sw" style="background:#f1e7d8;color:#b08d57">Դասական</div>Դիտել →</a>
+  <a class="card demo" href="i.html?theme=garden" target="_blank"><div class="sw" style="background:#e2ebdc;color:#6f8f5f">Այգի</div>Դիտել →</a>
+  <a class="card demo" href="i.html?theme=rose" target="_blank"><div class="sw" style="background:#f7dfe4;color:#c76b84">Վարդագույն</div>Դիտել →</a>
+  <a class="card demo" href="i.html?theme=night" target="_blank"><div class="sw" style="background:#1d2030;color:#d8b46a">Գիշերային</div>Դիտել →</a>
+</div></div></section>
+
+<section id="price" style="background:#fff"><div class="wrap">
+<h2>Գներ</h2>
+<div class="grid">
+  <div class="card price"><h3>Մինի</h3><div class="sum">9 900 ֏</div><p>Ծննդյան օր, կնունք</p>
+    <ul><li>Ձևանմուշ՝ ընտրությամբ</li><li>Հետհաշվարկ և քարտեզ</li><li>Մեկ վայր</li><li>Պատրաստ՝ 24 ժամում</li></ul>
+    <a class="btn ghost" href="#order">Ընտրել</a></div>
+  <div class="card price top"><h3>Ստանդարտ</h3><div class="sum">19 900 ֏</div><p>Ամենահաճախ ընտրվողը</p>
+    <ul><li>Ամեն ինչ «Մինի»-ից</li><li>Մի քանի վայր և օրվա ծրագիր</li><li>Հյուրերի պատասխաններ (RSVP)</li><li>Երաժշտություն և լուսանկար</li><li>2 անվճար ուղղում</li></ul>
+    <a class="btn" href="#order">Ընտրել</a></div>
+  <div class="card price"><h3>Պրեմիում</h3><div class="sum">34 900 ֏</div><p>Անհատական դիզայն</p>
+    <ul><li>Ամեն ինչ «Ստանդարտ»-ից</li><li>Անհատական գույներ և տառատեսակ</li><li>Ձեր պատմությունը և ֆոտոպատկերասրահ</li><li>Հայերեն + անգլերեն/ռուսերեն</li><li>Անսահմանափակ ուղղումներ</li></ul>
+    <a class="btn ghost" href="#order">Ընտրել</a></div>
+</div></div></section>
+
+<section><div class="wrap">
+<h2>Ինչպես է աշխատում</h2>
+<div class="grid steps">
+  <div class="card"><h3>Գրեք մեզ</h3><p>Ուղարկեք անունները, ամսաթիվը, հասցեները և ընտրեք ձևանմուշը։</p></div>
+  <div class="card"><h3>Կանխավճար</h3><p>50% կանխավճար, մնացածը՝ հրավերը տեսնելուց և հավանելուց հետո։</p></div>
+  <div class="card"><h3>Ստացեք հղումը</h3><p>24 ժամում ստանում եք պատրաստի հղում՝ ուղարկելու բոլոր հյուրերին։</p></div>
+</div></div></section>
+
+<section id="faq" style="background:#fff"><div class="wrap" style="max-width:760px">
+<h2>Հաճախ տրվող հարցեր</h2>
+<details><summary>Պե՞տք է հյուրերը ինչ-որ բան տեղադրեն</summary><p>Ոչ։ Հրավերը սովորական հղում է, որը բացվում է ցանկացած հեռախոսում։</p></details>
+<details><summary>Կարո՞ղ եմ փոխել տվյալները ուղարկելուց հետո</summary><p>Այո։ «Ստանդարտ» և «Պրեմիում» փաթեթներում ուղղումները ներառված են։</p></details>
+<details><summary>Ինչպե՞ս եմ տեսնում, թե ով կգա</summary><p>Ամեն հյուրի պատասխանը գալիս է Ձեր WhatsApp-ին կամ Telegram-ին՝ անունով և հյուրերի թվով։</p></details>
+<details><summary>Ինչպե՞ս վճարել</summary><p>Բանկային քարտով փոխանցում, Idram կամ Telcell։</p></details>
+</div></section>
+
+<div class="wrap" id="order"><div class="cta">
+  <h2>Պատվիրեք Ձեր հրավերը</h2>
+  <p style="opacity:.8">Գրեք մեզ, պատասխանում ենք 15 րոպեում</p>
+  <!-- CONTACT: replace the number and username with your own -->
+  <a class="btn" href="https://wa.me/37400000000?text=%D4%B2%D5%A1%D6%80%D6%87%2C%20%D5%B8%D6%82%D5%A6%D5%B8%D6%82%D5%B4%20%D5%A5%D5%B4%20%D5%BA%D5%A1%D5%BF%D5%BE%D5%AB%D6%80%D5%A5%D5%AC%20%D5%B0%D6%80%D5%A1%D5%BE%D5%A5%D6%80" target="_blank">WhatsApp</a>
+  <a class="btn" href="https://t.me/your_username" target="_blank" style="background:#2aabee">Telegram</a>
+  <a class="btn ghost" href="https://instagram.com/your_username" target="_blank" style="color:#fff;border-color:#fff">Instagram</a>
+</div></div>
+
+<footer>© Hraver · Էլեկտրոնային հրավերներ</footer>
+</body>
+</html>

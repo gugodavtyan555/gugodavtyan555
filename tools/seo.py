@@ -13,6 +13,13 @@ ARTICLES_UPDATED = {"ru": "6 ноября 2026", "en": "6 November 2026", "es": 
 UPD_LABEL = {"ru": "Обновлено", "en": "Updated", "es": "Actualizado", "pt": "Atualizado"}
 
 TITLES = {
+ 'index.html': 'Онлайн-казино: бонусы, фриспины и вейджер — гид для новичков',
+ 'es/index.html': 'Casinos online: bonos, giros gratis y requisito de apuesta',
+ 'pt/index.html': 'Cassinos online: bônus, giros grátis e rollover explicados',
+ 'en/index.html': 'Online casino guide: bonuses, wagering and free spins',
+ 'kazino.html': 'Сравнение онлайн-казино: подбор по стране и валюте',
+ 'es/kazino.html': 'Comparar casinos online: elige por país y moneda',
+ 'pt/kazino.html': 'Comparar cassinos online: escolha por país e moeda',
  "articles/kak-poluchit-bonus.html": "Как получить бонус в онлайн-казино: пошаговая инструкция",
  "kalkulyator.html": "Калькулятор вейджера: сколько отыграть и выгоден ли бонус",
  "en/articles/kak-poluchit-bonus.html": "How to get a casino welcome bonus: step-by-step guide",
@@ -29,6 +36,13 @@ TITLES = {
  "pt/kalkulyator.html": "Calculadora de rollover: quanto apostar e se compensa",
 }
 DESCS = {
+ 'index.html': 'Гид по онлайн-казино для новичков: как получить бонус и фриспины, отыграть вейджер и вывести деньги. Сравнение казино, калькуляторы и тесты. 18+',
+ 'es/index.html': 'Guía de casinos online para principiantes: bonos, giros gratis, requisito de apuesta y retiros. Comparación de casinos, calculadoras y tests. 18+',
+ 'pt/index.html': 'Guia de cassinos online para iniciantes: bônus, giros grátis, rollover e saques. Comparação de cassinos, calculadoras e testes gratuitos. 18+',
+ 'en/index.html': "A beginner's guide to online casinos: welcome bonuses, free spins, wagering requirements and withdrawals, plus a comparison of casinos. 18+",
+ 'kazino.html': 'Сравнение онлайн-казино с подбором за 10 секунд: выберите страну и валюту счёта (RUB, KZT, USD, EUR, крипто) и смотрите, какие казино подходят. 18+',
+ 'es/kazino.html': 'Compara casinos online y encuentra el tuyo en 10 segundos: elige tu país y la moneda de la cuenta y mira qué casinos aceptan jugadores como tú. 18+',
+ 'pt/kazino.html': 'Compare cassinos online e encontre o seu em 10 segundos: escolha seu país e a moeda da conta e veja quais cassinos aceitam jogadores como você. 18+',
  "articles/otvetstvennaya-igra.html": "Как играть ответственно: лимиты времени и денег, признаки игровой зависимости и где получить бесплатную анонимную помощь. 18+",
  "en/articles/otvetstvennaya-igra.html": "How to gamble responsibly: time and money limits, warning signs of problem gambling and where to get free, confidential help. 18+",
  "es/articles/otvetstvennaya-igra.html": "Cómo jugar de forma responsable: límites de tiempo y dinero, señales de alerta de la adicción al juego y dónde pedir ayuda gratuita. 18+",

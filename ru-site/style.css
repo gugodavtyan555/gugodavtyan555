@@ -200,3 +200,12 @@ picture { display: block; }
 .st-result.st-0 { border-color: #3ecf8e; }
 .st-result.st-1 { border-color: var(--gold); }
 .st-result.st-3 { border-color: #ff6b6b; }
+/* Casino finder on home pages */
+.home-finder { display: grid; gap: 14px; margin-top: 8px; }
+.home-finder .finder { margin: 0; }
+.fh-list { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.fh-item { flex-direction: row; align-items: center; gap: 14px; padding: 14px; }
+.fh-item img.logo { display: block; height: 56px; width: auto; max-width: 110px; object-fit: contain; border-radius: 10px; border: 1px solid var(--line); }
+.fh-actions { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fh-actions .btn { margin-top: 0; }
+.home-finder .hub-link { margin-top: 0; }

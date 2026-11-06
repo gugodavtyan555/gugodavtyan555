@@ -200,6 +200,21 @@ for full in glob.glob(os.path.join(ROOT, "**", "*.html"), recursive=True):
         root = "../" * rel.count("/")
         src = src.replace('<section class="casinos">', f'<section id="finder" class="calc finder" data-lang="{lg}"></section>\n    <section class="casinos">', 1)
         src = src.replace("</body>", f'<script src="{root}finder.js" defer></script>\n</body>', 1)
+    # casino finder on the language home pages, built from that language's comparison page (same casinos, same facts)
+    if rel in ("index.html", "en/index.html", "es/index.html", "pt/index.html") and 'id="finder"' not in src:
+        root = "../" * rel.count("/")
+        kz = open(os.path.join(ROOT, os.path.dirname(rel), "kazino.html")).read()
+        ids = re.findall(r'class="btn casino-ref" data-casino="([a-z]+)"', kz)
+        NAMES = {"jozz": "Jozz", "playfortuna": "Play Fortuna", "booi": "Booi", "winity": "Winity", "spincrypto": "SpinCrypto"}
+        GO = {"ru": "Перейти в", "en": "Go to", "es": "Ir a", "pt": "Ir para"}[lg]
+        MORE = {"ru": "Подробнее", "en": "Details", "es": "Detalles", "pt": "Detalhes"}[lg]
+        ALL = {"ru": "Сравнить все казино →", "en": "Compare all casinos →", "es": "Comparar todos los casinos →", "pt": "Comparar todos os cassinos →"}[lg]
+        cards = "".join(f'<div class="casino fh-item"><picture><source type="image/webp" srcset="{root}images/logos/{i}.webp"><img class="logo" loading="lazy" src="{root}images/logos/{i}.jpg" width="260" height="146" alt="{NAMES[i]}"></picture>'
+                        f'<div class="fh-actions"><a class="btn small casino-ref" data-casino="{i}" href="#">{GO} {NAMES[i]}</a><a class="more-link" href="kazino/{i}.html">{MORE}</a></div></div>' for i in ids)
+        block = (f'<section class="home-finder"><div id="finder" class="calc finder" data-lang="{lg}"></div>'
+                 f'<div class="fh-list">{cards}</div><p class="hub-link"><a href="kazino.html">{ALL}</a></p></section>\n')
+        src = re.sub(r'(<section class="hero">.*?</section>\n)', lambda m: m.group(1) + "    " + block, src, count=1, flags=re.S)
+        src = src.replace("</body>", f'<script src="{root}finder.js" defer></script>\n</body>', 1)
     # lazy-load logos below the first card on comparison pages
     if os.path.basename(rel) == "kazino.html":
         n = [0]

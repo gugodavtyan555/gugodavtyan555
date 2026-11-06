@@ -123,15 +123,16 @@ def promo_bar():
 
 
 def buy_button(p, big=False):
+    # Buy links go through /go/<id> on our own worker, which counts the click and redirects
+    # to the Gumroad checkout (with the promo code when a promo is running).
     if p.get("checkout"):
+        href = f'/go/{p["id"]}'
         if not p["price"]:
-            return f'<a class="btn" href="{E(p["checkout"])}" rel="nofollow">Download free</a>'
+            return f'<a class="btn" href="{href}" rel="nofollow">Download free</a>'
         if PROMO:
-            # Gumroad applies a discount code given as the last path segment of the product URL.
-            href = f'{p["checkout"]}/{PROMO["code"]}'
-            return (f'<a class="btn" href="{E(href)}" rel="nofollow">Buy now · ${promo_price(p):.2f}</a>'
+            return (f'<a class="btn" href="{href}" rel="nofollow">Buy now · ${promo_price(p):.2f}</a>'
                     f'<p class="note">{PROMO["percent"]}% launch discount applied at checkout (code {PROMO["code"]}, until {PROMO["ends"]}).</p>')
-        return f'<a class="btn" href="{E(p["checkout"])}" rel="nofollow">Buy now · ${p["price"]}</a>'
+        return f'<a class="btn" href="{href}" rel="nofollow">Buy now · ${p["price"]}</a>'
     return '<span class="btn" aria-disabled="true">Coming soon</span>'
 
 
@@ -238,7 +239,7 @@ LICENSE = """<h2>License</h2><p>When you buy a template you get a personal-use l
 <h2>Refunds</h2><p>Because these are instant digital downloads, sales are generally final. If a file does not work for you, contact us within 14 days through the receipt email and we will help you fix it or refund you in full.</p>
 <h2>Not financial advice</h2><p>The templates are planning tools. Results depend on the numbers you enter. For tax or legal questions, ask a qualified professional.</p>"""
 PRIVACY = """<p>This site does not use accounts. Payments are processed by our checkout provider, which receives your email and payment details to deliver your files and send a receipt; we never see your card number.</p>
-<p>We do not set advertising cookies and we do not sell personal data.</p>"""
+<p>We count page views and clicks on the buy buttons to see which pages are useful. We store only the page, the referring site, your country and whether you use a phone or a computer: no cookies, no IP addresses and no personal identifiers. We do not set advertising cookies and we do not sell personal data.</p>"""
 
 
 def main():

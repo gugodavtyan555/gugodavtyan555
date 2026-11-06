@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Իմ հրավերը · Hraver</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;600&family=Noto+Serif+Armenian:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f3ee;--ink:#2d2621;--muted:#857a71;--accent:#b08d57;--line:#e3dbcf;--ok:#3f8f5a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans Armenian",system-ui,sans-serif;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding:20px 16px 60px}
+h1{font-family:"Noto Serif Armenian",serif;font-size:26px;margin:6px 0}
+h2{font-size:18px;margin:0 0 10px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0}
+.badge{display:inline-block;padding:4px 12px;border-radius:999px;background:var(--line);font-weight:600;font-size:14px}
+.badge.paid{background:#dff1e5;color:var(--ok)}
+.btn{display:inline-block;background:var(--accent);color:#fff;border:none;border-radius:999px;padding:11px 20px;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;margin:4px 4px 0 0}
+.ghost{background:#fff;color:var(--accent);border:1.5px solid var(--accent)}
+.wa{background:#25d366}
+.link{background:var(--bg);border-radius:10px;padding:10px;word-break:break-all;font-size:14px;margin:6px 0}
+pre{white-space:pre-wrap;font:inherit;background:var(--bg);border-radius:10px;padding:12px;margin:8px 0}
+.phone{width:100%;max-width:330px;height:600px;border:8px solid var(--ink);border-radius:32px;overflow:hidden;margin:auto;display:block}
+.phone iframe{width:100%;height:100%;border:0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.stats b{display:block;font-size:26px;color:var(--accent)}
+.stats div{background:var(--bg);border-radius:12px;padding:10px 4px;font-size:13px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
+td,th{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+small,.muted{color:var(--muted)}
+.warn{background:#fff6e6;border-color:#f0d9a8}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="/" style="color:var(--accent);font-weight:600;text-decoration:none">Hraver</a>
+  <h1 id="t">Բեռնվում է…</h1>
+  <span class="badge" id="st"></span> <span class="muted" id="pl"></span>
+
+  <div class="card warn"><b>🔖 Պահպանեք այս էջի հղումը</b> (ավելացրեք էջանիշերում)։ Այստեղից կարող եք խմբագրել հրավերը և տեսնել հյուրերի պատասխանները։
+    <div><button class="btn ghost" id="copyMe">Պատճենել այս էջի հղումը</button></div></div>
+
+  <div class="card" id="pay" hidden>
+    <h2>💳 Վճարում՝ <span id="price"></span></h2>
+    <pre id="payInfo"></pre>
+    <p class="muted">Փոխանցման նշումում գրեք պատվերի համարը՝ <b id="oid"></b></p>
+    <button class="btn" id="claim">Ես վճարել եմ</button>
+    <p id="claimed" hidden>🔎 Ստուգում ենք վճարումը։ Սովորաբար դա տևում է մինչև 1 ժամ։ Այս էջը ինքնաշխատ կթարմացվի։</p>
+  </div>
+
+  <div class="card" id="live" hidden>
+    <h2>🎉 Ձեր հրավերը պատրաստ է</h2>
+    <p>Ուղարկեք այս հղումը հյուրերին՝</p>
+    <div class="link" id="inv"></div>
+    <a class="btn wa" id="shareWa" target="_blank">Ուղարկել WhatsApp-ով</a>
+    <a class="btn" id="shareTg" target="_blank" style="background:#2aabee">Telegram</a>
+    <button class="btn ghost" id="copyInv">Պատճենել</button>
+  </div>
+
+  <div class="card" id="guestsCard" hidden>
+    <h2>👥 Հյուրերի պատասխանները</h2>
+    <div class="stats"><div><b id="sYes">0</b>կգան (հոգի)</div><div><b id="sNo">0</b>չեն գա</div><div><b id="sAll">0</b>պատասխան</div></div>
+    <table><thead><tr><th>Անուն</th><th>Պատասխան</th><th>Հոգի</th></tr></thead><tbody id="guests"></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>👁 Նախադիտում</h2>
+    <div class="phone"><iframe id="prev" title="Հրավեր"></iframe></div>
+    <p style="text-align:center"><a class="btn ghost" id="edit">✏️ Խմբագրել հրավերը</a></p>
+  </div>
+  <p class="muted" style="text-align:center">Հարցերի դեպքում պատասխանեք մեր WhatsApp հաղորդագրությանը։</p>
+</div>
+<script>
+const id = location.pathname.split("/")[2], k = new URLSearchParams(location.search).get("k") || "";
+const $ = (x) => document.getElementById(x);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const invUrl = location.origin + "/i/" + id;
+const copy = async (t, b) => { try { await navigator.clipboard.writeText(t); b.textContent = "✅ Պատճենված է"; } catch (e) { prompt("Պատճենեք", t); } };
+$("copyMe").onclick = (e) => copy(location.href, e.target);
+$("copyInv").onclick = (e) => copy(invUrl, e.target);
+$("edit").href = `/create.html?id=${id}&k=${encodeURIComponent(k)}`;
+$("prev").src = "/i/" + id;
+try { const mine = JSON.parse(localStorage.getItem("hraver_orders") || "{}"); mine[id] = location.href; localStorage.setItem("hraver_orders", JSON.stringify(mine)); } catch (e) {}
+
+let last = "";
+async function load() {
+  const r = await fetch(`/api/order/${id}?k=${encodeURIComponent(k)}`);
+  if (!r.ok) { $("t").textContent = "Պատվերը չի գտնվել"; return; }
+  const o = await r.json(), d = o.data;
+  const names = d.n2 ? `${d.n1} & ${d.n2}` : d.n1;
+  $("t").textContent = `${d.type}՝ ${names}`;
+  $("st").textContent = o.statusText; $("st").className = "badge" + (o.status === "paid" ? " paid" : "");
+  $("pl").textContent = `· ${o.planName} · #${o.id}`;
+  $("pay").hidden = !(o.status === "pending" || o.status === "claimed");
+  $("price").textContent = o.price; $("oid").textContent = "#" + o.id;
+  $("payInfo").textContent = o.payInfo || "Վճարման տվյալները կուղարկենք Ձեր WhatsApp-ին մի քանի րոպեում։";
+  $("claim").hidden = o.status !== "pending"; $("claimed").hidden = o.status !== "claimed";
+  $("live").hidden = o.status !== "paid";
+  $("inv").textContent = invUrl;
+  const msg = `Սիրով հրավիրում ենք Ձեզ 💌\n${invUrl}`;
+  $("shareWa").href = "https://wa.me/?text=" + encodeURIComponent(msg);
+  $("shareTg").href = `https://t.me/share/url?url=${encodeURIComponent(invUrl)}&text=${encodeURIComponent("Սիրով հրավիրում ենք Ձեզ 💌")}`;
+  $("guestsCard").hidden = !(o.status === "paid" && d.rsvp);
+  let yes = 0, no = 0;
+  o.guests.forEach((g) => g.go ? yes += g.n : no++);
+  $("sYes").textContent = yes; $("sNo").textContent = no; $("sAll").textContent = o.guests.length;
+  $("guests").innerHTML = o.guests.map((g) => `<tr><td>${esc(g.name)}${g.msg ? `<br><small>${esc(g.msg)}</small>` : ""}</td><td>${g.go ? "✅ Կգա" : "❌ Չի գա"}</td><td>${g.go ? g.n : "–"}</td></tr>`).join("")
+    || `<tr><td colspan="3" class="muted">Դեռ պատասխաններ չկան</td></tr>`;
+  if (last && last !== o.status) $("prev").src = "/i/" + id + "?t=" + Date.now();
+  last = o.status;
+}
+$("claim").onclick = async () => { $("claim").disabled = true; await fetch(`/api/order/${id}/claim?k=${encodeURIComponent(k)}`, { method: "POST", body: "{}" }); load(); };
+load(); setInterval(load, 20000);
+</script>
+</body>
+</html>

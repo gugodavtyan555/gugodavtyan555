@@ -23,13 +23,22 @@ button,.btn{background:var(--accent);color:#fff;border:none;border-radius:999px;
 #out{position:sticky;bottom:0;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 -6px 20px rgba(0,0,0,.06)}
 #link{font-size:12px;word-break:break-all;color:var(--muted);max-height:60px;overflow:auto}
 small{color:var(--muted)}
+.srv{display:none}body.server .srv{display:block}body.server .static{display:none}
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.plans label{border:1.5px solid var(--line);border-radius:12px;padding:12px;color:var(--ink);cursor:pointer;margin:0}
+.plans input{width:auto;margin-right:6px}
+.plans label:has(input:checked){border-color:var(--accent);background:#fbf6ee}
+#err{color:#c0392b;font-weight:600}
+.hp{position:absolute;left:-9999px}
 @media(max-width:520px){.row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>Հրավերի կառուցիչ</h1>
-<p><small>Լրացրու հաճախորդի տվյալները → «Ստանալ հղումը» → ուղարկիր հղումը հաճախորդին։ Սերվեր պետք չէ. բոլոր տվյալները պահվում են հենց հղման մեջ։</small></p>
+<h1 class="srv" style="display:none" id="srvTitle">Ստեղծեք Ձեր հրավերը</h1>
+<p class="srv"><small>Լրացրեք տվյալները, տեսեք նախադիտումը և պատվիրեք։ Վճարումից հետո կստանաք հղումը՝ հյուրերին ուղարկելու համար։</small></p>
+<h1 class="static">Հրավերի կառուցիչ</h1>
+<p class="static"><small>Լրացրու հաճախորդի տվյալները → «Ստանալ հղումը» → ուղարկիր հղումը հաճախորդին։ Սերվեր պետք չէ. բոլոր տվյալները պահվում են հենց հղման մեջ։</small></p>
 
 <form id="f">
 <fieldset><legend>Հիմնական</legend>
@@ -47,7 +56,9 @@ small{color:var(--muted)}
   </div>
   <label>Ամսաթիվ և ժամ</label><input type="datetime-local" name="date" value="2027-06-12T15:00" required>
   <label>Տեքստ</label><textarea name="text" rows="3">Մեր կյանքի ամենագեղեցիկ օրը մենք ցանկանում ենք կիսել Ձեզ հետ։ Սիրով հրավիրում ենք Ձեզ մեր հարսանյաց արարողությանը։</textarea>
-  <label>Լուսանկարի հղում (ըստ ցանկության)</label><input name="photo" placeholder="https://...jpg">
+  <div class="static"><label>Լուսանկարի հղում (ըստ ցանկության)</label><input name="photo" placeholder="https://...jpg"></div>
+  <div class="srv"><label>Լուսանկար (ըստ ցանկության, բացի «Մինի» փաթեթից)</label><input type="file" id="photoFile" accept="image/*">
+    <div id="photoBox" hidden><img id="photoPrev" style="max-width:160px;border-radius:10px;margin-top:8px"><br><button type="button" class="ghost" id="photoDel">Հեռացնել լուսանկարը</button></div></div>
   <label>Երաժշտության հղում՝ mp3 (ըստ ցանկության)</label><input name="music" placeholder="https://...mp3">
 </fieldset>
 
@@ -66,19 +77,32 @@ small{color:var(--muted)}
   <label>Գույներ (ստորակետով)</label><input name="colors" value="#e8d7c3, #c9b79c, #9fae9a, #f4e1e1"></fieldset>
 
 <fieldset><legend>Պատասխաններ (RSVP)</legend>
-  <div class="row">
+  <label class="srv" style="color:var(--ink)"><input type="checkbox" name="rsvpOn" checked style="width:auto"> Հյուրերը կարող են պատասխանել՝ կգա՞ն, թե՝ ոչ։ Պատասխանները կտեսնեք Ձեր էջում։</label>
+  <div class="srv"><label>Պատասխանել մինչև</label><input type="date" name="rsvpBy2"></div>
+  <div class="static"><div class="row">
     <div><label>Ուր գան պատասխանները</label><select name="rsvpType"><option value="wa">WhatsApp</option><option value="tg">Telegram</option></select></div>
     <div><label>Հեռախոս (374...) կամ Telegram @username</label><input name="rsvp" value="37400000000"></div>
   </div>
   <label>Պատասխանել մինչև</label><input type="date" name="rsvpBy" value="2027-05-20">
-  <small>Դատարկ թողնելու դեպքում RSVP բաժինը չի ցուցադրվի։</small></fieldset>
+  <small>Դատարկ թողնելու դեպքում RSVP բաժինը չի ցուցադրվի։</small></div></fieldset>
+
+<fieldset class="srv" id="orderBox"><legend>Պատվեր</legend>
+  <div class="plans">
+    <label><input type="radio" name="plan" value="mini"><b>Մինի · 9 900 ֏</b><br><small>առանց լուսանկարի, երաժշտության և պատասխանների</small></label>
+    <label><input type="radio" name="plan" value="standard" checked><b>Ստանդարտ · 19 900 ֏</b><br><small>բոլոր հնարավորությունները</small></label>
+  </div>
+  <label>Ձեր հեռախոսը (WhatsApp)</label><input name="phone" type="tel" placeholder="091 123456" autocomplete="tel">
+  <input class="hp" name="website" tabindex="-1" autocomplete="off">
+</fieldset>
 </form>
 
 <div id="out">
-  <button id="gen">Ստանալ հղումը</button>
+  <div class="static"><button id="gen">Ստանալ հղումը</button>
   <a class="btn ghost" id="prev" target="_blank">Դիտել</a>
   <button class="ghost" id="copy">Պատճենել</button>
-  <div id="link"></div>
+  <div id="link"></div></div>
+  <div class="srv"><button class="ghost" id="sPrev">👁 Նախադիտում</button>
+  <button id="submit">Պատվիրել</button><div id="err"></div></div>
 </div>
 </div>
 
@@ -112,6 +136,77 @@ document.getElementById("gen").onclick = () => { const u=build(); out.textConten
 document.getElementById("copy").onclick = async () => { const u=build(); out.textContent=u; prev.href=u;
   try{ await navigator.clipboard.writeText(u); out.textContent="✅ Պատճենված է\n"+u; }catch(e){} };
 document.getElementById("gen").click();
+
+// ---------------- server mode (served by the Hraver worker): customers order themselves
+const SRV = window.__HRAVER || null;
+if (SRV) (async () => {
+  document.body.classList.add("server");
+  document.getElementById("srvTitle").style.display = "block";
+  const F = document.getElementById("f"), q = new URLSearchParams(location.search);
+  const editId = q.get("id"), editK = q.get("k");
+  const err = document.getElementById("err"), sub = document.getElementById("submit");
+  let photo; // undefined = unchanged, null = removed, string = new data URL
+  const showPhoto = (src) => { document.getElementById("photoPrev").src = src || ""; document.getElementById("photoBox").hidden = !src; };
+  F.rsvpBy2.value = F.rsvpBy.value;
+  const dataNow = () => {
+    const d = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(build().split("#d=")[1])))));
+    d.rsvp = F.rsvpOn.checked ? "site" : ""; d.rsvpBy = F.rsvpBy2.value; d.photo = "";
+    return d;
+  };
+  const updPlan = () => { const mini = F.plan.value === "mini"; document.getElementById("photoFile").disabled = mini; F.music.disabled = mini; F.rsvpOn.disabled = mini; };
+  F.querySelectorAll("[name=plan]").forEach(r => r.onchange = updPlan);
+
+  document.getElementById("photoFile").onchange = async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const img = await createImageBitmap(file);
+    const sc = Math.min(1, 1400 / Math.max(img.width, img.height));
+    const c = document.createElement("canvas"); c.width = img.width * sc; c.height = img.height * sc;
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    let qy = .85; photo = c.toDataURL("image/jpeg", qy);
+    while (photo.length > 880000 && qy > .4) { qy -= .1; photo = c.toDataURL("image/jpeg", qy); }
+    showPhoto(photo);
+  };
+  document.getElementById("photoDel").onclick = () => { photo = null; showPhoto(""); document.getElementById("photoFile").value = ""; };
+
+  document.getElementById("sPrev").onclick = () => {
+    const d = dataNow(); if (photo) d.photo = photo.length < 60000 ? photo : "";
+    if (d.rsvp) { d.rsvp = "37400000000"; d.rsvpType = "wa"; }
+    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(d))));
+    window.open("/i.html#d=" + encodeURIComponent(b64), "_blank");
+  };
+
+  if (editId) {
+    const r = await fetch(`/api/order/${editId}?k=${encodeURIComponent(editK || "")}`);
+    if (!r.ok) { err.textContent = "Պատվերը չի գտնվել"; sub.disabled = true; return; }
+    const o = await r.json(), d = o.data;
+    for (const k of ["type","theme","n1","n2","date","text","music","dress"]) if (F[k]) F[k].value = d[k] || "";
+    F.colors.value = (d.colors || []).join(", ");
+    F.timeline.value = (d.timeline || []).map(t => t.join(" ")).join("\n");
+    F.rsvpOn.checked = !!d.rsvp; F.rsvpBy2.value = d.rsvpBy || "";
+    pl.innerHTML = ""; (d.places || []).forEach(addPlace);
+    showPhoto(d.photo);
+    document.getElementById("orderBox").style.display = "none";
+    document.getElementById("srvTitle").textContent = "Խմբագրել հրավերը";
+    F.plan.value = o.plan; updPlan();
+    sub.textContent = "Պահպանել փոփոխությունները";
+  } else {
+    F.n1.value = ""; F.n2.value = ""; F.n1.placeholder = "Արամ"; F.n2.placeholder = "Անի";
+  }
+
+  sub.onclick = async () => {
+    err.textContent = ""; sub.disabled = true;
+    const body = { data: dataNow() };
+    if (photo !== undefined) body.photo = photo;
+    let url = "/api/order", method = "POST";
+    if (editId) { url += `/${editId}?k=${encodeURIComponent(editK)}`; method = "PUT"; }
+    else { body.plan = F.plan.value; body.phone = F.phone.value; body.website = F.website.value; }
+    const r = await fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(body) })
+      .then(r => r.json()).catch(() => ({ error: "Կապի սխալ, փորձեք նորից" }));
+    sub.disabled = false;
+    if (r.error) { err.textContent = r.error; return; }
+    location.href = editId ? `/o/${editId}?k=${encodeURIComponent(editK)}` : `/o/${r.id}?k=${r.k}`;
+  };
+})();
 </script>
 </body>
 </html>

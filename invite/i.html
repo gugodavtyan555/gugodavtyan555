@@ -105,20 +105,21 @@ footer a{color:var(--muted)}
     <form id="rsvp">
       <div><label>Անուն Ազգանուն</label><input name="name" required></div>
       <div class="choice">
-        <label><input type="radio" name="go" value="Կգամ ✅" checked><span>Կգամ</span></label>
-        <label><input type="radio" name="go" value="Չեմ կարող գալ ❌"><span>Չեմ կարող</span></label>
+        <label><input type="radio" name="go" value="yes" checked><span>Կգամ</span></label>
+        <label><input type="radio" name="go" value="no"><span>Չեմ կարող</span></label>
       </div>
-      <div><label>Քանի՞ հոգի</label><select name="n"><option>1</option><option>2</option><option>3</option><option>4</option><option>5+</option></select></div>
+      <div><label>Քանի՞ հոգի</label><select name="n"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
       <div><label>Մեկնաբանություն</label><textarea name="msg" rows="2"></textarea></div>
       <button class="btn" type="submit">Ուղարկել պատասխանը</button>
     </form>
+    <p id="rsvpDone" hidden class="serif" style="font-size:20px">Շնորհակալություն, Ձեր պատասխանը ստացվել է 💛</p>
   </section>
 
   <section class="reveal" style="border:none">
     <p class="serif" style="font-size:22px">Սիրով սպասում ենք Ձեզ</p>
     <div class="names serif" id="fNames" style="font-size:34px"></div>
   </section>
-  <footer>Ստեղծված է <a href="./">Hraver</a>-ով</footer>
+  <footer>Ստեղծված է <a href="/" id="brand">Hraver</a>-ով</footer>
 </main>
 
 <script>
@@ -136,8 +137,9 @@ const DEMO = {
   rsvpType:"wa", rsvp:"37400000000", rsvpBy:"2027-05-20",
   music:"", photo:""
 };
-let D = DEMO;
-try{
+const SRV = window.__HRAVER || null; // set when served by the Hraver worker (/i/<id>)
+let D = SRV ? Object.assign({places:[],timeline:[],colors:[]}, SRV.data) : DEMO;
+if(!SRV) try{
   const m = location.hash.match(/d=([^&]+)/);
   if(m) D = Object.assign({}, DEMO, JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))));
 }catch(e){console.warn("bad data",e)}
@@ -191,16 +193,35 @@ $("ics").onclick = () => {
 // RSVP: WhatsApp or Telegram message to the hosts
 if(D.rsvp){
   if(D.rsvpBy){ const b=new Date(D.rsvpBy); if(!isNaN(b)) $("rsvpNote").textContent = `Խնդրում ենք պատասխանել մինչև ${fmt(b)}`; }
-  $("rsvp").onsubmit = e => {
+  $("rsvp").onsubmit = async e => {
     e.preventDefault();
     const f = new FormData(e.target);
-    const msg = `${D.type} (${$("fNames").textContent})\nԱնուն՝ ${f.get("name")}\nՊատասխան՝ ${f.get("go")}\nՀյուրերի թիվ՝ ${f.get("n")}` + (f.get("msg")?`\nՄեկնաբանություն՝ ${f.get("msg")}`:"");
+    if(SRV){
+      if(!SRV.paid){ alert("Սա նախադիտում է. պատասխանները կընդունվեն հրավերն ակտիվացնելուց հետո։"); return; }
+      const btn = e.target.querySelector("button"); btn.disabled = true;
+      const r = await fetch("/api/rsvp/"+SRV.id,{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify({name:f.get("name"),go:f.get("go")==="yes",n:f.get("n"),msg:f.get("msg")})}).then(r=>r.json()).catch(()=>({error:"Կապի սխալ"}));
+      btn.disabled = false;
+      if(r.error){ alert(r.error); return; }
+      e.target.hidden = true; $("rsvpDone").hidden = false;
+      try{ localStorage.setItem("rsvp_"+SRV.id,"1"); }catch(_){}
+      return;
+    }
+    const msg = `${D.type} (${$("fNames").textContent})\nԱնուն՝ ${f.get("name")}\nՊատասխան՝ ${f.get("go")==="yes"?"Կգամ ✅":"Չեմ կարող գալ ❌"}\nՀյուրերի թիվ՝ ${f.get("n")}` + (f.get("msg")?`\nՄեկնաբանություն՝ ${f.get("msg")}`:"");
     const url = D.rsvpType==="tg"
       ? `https://t.me/${String(D.rsvp).replace(/^@/,"")}?text=${encodeURIComponent(msg)}`
       : `https://wa.me/${String(D.rsvp).replace(/\D/g,"")}?text=${encodeURIComponent(msg)}`;
     window.open(url,"_blank");
   };
+  try{ if(SRV && localStorage.getItem("rsvp_"+SRV.id)){ $("rsvp").hidden = true; $("rsvpDone").hidden = false; } }catch(_){}
 } else $("sRsvp").remove();
+if(!SRV) $("brand").href = "./";
+if(SRV && !SRV.paid){
+  const b = document.createElement("div");
+  b.textContent = "ՆԱԽԱԴԻՏՈՒՄ · ակտիվ կլինի վճարումից հետո";
+  b.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:30;background:#c0392b;color:#fff;text-align:center;font-size:13px;padding:6px;font-weight:600;letter-spacing:.05em";
+  document.body.appendChild(b);
+}
 
 // Opening + music
 const audio = $("audio");

@@ -3,3 +3,4 @@ bot/config.json
 __pycache__/
 mek-dram.zip
 node_modules/
+.wrangler/

@@ -1,0 +1,14 @@
+name = "hraver"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+# HTML pages are bundled into the worker as text.
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "hraver"
+database_id = "ae251fe5-fb24-4f94-a2e9-b49ccd834a2d"

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://pennyandplan.gugodavtyan555.workers.dev/sitemap.xml

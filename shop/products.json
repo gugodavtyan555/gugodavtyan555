@@ -1,0 +1,110 @@
+{
+  "brand": "Penny & Plan",
+  "tagline": "Simple spreadsheets and planners that make money feel calm.",
+  "site_url": "https://pennyandplan.gugodavtyan555.workers.dev",
+  "contact_email": "",
+  "products": [
+    {
+      "id": "budget-planner",
+      "name": "Monthly Budget Planner",
+      "short": "Budget vs. actual for every category, every month, with an automatic annual summary.",
+      "price": 9,
+      "format": "Excel + Google Sheets",
+      "files": ["Monthly-Budget-Planner.xlsx"],
+      "features": [
+        "Set a monthly budget for up to 26 income and expense categories",
+        "Log transactions with dropdowns. Totals update on their own",
+        "Dashboard: income, expenses, savings rate and an over-budget warning",
+        "Annual summary with 12 months side by side and a chart",
+        "Works in Excel, Google Sheets, LibreOffice and Numbers"
+      ],
+      "keywords": "budget spreadsheet, monthly budget template, budget planner excel, google sheets budget",
+      "checkout": ""
+    },
+    {
+      "id": "debt-payoff-planner",
+      "name": "Debt Payoff Planner",
+      "short": "Snowball or avalanche: enter your debts and see your exact debt-free date and total interest.",
+      "price": 8,
+      "format": "Excel + Google Sheets",
+      "files": ["Debt-Payoff-Planner.xlsx"],
+      "features": [
+        "Up to 10 debts: credit cards, car loan, student loans and more",
+        "Switch between Snowball and Avalanche with one click",
+        "Debt-free date, months left and total interest, calculated instantly",
+        "Payoff month for every debt, plus a 30-year month-by-month schedule",
+        "Freed-up minimum payments roll over to the next debt automatically"
+      ],
+      "keywords": "debt payoff spreadsheet, debt snowball calculator, debt avalanche template, debt tracker",
+      "checkout": ""
+    },
+    {
+      "id": "small-business-tracker",
+      "name": "Small Business Income & Expense Tracker",
+      "short": "A bookkeeping spreadsheet for freelancers, Etsy sellers and small shops, with a monthly P&L and tax set-aside.",
+      "price": 14,
+      "format": "Excel + Google Sheets",
+      "files": ["Small-Business-Income-Expense-Tracker.xlsx"],
+      "features": [
+        "Ledger for up to 2,000 transactions with categories and payment methods",
+        "Automatic month-by-month Profit & Loss statement",
+        "Estimated tax set-aside based on your own rate",
+        "Dashboard with profit margin, monthly chart and top expenses",
+        "Built for freelancers, Etsy and Shopify sellers, and side hustles"
+      ],
+      "keywords": "small business bookkeeping spreadsheet, income and expense tracker, profit and loss template, etsy seller spreadsheet",
+      "checkout": ""
+    },
+    {
+      "id": "savings-goals-tracker",
+      "name": "Savings Goals Tracker",
+      "short": "Track up to 12 savings goals with progress bars and the monthly amount you need to hit each deadline.",
+      "price": 6,
+      "format": "Excel + Google Sheets",
+      "files": ["Savings-Goals-Tracker.xlsx"],
+      "features": [
+        "Up to 12 goals with a target amount and a deadline",
+        "Log deposits and withdrawals per goal",
+        "Progress bars, remaining amount and status for each goal",
+        "Tells you exactly how much to save per month"
+      ],
+      "keywords": "savings tracker spreadsheet, savings goal template, sinking funds tracker, emergency fund tracker",
+      "checkout": ""
+    },
+    {
+      "id": "2027-planner",
+      "name": "2027 Hyperlinked Planner",
+      "short": "An 85-page planner with year, month, week and habit pages. Use it on an iPad or print it on Letter or A4 paper.",
+      "price": 7,
+      "format": "PDF (iPad, US Letter, A4)",
+      "files": ["2027-Planner-iPad-Digital.pdf", "2027-Planner-US-Letter.pdf", "2027-Planner-A4.pdf"],
+      "features": [
+        "Clickable tabs and links: jump from year to month to week",
+        "12 monthly calendars with goals, priorities and notes",
+        "53 weekly pages with a to-do list",
+        "12 monthly habit trackers and dot-grid notes pages",
+        "Works in GoodNotes, Notability, Xodo or any PDF app, and prints on Letter or A4"
+      ],
+      "keywords": "2027 digital planner, goodnotes planner 2027, printable planner 2027, hyperlinked planner",
+      "checkout": ""
+    },
+    {
+      "id": "money-bundle",
+      "name": "The Complete Money Bundle",
+      "short": "All five products in one download. Save $15 compared with buying them separately.",
+      "price": 29,
+      "compare_at": 44,
+      "format": "Excel + Google Sheets + PDF",
+      "files": ["ALL"],
+      "features": [
+        "Monthly Budget Planner",
+        "Debt Payoff Planner",
+        "Small Business Income & Expense Tracker",
+        "Savings Goals Tracker",
+        "2027 Hyperlinked Planner (iPad, Letter, A4)"
+      ],
+      "keywords": "budget spreadsheet bundle, personal finance templates, finance planner bundle",
+      "checkout": ""
+    }
+  ]
+}

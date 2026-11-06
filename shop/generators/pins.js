@@ -111,5 +111,9 @@ function csvCell(s) { return '"' + String(s).replace(/"/g, '""') + '"'; }
   const line = (r) => [r.title, r.media, r.board, '', r.description, r.link, r.date, r.keywords].map(csvCell).join(',');
   fs.writeFileSync(path.join(OUT, 'pinterest-bulk-part1.csv'), [header, ...order.slice(0, 14).map(line)].join('\n') + '\n');
   fs.writeFileSync(path.join(OUT, 'pinterest-bulk-part2.csv'), [header, ...order.slice(14).map(line)].join('\n') + '\n');
+  fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
+    title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
+    alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,
+  })), null, 1) + '\n');
   console.log(`wrote ${rows.length} pins and 2 CSV files to ${OUT}`);
 })();

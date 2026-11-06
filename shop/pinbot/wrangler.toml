@@ -1,0 +1,14 @@
+# Daily Pinterest publisher for the Penny & Plan shop.
+# Sends one pin a day to a Make.com webhook, which creates the pin on Pinterest.
+name = "penny-pins"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+preview_urls = false
+
+[triggers]
+crons = ["0 15 * * *"]   # 15:00 UTC = 10:00 US Eastern
+
+[[kv_namespaces]]
+binding = "KV"
+id = "fa2adb3335fa41608f343c23ffa416a4"

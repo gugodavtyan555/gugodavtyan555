@@ -6,3 +6,4 @@ node_modules/
 shop/dist/
 shop/worker/
 shop/.wrangler/
+shop/pinbot/.wrangler/

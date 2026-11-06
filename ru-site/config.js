@@ -14,7 +14,13 @@ const CASINO_LINKS = {
 };
 
 function goal(name, params) {
-  try { if (typeof ym === "function") ym(METRIKA_ID, "reachGoal", name, params); } catch (e) {}
+  try {
+    if (typeof ym === "function") {
+      ym(METRIKA_ID, "reachGoal", name, params);
+      // Visit parameters need no goal setup in Metrica: report "Параметры визитов" → event → name
+      ym(METRIKA_ID, "params", { event: { [name]: (params && params.casino) || 1 } });
+    }
+  } catch (e) {}
 }
 
 // Кнопки «Получить бонус» / «Регистрация» ведут на страницу сравнения казино (kazino.html)

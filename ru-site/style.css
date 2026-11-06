@@ -170,3 +170,10 @@ picture { display: block; }
 .updated { color: var(--muted); font-size: .85rem; margin: -10px 0 18px; }
 .hub-cat { margin-top: 28px; }
 .hub-link { text-align: center; margin-top: 18px; }
+/* Casino finder */
+.casino[hidden] { display: none; }
+.finder h2 { margin: 0 0 14px; font-size: 1.25rem; text-align: left; }
+.finder .note { margin-top: 10px; }
+.finder-res { margin: 14px 0 0; font-weight: 700; color: var(--gold); }
+.finder-res:empty { display: none; }
+.finder-reset { margin-top: 10px; }

@@ -40,10 +40,10 @@ try { LSC_CONSENT = localStorage.getItem("lsc_consent"); } catch (e) {}
 (function () {
   var lang = document.documentElement.lang || "ru";
   var T = {
-    ru: ["Мы используем cookie Яндекс Метрики, чтобы понимать, какие статьи полезны. Без вашего согласия статистика не собирается.", "Принять", "Отклонить", "Подробнее"],
-    en: ["We use Yandex Metrica cookies to understand which articles are useful. No statistics are collected without your consent.", "Accept", "Decline", "Details"],
-    es: ["Usamos cookies de Yandex Metrica para saber qué artículos son útiles. Sin tu consentimiento no se recopilan estadísticas.", "Aceptar", "Rechazar", "Más información"],
-    pt: ["Usamos cookies do Yandex Metrica para entender quais artigos são úteis. Sem o seu consentimento, nenhuma estatística é coletada.", "Aceitar", "Recusar", "Saiba mais"]
+    ru: ["Мы используем cookie Яндекс Метрики, чтобы понимать, какие статьи полезны. Без вашего согласия статистика не собирается.", "Принять", "Отклонить", "О cookie и данных"],
+    en: ["We use Yandex Metrica cookies to understand which articles are useful. No statistics are collected without your consent.", "Accept", "Decline", "Privacy policy"],
+    es: ["Usamos cookies de Yandex Metrica para saber qué artículos son útiles. Sin tu consentimiento no se recopilan estadísticas.", "Aceptar", "Rechazar", "Política de privacidad"],
+    pt: ["Usamos cookies do Yandex Metrica para entender quais artigos são úteis. Sem o seu consentimento, nenhuma estatística é coletada.", "Aceitar", "Recusar", "Política de privacidade"]
   }[lang] || null;
   var root = (document.currentScript && document.currentScript.src) ? document.currentScript.src.replace(/config\.js.*$/, "") : "/";
   document.querySelectorAll("a.cookie-reset").forEach(function (a) {

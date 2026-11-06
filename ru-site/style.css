@@ -159,3 +159,9 @@ img.cover { display: block; width: 100%; max-width: 100%; height: auto; aspect-r
 .calc-verdict.badv { border-color: #ff6b6b; color: #ffb3b3; }
 .embed-code { width: 100%; box-sizing: border-box; background: var(--bg2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 10px; font: .85rem/1.4 monospace; margin-bottom: 10px; resize: vertical; }
 .calc-promo { text-align: center; }
+/* Bankroll calculator */
+.calc-grid label.wide { grid-column: 1 / -1; }
+.bank-chart { margin: 16px 0 12px; }
+.bank-chart svg { display: block; width: 100%; height: 220px; background: var(--bg2); border-radius: 12px; }
+.bank-chart figcaption { color: var(--muted); font-size: .85rem; margin-top: 6px; }
+.calc-promo + .calc-promo { margin-top: 14px; }

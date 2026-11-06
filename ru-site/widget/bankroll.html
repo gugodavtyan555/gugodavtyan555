@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Калькулятор банкролла — Lucky Spin Club</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://lucky-spin-ru.netlify.app/kalkulyator-bankrolla.html">
+<link rel="stylesheet" href="../style.css">
+<style>body{background:var(--bg);padding:12px} .calc{margin:0} .w-credit{text-align:center;font-size:.85rem;margin:10px 0 0} .w-credit a{color:var(--gold)}</style>
+</head>
+<body>
+<div class="w-lang" data-l="ru" hidden><form class="calc" data-bank-calc data-lang="ru" onsubmit="return false">
+  <div class="calc-grid">
+    <label>Банкролл, ₽<input name="bank" type="number" inputmode="decimal" min="0" value="10000"></label>
+    <label>Ставка за спин, ₽<input name="bet" type="number" inputmode="decimal" min="0" value="50"></label>
+    <label>RTP слота, %<input name="rtp" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="96"></label>
+    <label>Сколько спинов планируете<input name="spins" type="number" inputmode="numeric" min="1" max="5000" value="500"></label>
+    <label class="wide">Волатильность<select name="vol"><option value="low">низкая</option><option value="mid" selected>средняя</option><option value="high">высокая</option></select></label>
+  </div>
+  <div class="calc-out" aria-live="polite">
+    <div><span>Средний проигрыш за сессию</span><b data-out="loss">—</b></div>
+    <div><span>Сессий закончились в плюсе</span><b data-out="profit">—</b></div>
+    <div><span>Банкролл закончился раньше</span><b data-out="bust">—</b></div>
+    <div><span>Типичный остаток (медиана)</span><b data-out="median">—</b></div>
+  </div>
+  <p class="calc-verdict" data-out="summary"></p>
+  <figure class="bank-chart"><div data-out="chart"></div><figcaption>Пять случайных сессий (пунктир — стартовый банкролл)</figcaption></figure>
+  <button type="button" class="btn small" data-run>Смоделировать ещё раз</button>
+</form><p class="w-credit"><a href="https://lucky-spin-ru.netlify.app/kalkulyator-bankrolla.html" target="_blank" rel="noopener">Калькулятор банкролла — Lucky Spin Club</a></p></div><div class="w-lang" data-l="es" hidden><form class="calc" data-bank-calc data-lang="es" onsubmit="return false">
+  <div class="calc-grid">
+    <label>Bankroll, $<input name="bank" type="number" inputmode="decimal" min="0" value="200"></label>
+    <label>Apuesta por giro, $<input name="bet" type="number" inputmode="decimal" min="0" value="1"></label>
+    <label>RTP de la tragamonedas, %<input name="rtp" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="96"></label>
+    <label>Cuántos giros planeas<input name="spins" type="number" inputmode="numeric" min="1" max="5000" value="500"></label>
+    <label class="wide">Volatilidad<select name="vol"><option value="low">baja</option><option value="mid" selected>media</option><option value="high">alta</option></select></label>
+  </div>
+  <div class="calc-out" aria-live="polite">
+    <div><span>Pérdida media por sesión</span><b data-out="loss">—</b></div>
+    <div><span>Sesiones que terminaron con ganancia</span><b data-out="profit">—</b></div>
+    <div><span>El saldo se acabó antes</span><b data-out="bust">—</b></div>
+    <div><span>Saldo típico al final (mediana)</span><b data-out="median">—</b></div>
+  </div>
+  <p class="calc-verdict" data-out="summary"></p>
+  <figure class="bank-chart"><div data-out="chart"></div><figcaption>Cinco sesiones al azar (línea punteada: saldo inicial)</figcaption></figure>
+  <button type="button" class="btn small" data-run>Simular otra vez</button>
+</form><p class="w-credit"><a href="https://lucky-spin-ru.netlify.app/es/kalkulyator-bankrolla.html" target="_blank" rel="noopener">Calculadora de bankroll — Lucky Spin Club</a></p></div><div class="w-lang" data-l="pt" hidden><form class="calc" data-bank-calc data-lang="pt" onsubmit="return false">
+  <div class="calc-grid">
+    <label>Banca, R$<input name="bank" type="number" inputmode="decimal" min="0" value="1000"></label>
+    <label>Aposta por giro, R$<input name="bet" type="number" inputmode="decimal" min="0" value="5"></label>
+    <label>RTP do caça-níquel, %<input name="rtp" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="96"></label>
+    <label>Quantos giros você planeja<input name="spins" type="number" inputmode="numeric" min="1" max="5000" value="500"></label>
+    <label class="wide">Volatilidade<select name="vol"><option value="low">baixa</option><option value="mid" selected>média</option><option value="high">alta</option></select></label>
+  </div>
+  <div class="calc-out" aria-live="polite">
+    <div><span>Perda média por sessão</span><b data-out="loss">—</b></div>
+    <div><span>Sessões que terminaram no lucro</span><b data-out="profit">—</b></div>
+    <div><span>A banca acabou antes</span><b data-out="bust">—</b></div>
+    <div><span>Saldo típico no fim (mediana)</span><b data-out="median">—</b></div>
+  </div>
+  <p class="calc-verdict" data-out="summary"></p>
+  <figure class="bank-chart"><div data-out="chart"></div><figcaption>Cinco sessões aleatórias (tracejado: banca inicial)</figcaption></figure>
+  <button type="button" class="btn small" data-run>Simular de novo</button>
+</form><p class="w-credit"><a href="https://lucky-spin-ru.netlify.app/pt/kalkulyator-bankrolla.html" target="_blank" rel="noopener">Calculadora de banca — Lucky Spin Club</a></p></div>
+<script>
+(function(){var l=new URLSearchParams(location.search).get("lang")||"ru";if(["ru","es","pt"].indexOf(l)<0)l="ru";
+document.documentElement.lang=l;document.querySelectorAll(".w-lang").forEach(function(d){if(d.getAttribute("data-l")===l)d.hidden=false;else d.remove();});})();
+</script>
+<script src="../bank.js"></script>
+</body>
+</html>

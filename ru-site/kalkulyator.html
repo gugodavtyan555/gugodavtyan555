@@ -38,6 +38,7 @@ try { if (localStorage.getItem("lsc_consent") === "yes") window.lscLoadMetrika()
 <link rel="alternate" type="application/rss+xml" title="Lucky Spin Club — статьи" href="https://lucky-spin-ru.netlify.app/rss.xml">
 <link rel="stylesheet" href="style.css">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Как посчитать вейджер бонуса?", "acceptedAnswer": {"@type": "Answer", "text": "Умножьте базу вейджера (бонус или бонус + депозит) на вейджер. Например, бонус 1 000 ₽ с вейджером x35 — это ставок на 35 000 ₽. Если игра засчитывается не на 100%, разделите сумму на её вклад."}}, {"@type": "Question", "name": "Какой вейджер считается хорошим?", "acceptedAnswer": {"@type": "Answer", "text": "Чем ниже, тем лучше. Вейджер до x20 обычно считают мягким, x35–x40 — средним, x50 и выше — тяжёлым. Важно также, от чего он считается и сколько дней на отыгрыш."}}, {"@type": "Question", "name": "Можно ли доверять расчёту калькулятора?", "acceptedAnswer": {"@type": "Answer", "text": "Калькулятор показывает среднее ожидаемое значение по RTP. На практике результат может сильно отличаться в любую сторону из-за случайности, поэтому это ориентир, а не прогноз."}}]}</script>
+<script type="application/ld+json" data-lsc="schema">{"@context": "https://schema.org", "@graph": [{"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Главная", "item": "https://lucky-spin-ru.netlify.app/"}, {"@type": "ListItem", "position": 2, "name": "Калькулятор вейджера", "item": "https://lucky-spin-ru.netlify.app/kalkulyator.html"}]}]}</script>
 </head>
 <body>
 <div class="wrap">
@@ -83,7 +84,7 @@ try { if (localStorage.getItem("lsc_consent") === "yes") window.lscLoadMetrika()
       <h2>Пример</h2>
       <p>Бонус 5 000 ₽, вейджер x35 от бонуса, слот с RTP 96%. Нужно поставить 175 000 ₽. Ожидаемый проигрыш — 4% от 175 000, то есть 7 000 ₽. Это больше бонуса, поэтому в среднем такой бонус невыгоден. С вейджером x20 сумма отыгрыша — 100 000 ₽, ожидаемый проигрыш — 4 000 ₽, и бонус уже в плюсе.</p>
       <p>Подробнее о вейджере — в статье <a href="articles/chto-takoe-vejdzher.html">«Что такое вейджер»</a>.</p>
-      <div class="box"><p>Хотите выбрать казино с подходящими условиями?</p><a class="btn ref" href="kazino.html">Сравнить казино</a><div class="note">18+</div></div>
+      <div class="box calc-promo"><p>📊 На сколько спинов хватит ваших денег? Проверьте в калькуляторе банкролла.</p><a class="btn small" href="kalkulyator-bankrolla.html">Калькулятор банкролла</a></div><div class="box"><p>Хотите выбрать казино с подходящими условиями?</p><a class="btn ref" href="kazino.html">Сравнить казино</a><div class="note">18+</div></div>
       <h2>Добавить калькулятор на свой сайт</h2>
       <p>Скопируйте код и вставьте его на страницу своего сайта или форума — калькулятор будет работать у вас бесплатно.</p>
       <textarea id="embed-code" class="embed-code" readonly rows="4">&lt;iframe src=&quot;https://lucky-spin-ru.netlify.app/widget/wager.html?lang=ru&quot; width=&quot;100%&quot; height=&quot;560&quot; style=&quot;border:0;max-width:640px&quot; loading=&quot;lazy&quot; title=&quot;Калькулятор вейджера — Lucky Spin Club&quot;&gt;&lt;/iframe&gt;

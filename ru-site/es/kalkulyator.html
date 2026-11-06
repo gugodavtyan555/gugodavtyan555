@@ -37,6 +37,7 @@ try { if (localStorage.getItem("lsc_consent") === "yes") window.lscLoadMetrika()
 <!-- /Yandex.Metrika counter -->
 <link rel="stylesheet" href="../style.css">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Cómo se calcula el requisito de apuesta?", "acceptedAnswer": {"@type": "Answer", "text": "Multiplica la base (bono o bono + depósito) por el requisito. Por ejemplo, un bono de 100 $ con x35 son 3500 $ en apuestas. Si el juego no cuenta al 100 %, divide por su contribución."}}, {"@type": "Question", "name": "¿Qué requisito de apuesta es bueno?", "acceptedAnswer": {"@type": "Answer", "text": "Cuanto más bajo, mejor. Hasta x20 suele considerarse suave, x35–x40 medio y x50 o más, duro. También importa sobre qué se calcula y cuántos días hay."}}, {"@type": "Question", "name": "¿Puedo fiarme del cálculo?", "acceptedAnswer": {"@type": "Answer", "text": "La calculadora muestra el valor medio esperado según el RTP. En la práctica el resultado puede variar mucho por el azar, así que es una referencia, no una predicción."}}]}</script>
+<script type="application/ld+json" data-lsc="schema">{"@context": "https://schema.org", "@graph": [{"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://lucky-spin-ru.netlify.app/es/"}, {"@type": "ListItem", "position": 2, "name": "Calculadora", "item": "https://lucky-spin-ru.netlify.app/es/kalkulyator.html"}]}]}</script>
 </head>
 <body>
 <div class="wrap">
@@ -81,7 +82,7 @@ try { if (localStorage.getItem("lsc_consent") === "yes") window.lscLoadMetrika()
       <h2>Ejemplo</h2>
       <p>Bono de 100 $, requisito x35 sobre el bono, tragamonedas con RTP del 96 %. Hay que apostar 3500 $. La pérdida esperada es el 4 % de 3500, es decir, 140 $. Es más que el bono, así que en promedio no conviene. Con x20 el total es 2000 $, la pérdida esperada 80 $ y el bono queda en positivo.</p>
       <p>Más sobre el requisito de apuesta en <a href="articles/chto-takoe-vejdzher.html">«Qué es el requisito de apuesta»</a>.</p>
-      <div class="box"><p>¿Quieres elegir un casino con condiciones adecuadas?</p><a class="btn ref" href="kazino.html">Comparar casinos</a><div class="note">18+</div></div>
+      <div class="box calc-promo"><p>📊 ¿Para cuántos giros alcanza tu dinero? Compruébalo en la calculadora de bankroll.</p><a class="btn small" href="kalkulyator-bankrolla.html">Calculadora de bankroll</a></div><div class="box"><p>¿Quieres elegir un casino con condiciones adecuadas?</p><a class="btn ref" href="kazino.html">Comparar casinos</a><div class="note">18+</div></div>
       <h2>Añade la calculadora a tu sitio</h2>
       <p>Copia el código y pégalo en tu sitio o foro: la calculadora funcionará gratis.</p>
       <textarea id="embed-code" class="embed-code" readonly rows="4">&lt;iframe src=&quot;https://lucky-spin-ru.netlify.app/widget/wager.html?lang=es&quot; width=&quot;100%&quot; height=&quot;560&quot; style=&quot;border:0;max-width:640px&quot; loading=&quot;lazy&quot; title=&quot;Calculadora de requisito de apuesta — Lucky Spin Club&quot;&gt;&lt;/iframe&gt;

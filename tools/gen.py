@@ -14,11 +14,12 @@ def lang_url(lang, path):
 I18N_EXTRA = {"es": {"articles/frispiny.html", "articles/kriptokazino.html", "articles/slovar-kazino.html"},
               "pt": {"articles/frispiny.html", "articles/kriptokazino.html", "articles/slovar-kazino.html"}}
 for _cl in ("es", "pt"):
-    I18N_EXTRA[_cl].update({"kalkulyator.html", "kalkulyator-bankrolla.html"})
+    I18N_EXTRA[_cl].update({"kalkulyator.html", "kalkulyator-bankrolla.html", "viktorina.html", "samoproverka.html"})
 exec(open("/tmp/claude-0/-workspace/8aeb4342-0200-5c82-93a5-effabca2f09f/scratchpad/calc_pages.py").read(), globals())
 exec(open("/tmp/claude-0/-workspace/8aeb4342-0200-5c82-93a5-effabca2f09f/scratchpad/bank_pages.py").read(), globals())
 BANK_ARTS = {"kak-rabotayut-sloty", "otvetstvennaya-igra"}
 exec(open("/tmp/claude-0/-workspace/8aeb4342-0200-5c82-93a5-effabca2f09f/scratchpad/hub.py").read(), globals())
+exec(open("/tmp/claude-0/-workspace/8aeb4342-0200-5c82-93a5-effabca2f09f/scratchpad/quiz_pages.py").read(), globals())
 CALC_ARTS = {"chto-takoe-vejdzher", "kak-poluchit-bonus", "frispiny"}
 def calc_promo(lg, pre):
     t = CT2[lg]
@@ -243,7 +244,7 @@ for slug, ico, short, teaser, title, desc, content in ARTICLES:
     body = f'''    <article>
       <div class="crumbs"><a href="../index.html">Главная</a> / <a href="../stati.html">Статьи</a> / {short}</div>
       <h1>{title}</h1>
-{content}{calc_promo("ru", "../") if slug in CALC_ARTS else ""}{bank_promo("ru", "../") if slug in BANK_ARTS else ""}{faq_html}
+{content}{calc_promo("ru", "../") if slug in CALC_ARTS else ""}{bank_promo("ru", "../") if slug in BANK_ARTS else ""}{selftest_promo("ru", "../") if slug == "otvetstvennaya-igra" else ""}{faq_html}
     </article>{rel_html}'''
     page(f"articles/{slug}.html", f"{title} | Lucky Spin Club", desc, body, 1, head)
 
@@ -303,6 +304,9 @@ page("kalkulyator.html", _ti, _de, _bo.replace('<div class="box"><p>', bank_prom
 write_widget(ROOT)
 _ti, _de, _bo, _he = bank_page_parts("ru", "", "")
 page(BANK_SLUG, _ti, _de, _bo, 0, _he)
+for _slug, _fn in ((QUIZ_SLUG, quiz_page_parts), (SELF_SLUG, selftest_page_parts)):
+    _ti, _de, _bo, _he = _fn("ru", "")
+    page(_slug, _ti, _de, _bo, 0, _he)
 write_bank_widget(ROOT)
 _ti, _de, _bo = hub_parts("ru", [(a[0], a[1], a[2], a[3]) for a in ARTICLES])
 page(HUB_SLUG, _ti, _de, _bo, 0)
@@ -325,7 +329,7 @@ for _path, _ti, _de, _h1, _ht, _crumb in [("o-sajte.html", _L["about_title"], _L
 {_ht}
       <p class="note">Обновлено: {UPDATED["ru"]}</p>
     </article>''', 0)
-urls = [BASE + "/", BASE + "/kazino.html", BASE + "/stati.html", BASE + "/kalkulyator.html", BASE + "/kalkulyator-bankrolla.html", BASE + "/o-sajte.html", BASE + "/privacy.html"] + [f"{BASE}/kazino/{c['id']}.html" for c in CASINOS] + [f"{BASE}/articles/{a[0]}.html" for a in ARTICLES]
+urls = [BASE + "/", BASE + "/kazino.html", BASE + "/stati.html", BASE + "/kalkulyator.html", BASE + "/kalkulyator-bankrolla.html", BASE + "/viktorina.html", BASE + "/samoproverka.html", BASE + "/o-sajte.html", BASE + "/privacy.html"] + [f"{BASE}/kazino/{c['id']}.html" for c in CASINOS] + [f"{BASE}/articles/{a[0]}.html" for a in ARTICLES]
 sm = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
 sm += "".join(f"  <url><loc>{u}</loc><lastmod>{TODAY}</lastmod></url>\n" for u in urls) + "</urlset>\n"
 open(os.path.join(ROOT, "sitemap.xml"), "w").write(sm)

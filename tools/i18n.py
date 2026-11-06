@@ -11,6 +11,7 @@ CALC_ARTS = {"chto-takoe-vejdzher", "kak-poluchit-bonus", "frispiny"}
 exec(open(S + "/bank_pages.py").read())
 BANK_ARTS = {"kak-rabotayut-sloty", "otvetstvennaya-igra"}
 exec(open(S + "/hub.py").read())
+exec(open(S + "/quiz_pages.py").read())
 def calc_promo(lg, pre):
     t = CT2[lg]
     return f'<div class="box calc-promo"><p>{t["promo"]}</p><a class="btn small" href="{pre}kalkulyator.html">{t["promo_btn"]}</a></div>'
@@ -23,7 +24,7 @@ CASINOS = {c["id"]: c for c in _g["CASINOS"]}
 LANGS = ["en", "es", "pt"]
 BASE_PAGES = ["index.html", "stati.html", "kazino.html", "o-sajte.html", "privacy.html"]
 def lang_pages(lg):
-    return BASE_PAGES + [f"articles/{s}.html" for s in LANG_ARTS[lg]] + [f"kazino/{i}.html" for i in CASINO_LANGS[lg]] + (["kalkulyator.html", BANK_SLUG] if lg in CALC_LANGS else [])
+    return BASE_PAGES + [f"articles/{s}.html" for s in LANG_ARTS[lg]] + [f"kazino/{i}.html" for i in CASINO_LANGS[lg]] + (["kalkulyator.html", BANK_SLUG, QUIZ_SLUG, SELF_SLUG] if lg in CALC_LANGS else [])
 def avail(path):
     return ["ru"] + [lg for lg in LANGS if path in lang_pages(lg)]
 
@@ -47,6 +48,7 @@ def alts(path):
 def cref(lg, text, extra=""):
     return f'<a class="btn ref{extra}" href="#">{text}</a>'
 
+RSS_LINK = {lg: f'<link rel="alternate" type="application/rss+xml" title="Lucky Spin Club ({lg.upper()})" href="{BASE}/{lg}/rss.xml">\n' for lg in ("es", "pt")}
 def write(lg, path, title, desc, body, extra_head=""):
     u = UI[lg]
     depth = path.count("/")
@@ -86,7 +88,7 @@ ym(114096229, "init", {{ssr:true, clickmap:true, accurateTrackBounce:true, track
 try {{ if (localStorage.getItem("lsc_consent") === "yes") window.lscLoadMetrika(); }} catch (e) {{}}
 </script>
 <!-- /Yandex.Metrika counter -->
-<link rel="stylesheet" href="{rootp}style.css">
+{RSS_LINK.get(lg, "")}<link rel="stylesheet" href="{rootp}style.css">
 {extra_head}
 </head>
 <body>
@@ -150,6 +152,9 @@ for lg in LANGS:
         write(lg, "kalkulyator.html", _ti, _de, _bo.replace('<div class="box"><p>', bank_promo(lg, "") + '<div class="box"><p>', 1), _he)
         _ti, _de, _bo, _he = bank_page_parts(lg, "../", lg + "/")
         write(lg, BANK_SLUG, _ti, _de, _bo, _he)
+        for _slug, _fn in ((QUIZ_SLUG, quiz_page_parts), (SELF_SLUG, selftest_page_parts)):
+            _ti, _de, _bo, _he = _fn(lg, "../")
+            write(lg, _slug, _ti, _de, _bo, _he)
     # Comparison
     def logo_html(c):
         L = {'jozz': (260, 146), 'playfortuna': (260, 146), 'booi': (260, 146), 'spincrypto': (226, 150), 'winity': (500, 300)}
@@ -211,7 +216,7 @@ for lg in LANGS:
       <div class="crumbs"><a href="../index.html">{u["home"]}</a> / <a href="../stati.html">{u["articles"]}</a> / {H.escape(short)}</div>
       <h1>{H.escape(h1)}</h1>
 {content}
-{calc_promo(lg, "../") if lg in CALC_LANGS and s in CALC_ARTS else ""}{bank_promo(lg, "../") if lg in CALC_LANGS and s in BANK_ARTS else ""}{box}{faq_html}
+{calc_promo(lg, "../") if lg in CALC_LANGS and s in CALC_ARTS else ""}{bank_promo(lg, "../") if lg in CALC_LANGS and s in BANK_ARTS else ""}{selftest_promo(lg, "../") if lg in CALC_LANGS and s == "otvetstvennaya-igra" else ""}{box}{faq_html}
     </article>{rel_html}'''
         write(lg, f"articles/{s}.html", f"{h1} | Lucky Spin Club", desc, body, head)
 
@@ -236,3 +241,30 @@ extra = "".join(f"  <url><loc>{url(lg, p)}</loc><lastmod>{today}</lastmod></url>
 sm = sm.replace("</urlset>", extra + "</urlset>")
 open(sm_path, "w").write(sm)
 print("built", sum(len(lang_pages(l)) for l in LANGS), "pages")
+
+# RSS feeds for Spanish and Portuguese articles
+import email.utils as _eu
+_pub = _eu.format_datetime(datetime.datetime(2026, 11, 5, 23, 55, tzinfo=datetime.timezone.utc))
+_now = _eu.format_datetime(datetime.datetime.now(datetime.timezone.utc))
+for lg, (ttl, dsc) in {"es": ("Lucky Spin Club — guía de casinos online", "Artículos para principiantes: bonos y requisito de apuesta, tragamonedas, pagos y juego responsable. 18+"),
+                       "pt": ("Lucky Spin Club — guia de cassinos online", "Artigos para iniciantes: bônus e rollover, caça-níqueis, pagamentos e jogo responsável. 18+")}.items():
+    items = "".join(f"""  <item>
+    <title>{H.escape(ART[s][lg][3])}</title>
+    <link>{url(lg, "articles/" + s + ".html")}</link>
+    <guid isPermaLink="true">{url(lg, "articles/" + s + ".html")}</guid>
+    <description>{H.escape(ART[s][lg][4])}</description>
+    <pubDate>{_pub}</pubDate>
+  </item>
+""" for s in LANG_ARTS[lg])
+    open(os.path.join(ROOT, lg, "rss.xml"), "w").write(f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>{ttl}</title>
+  <link>{BASE}/{lg}/</link>
+  <atom:link href="{BASE}/{lg}/rss.xml" rel="self" type="application/rss+xml"/>
+  <description>{dsc}</description>
+  <language>{lg}</language>
+  <lastBuildDate>{_now}</lastBuildDate>
+{items}</channel>
+</rss>
+""")

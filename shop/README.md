@@ -70,3 +70,9 @@ python3 generators/planner_pdf.py dist
 - Առաջին վաճառքը կախված է այցելուներից։ Google-ից եկող այցելուների համար սովորաբար 2–6 ամիս է պետք։
 - Ամենաարագ աղբյուրը **Pinterest**-ն է. այս տեսակի ապրանքներն այնտեղ լավ են վաճառվում։ Ռեպոյում արդեն կա `pins/` ավտոմատացումը, և այն կարելի է միացնել այս խանութին։
 - Etsy-ն նույնպես մեծ շուկա է նման շաբլոնների համար, եթե քո երկրից հնարավոր է այնտեղ վաճառող լինել։
+
+## Pinterest (ավտոմատ)
+
+- `pinbot/` — Cloudflare Worker `penny-pins`, որն ամեն օր 15:00 UTC-ին `pins/pins.json`-ից հաջորդ pin-ը ուղարկում է Make.com webhook-ին։ Կառավարման էջը՝ `/setup?key=...` (բանալին `SETUP_KEY` secret-ն է)։
+- Make scenario «Penny Pins → Pinterest» (`pinbot/make-blueprint.json`). webhook → Pinterest List Boards → Create a Pin, board-ը ընտրվում է ըստ անվան։
+- Նոր pin-եր. ավելացրու `generators/pins.js`-ի `PINS` ցանկում, գործարկիր `node pins.js`, commit/push, ապա `cd pinbot && npx wrangler deploy`։

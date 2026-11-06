@@ -1,0 +1,106 @@
+{
+ "name": "Penny Pins → Pinterest",
+ "flow": [
+  {
+   "id": 1,
+   "module": "gateway:CustomWebHook",
+   "version": 1,
+   "parameters": {
+    "hook": 4053538,
+    "maxResults": 1
+   },
+   "mapper": {},
+   "metadata": {
+    "designer": {
+     "x": 0,
+     "y": 0
+    }
+   }
+  },
+  {
+   "id": 2,
+   "module": "pinterest:listBoards",
+   "version": 2,
+   "parameters": {
+    "__IMTCONN__": 12777419
+   },
+   "mapper": {
+    "limit": "100"
+   },
+   "metadata": {
+    "designer": {
+     "x": 300,
+     "y": 0
+    }
+   },
+   "filter": {
+    "name": "Not a sample",
+    "conditions": [
+     [
+      {
+       "a": "{{1.sample}}",
+       "o": "boolean:notequal",
+       "b": "true"
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "id": 3,
+   "module": "pinterest:createPin",
+   "version": 2,
+   "parameters": {
+    "__IMTCONN__": 12777419
+   },
+   "filter": {
+    "name": "Board matches",
+    "conditions": [
+     [
+      {
+       "a": "{{2.name}}",
+       "o": "text:equal:ci",
+       "b": "{{1.board}}"
+      }
+     ]
+    ]
+   },
+   "mapper": {
+    "board_id": "{{2.id}}",
+    "title": "{{1.title}}",
+    "description": "{{1.description}}",
+    "link": "{{1.link}}",
+    "alt_text": "{{1.alt_text}}",
+    "media_source": {
+     "source_type": "image_url",
+     "url": "{{1.image_url}}",
+     "is_standard": true
+    }
+   },
+   "metadata": {
+    "designer": {
+     "x": 600,
+     "y": 0
+    }
+   }
+  }
+ ],
+ "metadata": {
+  "instant": true,
+  "version": 1,
+  "scenario": {
+   "roundtrips": 1,
+   "maxErrors": 3,
+   "autoCommit": true,
+   "autoCommitTriggerLast": true,
+   "sequential": false,
+   "confidential": false,
+   "dataloss": false,
+   "dlq": false,
+   "freshVariables": false
+  },
+  "designer": {
+   "orphans": []
+  }
+ }
+}

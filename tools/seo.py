@@ -19,6 +19,7 @@ TITLES = {
  "en/articles/kak-vyvesti-dengi.html": "Casino withdrawals: verification, timing and tips",
  "es/articles/kak-poluchit-bonus.html": "Cómo obtener el bono de bienvenida del casino: paso a paso",
  "es/articles/kak-vyvesti-dengi.html": "Retirar dinero de un casino online: verificación y plazos",
+ "es/articles/chto-takoe-vejdzher.html": "Requisito de apuesta en el casino: qué es y cómo cumplirlo",
  "es/articles/kriptokazino.html": "Casino cripto: cómo jugar con criptomonedas (guía)",
  "es/kalkulyator-bankrolla.html": "Calculadora de bankroll: ¿cuántos giros te alcanzan?",
  "es/kalkulyator.html": "Calculadora de requisito de apuesta: ¿conviene el bono?",
@@ -45,10 +46,12 @@ LINKS = {
         (r"withdrawals?", "kak-vyvesti-dengi"), (r"responsible gambling", "otvetstvennaya-igra")],
  "es": [(r"requisitos? de apuesta", "chto-takoe-vejdzher"), (r"giros gratis", "frispiny"), (r"\bRTP\b|tragamonedas", "kak-rabotayut-sloty"),
         (r"criptomonedas?", "kriptokazino"), (r"bonos? de bienvenida|\bbonos?\b", "kak-poluchit-bonus"), (r"retiros?\b|retirar (?:el )?dinero", "kak-vyvesti-dengi"),
-        (r"juego responsable", "otvetstvennaya-igra"), (r"\bbankroll\b", "../kalkulyator-bankrolla")],
+        (r"juego responsable", "otvetstvennaya-igra"), (r"verificación", "verifikaciya"), (r"\bruleta\b", "kak-igrat-v-ruletku"),
+        (r"\bblackjack\b", "blekdzhek-pravila"), (r"modo demo", "demo-rezhim"), (r"en vivo", "live-kazino"), (r"\bcelular\b|\bmóvil\b", "mobilnoe-kazino"), (r"\bbankroll\b", "../kalkulyator-bankrolla")],
  "pt": [(r"\brollover\b", "chto-takoe-vejdzher"), (r"giros grátis", "frispiny"), (r"\bRTP\b|caça-níqueis", "kak-rabotayut-sloty"),
         (r"criptomoedas?", "kriptokazino"), (r"bônus de boas-vindas|\bbônus\b", "kak-poluchit-bonus"), (r"\bsaques?\b|sacar (?:o )?dinheiro", "kak-vyvesti-dengi"),
-        (r"jogo responsável", "otvetstvennaya-igra"), (r"\bbanca\b", "../kalkulyator-bankrolla")],
+        (r"jogo responsável", "otvetstvennaya-igra"), (r"verificação", "verifikaciya"), (r"\broleta\b", "kak-igrat-v-ruletku"),
+        (r"\bblackjack\b", "blekdzhek-pravila"), (r"modo demo", "demo-rezhim"), (r"ao vivo", "live-kazino"), (r"\bcelular\b", "mobilnoe-kazino"), (r"\bbanca\b", "../kalkulyator-bankrolla")],
 }
 MAX_LINKS = 4
 

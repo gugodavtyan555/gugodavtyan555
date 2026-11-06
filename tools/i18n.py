@@ -5,6 +5,7 @@ BASE = "https://lucky-spin-ru.netlify.app"
 exec(open(S + "/i18n_text.py").read())
 exec(open(S + "/legal.py").read())
 exec(open(S + "/i18n_more.py").read())
+exec(open(S + "/i18n_more2.py").read())
 exec(open(S + "/casino_pages.py").read())
 exec(open(S + "/calc_pages.py").read())
 CALC_ARTS = {"chto-takoe-vejdzher", "kak-poluchit-bonus", "frispiny"}

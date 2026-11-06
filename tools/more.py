@@ -275,10 +275,13 @@ _GLOSS = [
  ]),
 ]
 
+exec(open("/tmp/claude-0/-workspace/8aeb4342-0200-5c82-93a5-effabca2f09f/scratchpad/gloss_extra.py").read(), globals())
+_GLOSS = gloss_merge(_GLOSS, "ru")
+
 def _gloss_html():
     out = '<p>Короткий словарь терминов, которые встречаются в онлайн-казино. Если какое-то слово в правилах бонуса или игры непонятно — найдите его здесь.</p>\n'
     for sec, items in _GLOSS:
-        out += f'<h2>{sec}</h2>\n<dl class="gloss">\n' + "".join(f'<dt>{t}</dt><dd>{d}</dd>\n' for t, d in items) + '</dl>\n'
+        out += f'<h2>{sec}</h2>\n<dl class="gloss">\n' + "".join(f'<dt id="{gloss_slug(t)}">{t}</dt><dd>{d}</dd>\n' for t, d in items) + '</dl>\n'
     return out + cta()
 
 ARTICLES.insert(len(ARTICLES)-1, ("slovar-kazino", "📖", "Словарь казино", "RTP, вейджер, wild, scatter, кэшбэк и другие термины простыми словами.",

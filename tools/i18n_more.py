@@ -175,6 +175,9 @@ _GL = {
    ("Limite de saque", "O valor mínimo ou máximo que pode ser sacado de uma vez ou em um período.")])],
 }
 
+exec(open(S + "/gloss_extra.py").read())
+_GL = {_l: gloss_merge(_GL[_l], _l) for _l in _GL}
+
 def _gloss(lg):
     intro = {"es": "Un breve glosario de términos que aparecen en los casinos online. Si una palabra de las reglas de un bono o juego no está clara, búscala aquí.",
              "pt": "Um glossário curto de termos que aparecem nos cassinos online. Se alguma palavra das regras de um bônus ou jogo não estiver clara, procure aqui."}[lg]
@@ -182,7 +185,7 @@ def _gloss(lg):
     out = f'<p>{intro}</p>\n'
     for sec, items in _GL[lg]:
         out += f'<h2>{sec}</h2>\n<dl class="gloss">\n' + "".join(
-            f'<dt>{t}</dt><dd>{d.replace(link_from, chr(60) + "a href=\"chto-takoe-vejdzher.html\"" + chr(62) + link_from + chr(60) + "/a" + chr(62))}</dd>\n' for t, d in items) + '</dl>\n'
+            f'<dt id="{gloss_slug(t)}">{t}</dt><dd>{d.replace(link_from, chr(60) + "a href=\"chto-takoe-vejdzher.html\"" + chr(62) + link_from + chr(60) + "/a" + chr(62))}</dd>\n' for t, d in items) + '</dl>\n'
     return out
 
 ART["slovar-kazino"] = {

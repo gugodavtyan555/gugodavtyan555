@@ -11,8 +11,9 @@ I18N_PAGES = {"index.html", "kazino.html", "articles/kak-poluchit-bonus.html", "
 def lang_url(lang, path):
     pre = "" if lang == "ru" else lang + "/"
     return BASE + "/" + pre + ("" if path == "index.html" else path)
-I18N_EXTRA = {"es": {"articles/frispiny.html", "articles/kriptokazino.html", "articles/slovar-kazino.html"},
-              "pt": {"articles/frispiny.html", "articles/kriptokazino.html", "articles/slovar-kazino.html"}}
+_MORE7 = {f"articles/{_s}.html" for _s in ["blekdzhek-pravila", "kak-igrat-v-ruletku", "demo-rezhim", "live-kazino", "mobilnoe-kazino", "verifikaciya", "kak-vybrat-kazino"]}
+I18N_EXTRA = {"es": {"articles/frispiny.html", "articles/kriptokazino.html", "articles/slovar-kazino.html"} | _MORE7,
+              "pt": {"articles/frispiny.html", "articles/kriptokazino.html", "articles/slovar-kazino.html"} | _MORE7}
 for _cl in ("es", "pt"):
     I18N_EXTRA[_cl].update({"kalkulyator.html", "kalkulyator-bankrolla.html", "viktorina.html", "samoproverka.html"})
 exec(open("/tmp/claude-0/-workspace/8aeb4342-0200-5c82-93a5-effabca2f09f/scratchpad/calc_pages.py").read(), globals())

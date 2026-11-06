@@ -96,6 +96,7 @@ def layout(title, description, body, path="", image=None, extra_head=""):
 <meta property="og:title" content="{E(title)}"><meta property="og:description" content="{E(description)}">
 <meta property="og:image" content="{og_img}"><meta property="og:url" content="{canonical}"><meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
+{f'<meta name="google-site-verification" content="{E(DATA["google_site_verification"])}">' if DATA.get("google_site_verification") else ""}
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%232F7D5B'/><text x='50' y='68' font-size='58' text-anchor='middle' fill='white' font-family='Arial' font-weight='700'>P</text></svg>">
 <style>{CSS}</style>
 {extra_head}

@@ -10,7 +10,9 @@
       "short": "Budget vs. actual for every category, every month, with an automatic annual summary.",
       "price": 9,
       "format": "Excel + Google Sheets",
-      "files": ["Monthly-Budget-Planner.xlsx"],
+      "files": [
+        "Monthly-Budget-Planner.xlsx"
+      ],
       "features": [
         "Set a monthly budget for up to 26 income and expense categories",
         "Log transactions with dropdowns. Totals update on their own",
@@ -19,7 +21,8 @@
         "Works in Excel, Google Sheets, LibreOffice and Numbers"
       ],
       "keywords": "budget spreadsheet, monthly budget template, budget planner excel, google sheets budget",
-      "checkout": ""
+      "checkout": "https://gugodavtyan.gumroad.com/l/budget-planner",
+      "gumroad_id": "aTXcp9Niz2d8x-_HfEi1-A=="
     },
     {
       "id": "debt-payoff-planner",
@@ -27,7 +30,9 @@
       "short": "Snowball or avalanche: enter your debts and see your exact debt-free date and total interest.",
       "price": 8,
       "format": "Excel + Google Sheets",
-      "files": ["Debt-Payoff-Planner.xlsx"],
+      "files": [
+        "Debt-Payoff-Planner.xlsx"
+      ],
       "features": [
         "Up to 10 debts: credit cards, car loan, student loans and more",
         "Switch between Snowball and Avalanche with one click",
@@ -36,7 +41,8 @@
         "Freed-up minimum payments roll over to the next debt automatically"
       ],
       "keywords": "debt payoff spreadsheet, debt snowball calculator, debt avalanche template, debt tracker",
-      "checkout": ""
+      "checkout": "https://gugodavtyan.gumroad.com/l/debt-payoff-planner",
+      "gumroad_id": "PIM1CWDYqerfTwtOwfdtYg=="
     },
     {
       "id": "small-business-tracker",
@@ -44,7 +50,9 @@
       "short": "A bookkeeping spreadsheet for freelancers, Etsy sellers and small shops, with a monthly P&L and tax set-aside.",
       "price": 14,
       "format": "Excel + Google Sheets",
-      "files": ["Small-Business-Income-Expense-Tracker.xlsx"],
+      "files": [
+        "Small-Business-Income-Expense-Tracker.xlsx"
+      ],
       "features": [
         "Ledger for up to 2,000 transactions with categories and payment methods",
         "Automatic month-by-month Profit & Loss statement",
@@ -53,7 +61,8 @@
         "Built for freelancers, Etsy and Shopify sellers, and side hustles"
       ],
       "keywords": "small business bookkeeping spreadsheet, income and expense tracker, profit and loss template, etsy seller spreadsheet",
-      "checkout": ""
+      "checkout": "https://gugodavtyan.gumroad.com/l/business-tracker",
+      "gumroad_id": "mtISmnGz4lRn2TrVf5sHKQ=="
     },
     {
       "id": "savings-goals-tracker",
@@ -61,7 +70,9 @@
       "short": "Track up to 12 savings goals with progress bars and the monthly amount you need to hit each deadline.",
       "price": 6,
       "format": "Excel + Google Sheets",
-      "files": ["Savings-Goals-Tracker.xlsx"],
+      "files": [
+        "Savings-Goals-Tracker.xlsx"
+      ],
       "features": [
         "Up to 12 goals with a target amount and a deadline",
         "Log deposits and withdrawals per goal",
@@ -69,7 +80,8 @@
         "Tells you exactly how much to save per month"
       ],
       "keywords": "savings tracker spreadsheet, savings goal template, sinking funds tracker, emergency fund tracker",
-      "checkout": ""
+      "checkout": "https://gugodavtyan.gumroad.com/l/savings-tracker",
+      "gumroad_id": "54JjRkQ6LqziBt2Z385f6g=="
     },
     {
       "id": "2027-planner",
@@ -77,7 +89,11 @@
       "short": "An 85-page planner with year, month, week and habit pages. Use it on an iPad or print it on Letter or A4 paper.",
       "price": 7,
       "format": "PDF (iPad, US Letter, A4)",
-      "files": ["2027-Planner-iPad-Digital.pdf", "2027-Planner-US-Letter.pdf", "2027-Planner-A4.pdf"],
+      "files": [
+        "2027-Planner-iPad-Digital.pdf",
+        "2027-Planner-US-Letter.pdf",
+        "2027-Planner-A4.pdf"
+      ],
       "features": [
         "Clickable tabs and links: jump from year to month to week",
         "12 monthly calendars with goals, priorities and notes",
@@ -86,7 +102,8 @@
         "Works in GoodNotes, Notability, Xodo or any PDF app, and prints on Letter or A4"
       ],
       "keywords": "2027 digital planner, goodnotes planner 2027, printable planner 2027, hyperlinked planner",
-      "checkout": ""
+      "checkout": "https://gugodavtyan.gumroad.com/l/planner-2027",
+      "gumroad_id": "orrOKqm8IaIdwBse3wOVAg=="
     },
     {
       "id": "money-bundle",
@@ -95,7 +112,9 @@
       "price": 29,
       "compare_at": 44,
       "format": "Excel + Google Sheets + PDF",
-      "files": ["ALL"],
+      "files": [
+        "ALL"
+      ],
       "features": [
         "Monthly Budget Planner",
         "Debt Payoff Planner",
@@ -104,7 +123,8 @@
         "2027 Hyperlinked Planner (iPad, Letter, A4)"
       ],
       "keywords": "budget spreadsheet bundle, personal finance templates, finance planner bundle",
-      "checkout": ""
+      "checkout": "https://gugodavtyan.gumroad.com/l/money-bundle",
+      "gumroad_id": "tlJ1lQk0vERKix_yEBYYjg=="
     }
   ]
 }

@@ -9,3 +9,4 @@ python3 $S/i18n.py
 python3 $S/covers.py
 python3 $S/seo.py
 python3 $S/schema.py
+python3 $S/ask.py

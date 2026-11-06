@@ -1,6 +1,6 @@
 # Penny & Plan — թվային ապրանքների խանութ (անգլալեզու)
 
-**Կայքը.** https://pennyandplan.gugodavtyan555.workers.dev
+**Կայքը.** https://penny-and-plan.pages.dev
 
 Ֆինանսական Excel/Google Sheets շաբլոններ և 2027-ի պլանավորիչ ենք վաճառում անգլալեզու գնորդներին։ Ապրանքները թվային են. գնորդը վճարում է և ֆայլն ավտոմատ ստանում email-ով։ Ոչ մի բան չի առաքվում, պահեստ պետք չէ։
 
@@ -49,7 +49,7 @@ python3 generators/planner_pdf.py dist
 ## Ինչ եմ անում ես (առանց քո մասնակցության)
 
 - Գրում եմ նոր ապրանքներ և նոր SEO հոդվածներ (`generators/articles.py`)։
-- Թարմացնում և տեղադրում եմ կայքը. `./deploy.sh` (Cloudflare Workers, անվճար)։
+- Թարմացնում և տեղադրում եմ կայքը. `./deploy.sh` (Cloudflare Pages, անվճար)։
 - Կարող եմ ամեն տարի ավելացնել նոր տարվա պլանավորիչը. `planner_pdf.py dist 2028`։
 
 ## Կառուցվածքը

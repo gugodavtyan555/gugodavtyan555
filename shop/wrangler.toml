@@ -1,7 +1,0 @@
-# The shop runs as a Cloudflare Worker (free plan). worker/worker.js is generated
-# by generators/build_worker.py from ./site — run ./deploy.sh instead of editing it.
-name = "pennyandplan"
-main = "worker/worker.js"
-compatibility_date = "2026-10-01"
-workers_dev = true
-preview_urls = false

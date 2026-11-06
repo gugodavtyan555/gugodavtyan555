@@ -230,6 +230,8 @@ def main():
     urls = "".join(f"<url><loc>{URL}/{'' if k == 'index.html' else k.replace('index.html', '')}</loc><lastmod>{today}</lastmod></url>"
                    for k in pages)
     (SITE / "sitemap.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>')
+    # IndexNow key (Bing, Yandex, Seznam...): proves we own the site when pinging new URLs.
+    (SITE / "8f3c1d2e9a7b4c6d5e0f1a2b3c4d5e6f.txt").write_text("8f3c1d2e9a7b4c6d5e0f1a2b3c4d5e6f")
     (SITE / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {URL}/sitemap.xml\n")
     (SITE / "404.html").write_text(simple("Page not found", "404.html", '<p><a href="/">Back to the shop</a></p>'))
     print(f"built {len(pages)} pages into {SITE}")

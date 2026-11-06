@@ -12,7 +12,17 @@ const SITE = data.site_url.replace(/\/$/, '');
 const IMG_BASE = 'https://raw.githubusercontent.com/gugodavtyan555/gugodavtyan555/claude/online-shop-sales-scheme-typp8c/shop/pins/';
 fs.mkdirSync(OUT, { recursive: true });
 
+// Which product image and board a blog guide's pin uses.
+const BLOG_PRODUCT = {
+  'debt-snowball-vs-avalanche': 'debt-payoff-planner', '50-30-20-budget-rule': 'budget-planner',
+  'track-small-business-income-expenses': 'small-business-tracker', 'how-much-to-save-each-month-for-a-goal': 'savings-goals-tracker',
+  'how-to-pay-off-credit-card-debt-fast': 'debt-payoff-planner', 'sinking-funds-explained': 'savings-goals-tracker',
+  'how-to-make-a-budget-in-google-sheets': 'budget-planner', 'how-to-set-financial-goals-for-2027': '2027-planner',
+};
+
 const BOARDS = {
+  'holiday-budget-planner': 'Budget Templates',
+  'free-budget-template': 'Budget Templates',
   'budget-planner': 'Budget Templates',
   'debt-payoff-planner': 'Debt Payoff Plan',
   'small-business-tracker': 'Small Business Finance',
@@ -53,6 +63,20 @@ const PINS = [
   ['blog:how-much-to-save-each-month-for-a-goal', 'How Much Should You Save Each Month?', 'One simple formula', 'Use one formula to know exactly how much to save each month for an emergency fund, a vacation or a house deposit.', 'how much to save, savings tips, saving money, money goals'],
 ];
 
+// Batch 2 (Nov 2026): holiday planner, free template and the new guides. Seasonal ones first.
+const PINS2 = [
+  ['holiday-budget-planner', 'Christmas Budget Planner Spreadsheet', 'Holiday 2026', 'Plan every gift and holiday cost against one total budget. Tick bought and wrapped, and see what is left to spend.', 'christmas budget, holiday budget planner, christmas planning, gift budget'],
+  ['free-budget-template', 'Free One-Page Budget Template', 'Free download', 'A free one-page budget that splits your pay into needs, wants and savings and compares it with the 50/30/20 rule.', 'free budget template, free printable budget, 50 30 20 budget, budget spreadsheet free'],
+  ['holiday-budget-planner', 'Holiday Gift List + Budget Tracker', 'Never overspend at Christmas', 'One list for everyone you buy for: gift ideas, budget, actual cost, bought and wrapped. Excel and Google Sheets.', 'christmas gift list, gift tracker, holiday gift ideas, christmas organization'],
+  ['blog:how-to-make-a-budget-in-google-sheets', 'How to Make a Budget in Google Sheets', 'Step by step, with formulas', 'Build a simple monthly budget in Google Sheets with SUMIFS, dropdowns and a budget vs. actual chart.', 'google sheets budget, budget spreadsheet, how to budget, google sheets tips'],
+  ['blog:how-to-set-financial-goals-for-2027', 'How to Set Financial Goals for 2027', 'New year money plan', 'Review 2026, pick three money goals, turn them into monthly numbers and check in every week.', 'financial goals, new year goals 2027, money goals, new year resolutions'],
+  ['free-budget-template', 'Is Your Budget 50/30/20? Free Checker', 'Free spreadsheet', 'Type in your take-home pay and costs and see how your split compares with 50% needs, 30% wants, 20% savings.', '50/30/20 rule, budget for beginners, free budget spreadsheet, money tips'],
+  ['blog:how-to-pay-off-credit-card-debt-fast', 'How to Pay Off Credit Card Debt Fast', '6 steps that work', 'See how much a bigger monthly payment saves on a $5,000 card balance, plus six steps to clear credit card debt faster.', 'pay off credit card debt, debt free tips, credit card debt, debt payoff'],
+  ['holiday-budget-planner', 'Plan a Stress-Free Christmas on a Budget', 'Gifts · food · decor · travel', 'Holiday budget dashboard: plan vs. total budget, spent so far and left to spend, by gift group.', 'christmas on a budget, frugal christmas, holiday spending, budget christmas'],
+  ['blog:sinking-funds-explained', 'Sinking Funds Explained', 'Stop big bills wrecking your budget', 'What sinking funds are, the most common ones and how much to put in each month.', 'sinking funds, sinking funds list, budgeting tips, saving money tips'],
+  ['free-budget-template', 'Free Budget Spreadsheet for Beginners', 'Excel + Google Sheets', 'Start budgeting today with a free one-page template. Download and fill in the yellow cells.', 'budget for beginners, free budget spreadsheet, budgeting 101, simple budget'],
+];
+
 const THEMES = [
   { bg: '#EEF4F0', ink: '#1F2A37', accent: '#2F7D5B', band: '#2F7D5B', bandInk: '#FFFFFF' },
   { bg: '#FBF3E8', ink: '#2B2118', accent: '#B5622E', band: '#2B2118', bandInk: '#FBF3E8' },
@@ -64,11 +88,10 @@ function html(pin, i) {
   const [ref, headline, kicker] = pin;
   const t = THEMES[i % THEMES.length];
   const pid = ref.startsWith('blog:') ? null : ref;
-  const imgId = pid || ({ 'blog:debt-snowball-vs-avalanche': 'debt-payoff-planner', 'blog:50-30-20-budget-rule': 'budget-planner',
-    'blog:track-small-business-income-expenses': 'small-business-tracker', 'blog:how-much-to-save-each-month-for-a-goal': 'savings-goals-tracker' })[ref];
+  const imgId = pid || BLOG_PRODUCT[ref.slice(5)];
   const img = 'data:image/png;base64,' + fs.readFileSync(path.join(ROOT, 'site', 'img', imgId + '.png')).toString('base64');
   const p = pid && data.products.find((x) => x.id === pid);
-  const bottom = pid ? `Instant download · $${p.price}` : 'Free guide · read on the blog';
+  const bottom = !pid ? 'Free guide · read on the blog' : p.price ? `Instant download · $${p.price}` : 'Free download';
   return `<!doctype html><html><head><meta charset="utf-8"><style>
 *{box-sizing:border-box;margin:0}body{width:1000px;height:1500px;background:${t.bg};font-family:Inter,system-ui,sans-serif;color:${t.ink};overflow:hidden;position:relative}
 .k{position:absolute;left:70px;top:90px;font-size:30px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${t.accent}}
@@ -82,38 +105,36 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
 <div class="band"><b>${bottom}</b><span>Penny &amp; Plan · penny-and-plan.pages.dev</span></div></body></html>`;
 }
 
-function csvCell(s) { return '"' + String(s).replace(/"/g, '""') + '"'; }
-
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1500 }, deviceScaleFactor: 1 });
   const rows = [];
-  const start = new Date(Date.UTC(2026, 10, 9, 15, 0, 0)); // first pin: Nov 9, 2026, 15:00 UTC (10am US Eastern)
-  for (let i = 0; i < PINS.length; i++) {
-    const [ref, headline, , description, keywords] = PINS[i];
+  const ALL = [...PINS, ...PINS2];
+  for (let i = 0; i < ALL.length; i++) {
+    const [ref, headline, , description, keywords] = ALL[i];
     const file = `pin-${String(i + 1).padStart(2, '0')}-${ref.replace('blog:', '')}.jpg`;
-    await page.setContent(html(PINS[i], i), { waitUntil: 'load' });
+    await page.setContent(html(ALL[i], i), { waitUntil: 'load' });
     await page.screenshot({ path: path.join(OUT, file), type: 'jpeg', quality: 86 });
     const isBlog = ref.startsWith('blog:');
     const link = isBlog ? `${SITE}/blog/${ref.slice(5)}.html` : `${SITE}/p/${ref}.html`;
-    const board = isBlog ? BOARDS[{ 'debt-snowball-vs-avalanche': 'debt-payoff-planner', '50-30-20-budget-rule': 'budget-planner',
-      'track-small-business-income-expenses': 'small-business-tracker', 'how-much-to-save-each-month-for-a-goal': 'savings-goals-tracker' }[ref.slice(5)]] : BOARDS[ref];
-    // Spread pins out: one per day, alternating products so boards fill evenly.
-    const when = new Date(start.getTime() + i * 24 * 3600 * 1000);
-    rows.push({ title: headline, media: IMG_BASE + file, board, description, link: `${link}?utm_source=pinterest&utm_medium=pin&utm_campaign=pin${i + 1}`, date: when.toISOString().slice(0, 19), keywords, order: i });
+    const board = BOARDS[isBlog ? BLOG_PRODUCT[ref.slice(5)] : ref];
+    rows.push({ title: headline, media: IMG_BASE + file, board, description, link: `${link}?utm_source=pinterest&utm_medium=pin&utm_campaign=pin${i + 1}`, keywords });
   }
   await browser.close();
-  // Interleave so consecutive days show different products.
-  const order = [];
-  for (let k = 0; k < 4; k++) for (let j = k; j < rows.length; j += 4) order.push(rows[j]);
-  order.forEach((r, n) => { r.date = new Date(start.getTime() + n * 24 * 3600 * 1000).toISOString().slice(0, 19); });
-  const header = 'Title,Media URL,Pinterest board,Thumbnail,Description,Link,Publish date,Keywords';
-  const line = (r) => [r.title, r.media, r.board, '', r.description, r.link, r.date, r.keywords].map(csvCell).join(',');
-  fs.writeFileSync(path.join(OUT, 'pinterest-bulk-part1.csv'), [header, ...order.slice(0, 14).map(line)].join('\n') + '\n');
-  fs.writeFileSync(path.join(OUT, 'pinterest-bulk-part2.csv'), [header, ...order.slice(14).map(line)].join('\n') + '\n');
+  // Batch 1: interleave so consecutive pins show different products.
+  const old = rows.slice(0, PINS.length);
+  const order1 = [];
+  for (let k = 0; k < 4; k++) for (let j = k; j < old.length; j += 4) order1.push(old[j]);
+  // Batch 2 was added after pin #1 was published. pins.json order must never change for pins already
+  // sent (the worker keeps an index), so they stay first; new pins then alternate with the rest.
+  const SENT_BEFORE_BATCH2 = 1;
+  const fresh = rows.slice(PINS.length);
+  const rest = order1.slice(SENT_BEFORE_BATCH2);
+  const order = order1.slice(0, SENT_BEFORE_BATCH2);
+  while (fresh.length || rest.length) { if (fresh.length) order.push(fresh.shift()); if (rest.length) order.push(rest.shift()); }
   fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
     title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
     alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,
   })), null, 1) + '\n');
-  console.log(`wrote ${rows.length} pins and 2 CSV files to ${OUT}`);
+  console.log(`wrote ${rows.length} pins to ${OUT}`);
 })();

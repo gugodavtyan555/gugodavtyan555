@@ -15,6 +15,11 @@ DATA = json.loads((ROOT / "products.json").read_text())
 BRAND = DATA["brand"]
 URL = DATA["site_url"].rstrip("/")
 PRODUCTS = DATA["products"]
+PROMO = DATA.get("promo") if DATA.get("promo") and date.today().isoformat() <= DATA["promo"]["ends"] else None
+
+
+def promo_price(p):
+    return round(p["price"] * (100 - PROMO["percent"]) / 100, 2) if PROMO and p["price"] else p["price"]
 E = html.escape
 
 CSS = """
@@ -24,6 +29,7 @@ CSS = """
 *{box-sizing:border-box}
 body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;font-size:17px}
 a{color:var(--accent)}
+.promo{background:var(--accent);color:var(--accent-ink);text-align:center;padding:9px 16px;font-size:15px}
 .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
 header.top{border-bottom:1px solid var(--line);background:var(--card)}
 header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;gap:16px}
@@ -94,6 +100,7 @@ def layout(title, description, body, path="", image=None, extra_head=""):
 <style>{CSS}</style>
 {extra_head}
 </head><body>
+{promo_bar()}
 <header class="top"><div class="wrap">
 <a class="logo" href="/">Penny <span>&amp;</span> Plan</a>
 <nav><a href="/#shop">Shop</a><a href="/blog/">Guides</a><a class="hide-sm" href="/#faq">FAQ</a></nav>
@@ -106,13 +113,32 @@ def layout(title, description, body, path="", image=None, extra_head=""):
 </body></html>"""
 
 
+def promo_bar():
+    if not PROMO:
+        return ""
+    return (f'<div class="promo" data-ends="{PROMO["ends"]}">Launch sale: <b>{PROMO["percent"]}% off everything</b> with code '
+            f'<b>{PROMO["code"]}</b>, until {date.fromisoformat(PROMO["ends"]).strftime("%B %-d")}.</div>'
+            '<script>(function(){var b=document.querySelector(".promo");if(b&&new Date()>new Date(b.dataset.ends+"T23:59:59Z"))b.remove();})()</script>')
+
+
 def buy_button(p, big=False):
     if p.get("checkout"):
+        if not p["price"]:
+            return f'<a class="btn" href="{E(p["checkout"])}" rel="nofollow">Download free</a>'
+        if PROMO:
+            # Gumroad applies a discount code given as the last path segment of the product URL.
+            href = f'{p["checkout"]}/{PROMO["code"]}'
+            return (f'<a class="btn" href="{E(href)}" rel="nofollow">Buy now · ${promo_price(p):.2f}</a>'
+                    f'<p class="note">{PROMO["percent"]}% launch discount applied at checkout (code {PROMO["code"]}, until {PROMO["ends"]}).</p>')
         return f'<a class="btn" href="{E(p["checkout"])}" rel="nofollow">Buy now · ${p["price"]}</a>'
     return '<span class="btn" aria-disabled="true">Coming soon</span>'
 
 
 def price_html(p):
+    if not p["price"]:
+        return "Free"
+    if PROMO:
+        return f'${promo_price(p):.2f}<s>${p["price"]}</s>'
     s = f'${p["price"]}'
     if p.get("compare_at"):
         s += f'<s>${p["compare_at"]}</s>'
@@ -136,7 +162,7 @@ FAQ = [
 
 
 def home():
-    order = ["money-bundle", "budget-planner", "debt-payoff-planner", "small-business-tracker", "savings-goals-tracker", "2027-planner"]
+    order = ["holiday-budget-planner", "money-bundle", "free-budget-template", "budget-planner", "debt-payoff-planner", "small-business-tracker", "savings-goals-tracker", "2027-planner"]
     items = sorted(PRODUCTS, key=lambda p: order.index(p["id"]) if p["id"] in order else 99)
     faq_ld = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in FAQ]}

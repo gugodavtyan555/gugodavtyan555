@@ -49,7 +49,7 @@ button{padding:12px 16px;font-size:16px;border:0;border-radius:8px;background:#2
 </style></head><body><h1>📌 Penny Pins</h1>
 ${msg ? `<p class="msg">${esc(msg)}</p>` : ''}
 <div class="card"><b>Վիճակ</b><br>Make webhook՝ ${st.webhook ? '✅' : '❌ դեռ չկա'}<br>
-Հրապարակված՝ ${st.next} / ${PINS.length}<br>${st.paused ? '⏸ կանգնեցված' : '▶️ աշխատում է (ամեն օր 15:00 UTC)'}<br>
+Հրապարակված՝ ${st.next} / ${PINS.length}<br>${st.paused ? '⏸ կանգնեցված' : '▶️ աշխատում է (օրական 2 անգամ՝ 15:00 և 23:00 UTC)'}<br>
 Հաջորդը՝ ${esc(PINS[st.next]?.title || '—')}</div>
 <form method="post" action="/setup?key=${k}" class="card">
 <label><b>Make.com Webhook URL</b></label><br><br>

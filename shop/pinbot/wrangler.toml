@@ -7,7 +7,7 @@ workers_dev = true
 preview_urls = false
 
 [triggers]
-crons = ["0 15 * * *"]   # 15:00 UTC = 10:00 US Eastern
+crons = ["0 15,23 * * *"]   # 15:00 and 23:00 UTC = 10am and 6pm US Eastern
 
 [[kv_namespaces]]
 binding = "KV"

@@ -5,6 +5,26 @@
   "contact_email": "",
   "products": [
     {
+      "id": "holiday-budget-planner",
+      "name": "Holiday Gift & Christmas Budget Planner",
+      "short": "Plan every gift and holiday cost against one total budget, and see what's bought, wrapped and left to spend.",
+      "price": 5,
+      "format": "Excel + Google Sheets",
+      "files": [
+        "Holiday-Gift-Budget-Planner.xlsx"
+      ],
+      "features": [
+        "Gift list with budget, actual cost, Bought and Wrapped checkboxes",
+        "Gift groups: family, kids, friends, work and more",
+        "Other costs: food, decorations, travel, cards, parties",
+        "Dashboard: plan vs. total budget, spent so far, left to spend",
+        "Over-budget warnings for every gift and group"
+      ],
+      "keywords": "christmas budget planner, holiday budget spreadsheet, gift list template, christmas gift tracker",
+      "checkout": "https://pennyplanshop.gumroad.com/l/holiday-budget",
+      "gumroad_id": "pTpdbgOm4cxd8hO5Idc7EA=="
+    },
+    {
       "id": "budget-planner",
       "name": "Monthly Budget Planner",
       "short": "Budget vs. actual for every category, every month, with an automatic annual summary.",
@@ -125,6 +145,30 @@
       "keywords": "budget spreadsheet bundle, personal finance templates, finance planner bundle",
       "checkout": "https://pennyplanshop.gumroad.com/l/money-bundle",
       "gumroad_id": "tlJ1lQk0vERKix_yEBYYjg=="
+    },
+    {
+      "id": "free-budget-template",
+      "name": "Free One-Page Budget Template (50/30/20)",
+      "short": "A free one-page budget that splits your take-home pay into needs, wants and savings and compares it with the 50/30/20 rule.",
+      "price": 0,
+      "format": "Excel + Google Sheets",
+      "files": [
+        "Free-One-Page-Budget.xlsx"
+      ],
+      "features": [
+        "One page: income, needs, wants, savings and debt",
+        "Your split vs. the 50/30/20 targets, calculated for you",
+        "Shows any money left unassigned",
+        "Works in Excel, Google Sheets, LibreOffice and Numbers"
+      ],
+      "keywords": "free budget template, 50 30 20 budget spreadsheet, free budget spreadsheet, simple budget",
+      "checkout": "https://pennyplanshop.gumroad.com/l/free-budget",
+      "gumroad_id": "VpqcbnxuAO_5yBiz7mCkuA=="
     }
-  ]
+  ],
+  "promo": {
+    "code": "LAUNCH30",
+    "percent": 30,
+    "ends": "2026-12-31"
+  }
 }

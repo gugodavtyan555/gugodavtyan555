@@ -101,6 +101,27 @@ const planner = page({ title: '2027 Hyperlinked Planner', sub: 'Year, month, wee
   `<div class="pdfstack"><img src="${img('p-05.png')}" style="right:-60px;top:560px;transform:rotate(3deg)"><img src="${img('p-03.png')}" style="right:120px;top:110px;transform:rotate(-2deg)"></div>`,
   ['iPad / GoodNotes', 'US Letter', 'A4', '85 pages']);
 
+
+const hol = [['Family', 3, 190, 110.5], ['Kids', 2, 95, 64.99], ['Friends', 2, 65, 27], ['Work', 1, 25, 0], ['Teachers & helpers', 1, 25, 25]];
+const holiday = page({ title: 'Holiday Gift & Christmas Budget Planner', sub: 'Every gift and holiday cost in one plan. Know what is left to spend.' },
+  `<div class="pad"><div class="t">Holidays 2026</div><div class="ts">Holiday budget dashboard</div>
+  <div class="kpis"><div class="kpi"><b>BUDGET</b><span>$1,500</span></div><div class="kpi"><b>PLANNED</b><span>$1,200</span></div><div class="kpi"><b>SPENT</b><span>$435</span></div><div class="kpi"><b>GIFTS BOUGHT</b><span>5 / 9</span></div></div>
+  <table><tr><th>Gift group</th><th>People</th><th>Budget</th><th>Spent</th><th style="width:30%">Progress</th></tr>
+  ${hol.map(([g, n, b, s]) => `<tr><td>${g}</td><td class="n">${n}</td><td class="n">${money(b)}</td><td class="n">${money(s)}</td><td class="barcell"><div style="width:${Math.min(100, s / b * 100)}%"></div><span>${Math.round(s / b * 100)}%</span></td></tr>`).join('')}
+  </table>
+  <table><tr><th>Person</th><th>Gift</th><th>Bought</th><th>Wrapped</th></tr>
+  <tr><td class="in">Mom</td><td class="in">Cashmere scarf</td><td>✓</td><td>✓</td></tr><tr><td class="in">Leo</td><td class="in">LEGO set</td><td>✓</td><td>✓</td></tr><tr><td class="in">Dad</td><td class="in">Coffee grinder</td><td>—</td><td>—</td></tr></table></div>`,
+  ['Christmas', 'Gift list', 'Excel + Sheets'], ['Start Here', 'Dashboard', 'Setup', 'Gift List', 'Other Costs']);
+
+const free = page({ title: 'Free One-Page Budget Template', sub: 'Split your pay into needs, wants and savings. Compare with 50/30/20.' },
+  `<div class="pad"><div class="t">One-Page Budget</div><div class="ts">Monthly take-home pay: $4,000</div>
+  <div class="kpis"><div class="kpi"><b>NEEDS</b><span>63%</span></div><div class="kpi"><b>WANTS</b><span>13%</span></div><div class="kpi"><b>SAVINGS</b><span>19%</span></div><div class="kpi"><b>LEFT OVER</b><span>$200</span></div></div>
+  <table><tr><th>Bucket</th><th>Actual</th><th>Target</th><th style="width:40%">vs. target</th></tr>
+  ${[['Needs', 62.5, 50], ['Wants', 13.25, 30], ['Savings & debt', 19.25, 20]].map(([n, a, t]) => `<tr><td>${n}</td><td class="n">${a}%</td><td class="n">${t}%</td><td class="barcell"><div style="width:${a}%"></div><span>${a > t ? 'over' : 'under'}</span></td></tr>`).join('')}
+  </table>
+  <table><tr><th>Needs</th><th>Amount</th></tr>${[['Rent / mortgage', 1400], ['Utilities', 180], ['Groceries', 450], ['Transport', 220], ['Insurance', 150]].map(([c, a]) => `<tr><td class="in">${c}</td><td class="n in">${money(a)}</td></tr>`).join('')}</table></div>`,
+  ['FREE', 'Excel', 'Google Sheets'], ['＋', 'One-Page Budget']);
+
 const bundle = page({ title: 'The Complete Money Bundle', sub: 'All five products in one download. Save $15.' },
   `<div class="pdfstack"><img src="${img('p-03.png')}" style="right:-40px;top:620px;transform:rotate(4deg);width:700px"></div>
    <div class="screen" style="width:760px;height:540px;top:90px;right:160px"><div class="bar"><i></i><i></i><i></i></div>
@@ -112,7 +133,7 @@ const bundle = page({ title: 'The Complete Money Bundle', sub: 'All five product
 (async () => {
   const browser = await chromium.launch();
   const pg = await browser.newPage({ viewport: { width: 1600, height: 1200 }, deviceScaleFactor: 1 });
-  const items = { 'budget-planner': budget, 'debt-payoff-planner': debt, 'small-business-tracker': biz, 'savings-goals-tracker': sav, '2027-planner': planner, 'money-bundle': bundle };
+  const items = { 'budget-planner': budget, 'debt-payoff-planner': debt, 'small-business-tracker': biz, 'savings-goals-tracker': sav, '2027-planner': planner, 'money-bundle': bundle, 'holiday-budget-planner': holiday, 'free-budget-template': free };
   for (const [id, html] of Object.entries(items)) {
     await pg.setContent(html, { waitUntil: 'load' });
     await pg.screenshot({ path: path.join(outDir, `${id}.png`) });

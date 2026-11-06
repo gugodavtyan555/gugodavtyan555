@@ -722,6 +722,162 @@ def savings_goals(out):
     wb.save(out / "Savings-Goals-Tracker.xlsx")
 
 
+# ---------------------------------------------------------------- holiday
+
+def holiday_budget(out):
+    wb = Workbook()
+    st = wb.active
+    st.title = "Setup"
+    title(st, "Holiday Budget Setup", "Set your total holiday budget and the groups you buy gifts for.")
+    st.column_dimensions["B"].width = 28
+    st.column_dimensions["C"].width = 16
+    label_value(st, 5, "Season", "Holidays 2026", input_cell=True)
+    label_value(st, 6, "Total holiday budget", 1500, MONEY, True)
+    header(st, 8, 2, ["Gift groups"])
+    for i, g in enumerate(["Family", "Kids", "Friends", "Work", "Teachers & helpers", "Other"] + [None] * 4):
+        st.cell(row=9 + i, column=2, value=g)
+    style_range(st, "B9:B18", input_cell=True)
+
+    G = 108
+    gl = wb.create_sheet("Gift List")
+    title(gl, "Gift List", "One row per person. Tick Bought and Wrapped as you go.")
+    header(gl, 5, 2, ["Person", "Group", "Gift idea", "Budget", "Actual cost", "Bought?", "Wrapped?", "Store / link"],
+           [20, 18, 28, 12, 12, 10, 10, 26])
+    gifts = [("Mom", "Family", "Cashmere scarf", 80, 72, "Yes", "Yes"), ("Dad", "Family", "Coffee grinder", 70, 0, "No", "No"),
+             ("Sister", "Family", "Book set", 40, 38.5, "Yes", "No"), ("Leo", "Kids", "LEGO set", 60, 64.99, "Yes", "Yes"),
+             ("Mia", "Kids", "Art kit", 35, 0, "No", "No"), ("Anna", "Friends", "Candle + mug", 30, 27, "Yes", "No"),
+             ("Sam", "Friends", "Board game", 35, 0, "No", "No"), ("Team", "Work", "Cookies", 25, 0, "No", "No"),
+             ("Ms. Lee", "Teachers & helpers", "Gift card", 25, 25, "Yes", "Yes")]
+    for i, row in enumerate(gifts):
+        for j, v in enumerate(row):
+            gl.cell(row=6 + i, column=2 + j, value=v)
+    style_range(gl, f"B6:I{G}", input_cell=True)
+    style_range(gl, f"E6:F{G}", number_format=MONEY)
+    list_validation(gl, "=Setup!$B$9:$B$18", f"C6:C{G}")
+    list_validation(gl, '"Yes,No"', f"G6:H{G}")
+    gl.conditional_formatting.add(f"B6:I{G}", FormulaRule(formula=['$G6="Yes"'], fill=fill(ACCENT_LIGHT)))
+    gl.conditional_formatting.add(f"F6:F{G}", FormulaRule(formula=['AND(N($F6)>0,N($F6)>N($E6))'], fill=fill(RED_LIGHT), font=Font(color=RED, bold=True)))
+    gl.freeze_panes = "B6"
+
+    oe = wb.create_sheet("Other Costs")
+    title(oe, "Other Holiday Costs", "Food, decorations, travel and everything that isn't a gift.")
+    header(oe, 5, 2, ["Category", "Budget", "Actual", "Remaining"], [26, 13, 13, 13])
+    other = [("Food & dinners", 250, 120), ("Decorations", 80, 45), ("Wrapping & cards", 40, 18), ("Postage & shipping", 30, 0),
+             ("Travel", 200, 0), ("Parties & events", 100, 0), ("Charity", 50, 25), ("Other", 50, 0)]
+    for i in range(14):
+        r = 6 + i
+        if i < len(other):
+            for j, v in enumerate(other[i]):
+                oe.cell(row=r, column=2 + j, value=v)
+        oe.cell(row=r, column=5, value=f'=IF(B{r}="","",N(C{r})-N(D{r}))')
+    style_range(oe, "B6:D19", input_cell=True)
+    style_range(oe, "C6:E19", number_format=MONEY)
+    oe.conditional_formatting.add("E6:E19", CellIsRule(operator="lessThan", formula=["0"], fill=fill(RED_LIGHT), font=Font(color=RED, bold=True)))
+    oe["B20"] = "Total"
+    for c in "CDE":
+        oe[f"{c}20"] = f"=SUM({c}6:{c}19)"
+    style_range(oe, "B20:E20", bold=True)
+    style_range(oe, "C20:E20", number_format=MONEY)
+
+    dash = wb.create_sheet("Dashboard", 0)
+    title(dash, "Holiday Budget Dashboard", "Everything updates from the Gift List and Other Costs sheets.")
+    dash["B3"] = '=Setup!C5&" · holiday budget overview"'
+    for c, w in zip("BCDEF", [22, 16, 16, 16, 16]):
+        dash.column_dimensions[c].width = w
+    gb = f"'Gift List'!$E$6:$E${G}"
+    ga = f"'Gift List'!$F$6:$F${G}"
+    gg = f"'Gift List'!$C$6:$C${G}"
+    kpi(dash, 5, 2, "TOTAL BUDGET", "=Setup!C6")
+    kpi(dash, 5, 3, "PLANNED", f"=SUM({gb})+'Other Costs'!C20")
+    kpi(dash, 5, 4, "SPENT SO FAR", f"=SUM({ga})+'Other Costs'!D20")
+    kpi(dash, 5, 5, "LEFT TO SPEND", "=B6-D6")
+    kpi(dash, 5, 6, "GIFTS BOUGHT", f"=COUNTIF('Gift List'!$G$6:$G${G},\"Yes\")&\" / \"&COUNTA('Gift List'!$B$6:$B${G})", "@")
+    dash.conditional_formatting.add("E6", CellIsRule(operator="lessThan", formula=["0"], font=Font(color=RED, bold=True, size=16)))
+    dash["B8"] = '=IF(C6>B6,"⚠ Your plan is "&TEXT(C6-B6,"#,##0")&" over the total budget. Trim a few gifts or costs.","✓ Your plan fits the total budget.")'
+    dash["B8"].font = Font(bold=True, color=ACCENT)
+    header(dash, 10, 2, ["Gift group", "People", "Budget", "Spent", "Remaining"])
+    for i in range(10):
+        r = 11 + i
+        dash.cell(row=r, column=2, value=f'=IF(Setup!B{9+i}="","",Setup!B{9+i})')
+        dash.cell(row=r, column=3, value=f'=IF(B{r}="","",COUNTIF({gg},B{r}))')
+        dash.cell(row=r, column=4, value=f'=IF(B{r}="","",SUMIFS({gb},{gg},B{r}))')
+        dash.cell(row=r, column=5, value=f'=IF(B{r}="","",SUMIFS({ga},{gg},B{r}))')
+        dash.cell(row=r, column=6, value=f'=IF(B{r}="","",D{r}-E{r})')
+    style_range(dash, "B11:F20")
+    style_range(dash, "D11:F20", number_format=MONEY)
+    dash.conditional_formatting.add("F11:F20", CellIsRule(operator="lessThan", formula=["0"], fill=fill(RED_LIGHT), font=Font(color=RED, bold=True)))
+    dash["B21"] = "Gifts total"
+    dash["C21"] = "=SUM(C11:C20)"
+    for c in "DEF":
+        dash[f"{c}21"] = f"=SUM({c}11:{c}20)"
+    style_range(dash, "B21:F21", bold=True)
+    style_range(dash, "D21:F21", number_format=MONEY)
+    bc = BarChart()
+    bc.title = "Gift budget vs. spent by group"
+    bc.height, bc.width = 8, 16
+    bc.add_data(Reference(dash, min_col=4, max_col=5, min_row=10, max_row=16), titles_from_data=True)
+    bc.set_categories(Reference(dash, min_col=2, min_row=11, max_row=16))
+    dash.add_chart(bc, "H10")
+
+    howto(wb, "Holiday Gift & Christmas Budget Planner", [
+        "Open 'Setup': enter your total holiday budget and edit the gift groups.",
+        "Open 'Gift List': add everyone you buy for, a gift idea and a budget. Fill in the actual cost and tick Bought / Wrapped as you shop.",
+        "Open 'Other Costs': plan food, decorations, travel, cards and parties.",
+        "Open 'Dashboard': see your plan vs. total budget, what you've spent and what's left, by group.",
+    ])
+    wb.active = 0
+    wb.save(out / "Holiday-Gift-Budget-Planner.xlsx")
+
+
+# ---------------------------------------------------------------- free
+
+def free_budget(out):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "One-Page Budget"
+    title(ws, "One-Page Budget (50/30/20)", f"Free template from {BRAND} · penny-and-plan.pages.dev")
+    for c, w in zip("BCDEFG", [26, 14, 4, 26, 14, 14]):
+        ws.column_dimensions[c].width = w
+    label_value(ws, 5, "Monthly take-home pay", 4000, MONEY, True)
+    groups = [("NEEDS (target 50%)", ["Rent / mortgage", "Utilities", "Groceries", "Transport", "Insurance", "Minimum debt payments"], [1400, 180, 450, 220, 150, 100]),
+              ("WANTS (target 30%)", ["Dining out", "Shopping", "Subscriptions", "Entertainment", "Travel"], [180, 120, 40, 90, 100]),
+              ("SAVINGS & DEBT (target 20%)", ["Emergency fund", "Retirement", "Extra debt payments", "Goals"], [300, 200, 150, 120])]
+    r = 7
+    tot_rows = []
+    for name, cats, amts in groups:
+        header(ws, r, 2, [name, "Amount"])
+        first = r + 1
+        for i in range(8):
+            ws.cell(row=first + i, column=2, value=cats[i] if i < len(cats) else None)
+            ws.cell(row=first + i, column=3, value=amts[i] if i < len(amts) else None)
+        style_range(ws, f"B{first}:C{first+7}", input_cell=True)
+        style_range(ws, f"C{first}:C{first+7}", number_format=MONEY)
+        ws.cell(row=first + 8, column=2, value="Total").font = Font(bold=True)
+        ws.cell(row=first + 8, column=3, value=f"=SUM(C{first}:C{first+7})").number_format = MONEY
+        tot_rows.append(first + 8)
+        r = first + 10
+    header(ws, 7, 5, ["Bucket", "Actual", "Target"])
+    for i, (lbl, pct) in enumerate([("Needs", 0.5), ("Wants", 0.3), ("Savings & debt", 0.2)]):
+        rr = 8 + i
+        ws.cell(row=rr, column=5, value=lbl)
+        ws.cell(row=rr, column=6, value=f"=IF($C$5=0,0,C{tot_rows[i]}/$C$5)").number_format = PCT
+        ws.cell(row=rr, column=7, value=pct).number_format = PCT
+    style_range(ws, "E8:G10")
+    ws["E12"] = "Left over (unassigned)"
+    ws["E12"].font = Font(bold=True)
+    ws["F12"] = f"=C5-{'-'.join('C'+str(t) for t in tot_rows)}"
+    ws["F12"].number_format = MONEY
+    ws.conditional_formatting.add("F12", CellIsRule(operator="lessThan", formula=["0"], font=Font(color=RED, bold=True)))
+    ws["E14"] = "Want a full monthly planner with a dashboard,"
+    ws["E15"] = "transaction log and 12-month summary?"
+    ws["E16"] = "penny-and-plan.pages.dev"
+    ws["E16"].hyperlink = "https://penny-and-plan.pages.dev/p/budget-planner.html?utm_source=free-template"
+    ws["E16"].font = Font(bold=True, color=ACCENT, underline="single")
+    for c in ("E14", "E15"):
+        ws[c].font = Font(color=MUTED)
+    wb.save(out / "Free-One-Page-Budget.xlsx")
+
+
 def main():
     out = Path(sys.argv[1] if len(sys.argv) > 1 else "dist")
     out.mkdir(parents=True, exist_ok=True)
@@ -729,6 +885,8 @@ def main():
     debt_payoff(out)
     business_tracker(out)
     savings_goals(out)
+    holiday_budget(out)
+    free_budget(out)
     print("spreadsheets written to", out)
 
 

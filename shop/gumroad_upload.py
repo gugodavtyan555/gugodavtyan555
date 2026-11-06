@@ -23,6 +23,8 @@ ZIPS = {
     "savings-goals-tracker": "Savings-Goals-Tracker.zip",
     "2027-planner": "2027-Planner.zip",
     "money-bundle": "Complete-Money-Bundle.zip",
+    "holiday-budget-planner": "Holiday-Gift-Budget-Planner.zip",
+    "free-budget-template": "Free-One-Page-Budget.zip",
 }
 PERMALINKS = {
     "budget-planner": "budget-planner",
@@ -31,6 +33,8 @@ PERMALINKS = {
     "savings-goals-tracker": "savings-tracker",
     "2027-planner": "planner-2027",
     "money-bundle": "money-bundle",
+    "holiday-budget-planner": "holiday-budget",
+    "free-budget-template": "free-budget",
 }
 
 
@@ -99,6 +103,7 @@ def main():
             "custom_summary": p["short"],
             "files": [{"url": file_url, "display_name": zpath.stem.replace("-", " ")}],
             "draft": True,
+            **({"customizable_price": True} if not p["price"] else {}),
         })["product"]
         pid = created["id"]
         curl("POST", f"{API}/products/{pid}/covers", {"url": f"{site}/img/{p['id']}.png"})

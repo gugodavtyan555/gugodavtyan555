@@ -164,6 +164,92 @@
       "keywords": "free budget template, 50 30 20 budget spreadsheet, free budget spreadsheet, simple budget",
       "checkout": "https://pennyplanshop.gumroad.com/l/free-budget",
       "gumroad_id": "VpqcbnxuAO_5yBiz7mCkuA=="
+    },
+    {
+      "id": "word-search-large-print",
+      "category": "puzzles",
+      "name": "Large Print Word Search: 50 Themed Puzzles",
+      "short": "50 relaxing word searches with big, easy-to-read letters. Words never run backwards. Answers included.",
+      "price": 6,
+      "format": "Printable PDF (Letter + A4)",
+      "files": [
+        "Large-Print-Word-Search-US-Letter.pdf",
+        "Large-Print-Word-Search-A4.pdf"
+      ],
+      "features": [
+        "50 themed puzzles: animals, garden, travel, Christmas and more",
+        "Big 15 x 15 grids with large, clear letters",
+        "Words go across, down and diagonally, never backwards",
+        "Answer key for every puzzle",
+        "US Letter and A4 versions: print as many times as you like"
+      ],
+      "keywords": "large print word search, printable word search, word search for seniors, word find puzzles",
+      "checkout": "https://pennyplanshop.gumroad.com/l/word-search",
+      "gumroad_id": "q0YqmpjzBFTJRz5tRQ72Xg=="
+    },
+    {
+      "id": "sudoku-puzzle-book",
+      "category": "puzzles",
+      "name": "Sudoku: 120 Puzzles, Easy to Expert",
+      "short": "120 printable sudoku puzzles in four levels, two per page, each checked by computer to have exactly one solution.",
+      "price": 5,
+      "format": "Printable PDF (Letter + A4)",
+      "files": [
+        "Sudoku-Puzzle-Book-US-Letter.pdf",
+        "Sudoku-Puzzle-Book-A4.pdf"
+      ],
+      "features": [
+        "120 puzzles: 30 Easy, 30 Medium, 30 Hard, 30 Expert",
+        "Every puzzle has exactly one solution",
+        "Large print, two puzzles per page",
+        "Full answer key at the back",
+        "US Letter and A4 versions"
+      ],
+      "keywords": "printable sudoku, sudoku puzzle book, sudoku for beginners, large print sudoku",
+      "checkout": "https://pennyplanshop.gumroad.com/l/sudoku",
+      "gumroad_id": "QxUEJ7ODQ48Da9nsD5wxKw=="
+    },
+    {
+      "id": "mazes-for-kids",
+      "category": "puzzles",
+      "name": "Mazes for Kids: 60 Mazes, Easy to Hard",
+      "short": "60 printable mazes for ages 5–10 that grow from simple to tricky, with every solution drawn at the back.",
+      "price": 5,
+      "format": "Printable PDF (Letter + A4)",
+      "files": [
+        "Mazes-for-Kids-US-Letter.pdf",
+        "Mazes-for-Kids-A4.pdf"
+      ],
+      "features": [
+        "60 mazes: 20 Easy, 20 Medium, 20 Hard",
+        "One maze per page with clear start and finish",
+        "Every maze has exactly one path",
+        "Solutions included",
+        "Great for road trips, rainy days and classrooms"
+      ],
+      "keywords": "mazes for kids, printable mazes, kids activity pages, maze book",
+      "checkout": ""
+    },
+    {
+      "id": "puzzle-bundle",
+      "category": "puzzles",
+      "name": "The Puzzle Book Bundle",
+      "short": "All three puzzle books in one download: large print word search, sudoku and mazes for kids. Save $4.",
+      "price": 12,
+      "compare_at": 16,
+      "format": "Printable PDF (Letter + A4)",
+      "files": [
+        "ALL"
+      ],
+      "features": [
+        "Large Print Word Search: 50 puzzles",
+        "Sudoku: 120 puzzles, easy to expert",
+        "Mazes for Kids: 60 mazes",
+        "All answers included",
+        "US Letter and A4 versions"
+      ],
+      "keywords": "puzzle book bundle, printable puzzles, activity book, brain games",
+      "checkout": ""
     }
   ],
   "promo": {

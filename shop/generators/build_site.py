@@ -104,7 +104,7 @@ def layout(title, description, body, path="", image=None, extra_head=""):
 {promo_bar()}
 <header class="top"><div class="wrap">
 <a class="logo" href="/">Penny <span>&amp;</span> Plan</a>
-<nav><a href="/#shop">Shop</a><a href="/blog/">Guides</a><a class="hide-sm" href="/#faq">FAQ</a></nav>
+<nav><a href="/#shop">Templates</a><a href="/#puzzles">Puzzles</a><a href="/blog/">Guides</a><a class="hide-sm" href="/#faq">FAQ</a></nav>
 </div></header>
 {body}
 <footer><div class="wrap">
@@ -165,7 +165,8 @@ FAQ = [
 
 def home():
     order = ["holiday-budget-planner", "money-bundle", "free-budget-template", "budget-planner", "debt-payoff-planner", "small-business-tracker", "savings-goals-tracker", "2027-planner"]
-    items = sorted(PRODUCTS, key=lambda p: order.index(p["id"]) if p["id"] in order else 99)
+    items = sorted([p for p in PRODUCTS if p.get("category") != "puzzles"], key=lambda p: order.index(p["id"]) if p["id"] in order else 99)
+    puzzles = sorted([p for p in PRODUCTS if p.get("category") == "puzzles"], key=lambda p: p["id"] != "puzzle-bundle")
     faq_ld = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in FAQ]}
     body = f"""
@@ -176,6 +177,7 @@ def home():
 <div class="trust"><span>✓ Instant download</span><span>✓ Excel &amp; Google Sheets</span><span>✓ No subscription</span><span>✓ 14-day help or refund</span></div>
 </div></section>
 <section id="shop"><div class="wrap"><h2 class="sec">Templates</h2><div class="grid">{''.join(card(p) for p in items)}</div></div></section>
+<section id="puzzles"><div class="wrap"><h2 class="sec">Puzzle Books</h2><p style="color:var(--muted);margin:-10px 0 22px">Printable puzzle books with answers: large print word search, sudoku and mazes for kids. Print at home on Letter or A4 paper.</p><div class="grid">{''.join(card(p) for p in puzzles)}</div></div></section>
 <section class="band"><div class="wrap"><div class="cols">
 <div><h3>Type a number, everything updates</h3><p>Dashboards, charts and totals are live formulas. No macros, no add-ons.</p></div>
 <div><h3>Made to be edited</h3><p>Rename categories, change the currency, add rows. Yellow cells are yours; the rest is calculated.</p></div>
@@ -196,7 +198,7 @@ def product_page(p):
           "offers": {"@type": "Offer", "price": str(p["price"]), "priceCurrency": "USD",
                      "availability": "https://schema.org/InStock" if p.get("checkout") else "https://schema.org/PreOrder",
                      "url": f"{URL}/p/{p['id']}.html"}}
-    others = [o for o in PRODUCTS if o["id"] != p["id"]][:3]
+    others = [o for o in PRODUCTS if o["id"] != p["id"] and o.get("category") == p.get("category")][:3]
     related = [a for a in ARTICLES if p["id"] in a["products"]]
     rel_html = "".join(f'<p>Guide: <a href="/blog/{a["slug"]}.html">{E(a["title"])}</a></p>' for a in related)
     body = f"""<div class="wrap"><div class="crumb"><a href="/">Shop</a> / {E(p['name'])}</div>

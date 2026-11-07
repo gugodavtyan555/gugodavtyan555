@@ -25,6 +25,10 @@ ZIPS = {
     "money-bundle": "Complete-Money-Bundle.zip",
     "holiday-budget-planner": "Holiday-Gift-Budget-Planner.zip",
     "free-budget-template": "Free-One-Page-Budget.zip",
+    "word-search-large-print": "Large-Print-Word-Search.zip",
+    "sudoku-puzzle-book": "Sudoku-Puzzle-Book.zip",
+    "mazes-for-kids": "Mazes-for-Kids.zip",
+    "puzzle-bundle": "Puzzle-Book-Bundle.zip",
 }
 PERMALINKS = {
     "budget-planner": "budget-planner",
@@ -35,6 +39,10 @@ PERMALINKS = {
     "money-bundle": "money-bundle",
     "holiday-budget-planner": "holiday-budget",
     "free-budget-template": "free-budget",
+    "word-search-large-print": "word-search",
+    "sudoku-puzzle-book": "sudoku",
+    "mazes-for-kids": "mazes",
+    "puzzle-bundle": "puzzle-bundle",
 }
 
 

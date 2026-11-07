@@ -21,6 +21,10 @@ const BLOG_PRODUCT = {
 };
 
 const BOARDS = {
+  'word-search-large-print': 'Puzzle Books',
+  'sudoku-puzzle-book': 'Puzzle Books',
+  'mazes-for-kids': 'Puzzle Books',
+  'puzzle-bundle': 'Puzzle Books',
   'holiday-budget-planner': 'Budget Templates',
   'free-budget-template': 'Budget Templates',
   'budget-planner': 'Budget Templates',
@@ -77,6 +81,20 @@ const PINS2 = [
   ['free-budget-template', 'Free Budget Spreadsheet for Beginners', 'Excel + Google Sheets', 'Start budgeting today with a free one-page template. Download and fill in the yellow cells.', 'budget for beginners, free budget spreadsheet, budgeting 101, simple budget'],
 ];
 
+// Batch 3 (Nov 7, 2026): puzzle books. Mazes and the bundle come last because they go live on Gumroad later the same day.
+const PINS3 = [
+  ['word-search-large-print', 'Large Print Word Search Puzzles', 'Printable · answers included', '50 relaxing word searches with big, easy-to-read letters. Words never run backwards. Print on Letter or A4.', 'large print word search, printable word search, word search for seniors, word find'],
+  ['sudoku-puzzle-book', '120 Printable Sudoku Puzzles', 'Easy to expert', 'Four levels, two puzzles per page, and every puzzle has exactly one solution. Answers at the back.', 'printable sudoku, sudoku puzzles, brain games, sudoku for beginners'],
+  ['word-search-large-print', 'Word Search for Seniors: Big Letters', 'Easy on the eyes', 'Themed puzzles with large 15 x 15 grids and a tick-box word list. A calm, screen-free activity.', 'word search for seniors, activities for seniors, large print puzzles, brain exercise'],
+  ['sudoku-puzzle-book', 'Sudoku for Beginners to Experts', 'Printable puzzle book', 'Start easy and work up to expert. Every grid is computer-checked so you never need to guess.', 'sudoku book, logic puzzles, puzzle book, printable games'],
+  ['word-search-large-print', 'Christmas & Winter Word Search', 'Printable holiday puzzles', 'Holiday, winter and New Year word searches with big letters, plus 47 more themes. Great for family gatherings.', 'christmas word search, holiday printables, winter activities, christmas activities'],
+  ['sudoku-puzzle-book', 'Screen-Free Brain Games: Sudoku', 'Print at home', 'Keep your mind sharp with 120 sudoku puzzles you can print as often as you like.', 'brain games, screen free activities, sudoku printable, puzzle lovers'],
+  ['mazes-for-kids', 'Printable Mazes for Kids', 'Ages 5–10 · 60 mazes', '60 mazes that grow from simple to tricky, with every solution drawn at the back. Great for road trips and rainy days.', 'mazes for kids, printable mazes, kids activities, rainy day activities'],
+  ['puzzle-bundle', 'Printable Puzzle Book Bundle', 'Word search · sudoku · mazes', 'Three printable puzzle books in one download: 230 puzzles with answers, Letter and A4.', 'puzzle book bundle, printable puzzles, activity book, family activities'],
+  ['mazes-for-kids', 'Screen-Free Activity: Maze Book', 'Easy · medium · hard', 'One maze per page with a clear start and finish. Every maze has exactly one path.', 'screen free kids activities, maze puzzles, kids printables, homeschool activities'],
+  ['puzzle-bundle', '230 Printable Puzzles With Answers', 'For kids and grown-ups', 'Large print word search, sudoku and mazes for kids in one bundle. Print as many copies as you like.', 'printable activities, puzzle printables, brain teasers, family game night'],
+];
+
 const THEMES = [
   { bg: '#EEF4F0', ink: '#1F2A37', accent: '#2F7D5B', band: '#2F7D5B', bandInk: '#FFFFFF' },
   { bg: '#FBF3E8', ink: '#2B2118', accent: '#B5622E', band: '#2B2118', bandInk: '#FBF3E8' },
@@ -109,7 +127,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1500 }, deviceScaleFactor: 1 });
   const rows = [];
-  const ALL = [...PINS, ...PINS2];
+  const ALL = [...PINS, ...PINS2, ...PINS3];
   for (let i = 0; i < ALL.length; i++) {
     const [ref, headline, , description, keywords] = ALL[i];
     const file = `pin-${String(i + 1).padStart(2, '0')}-${ref.replace('blog:', '')}.jpg`;
@@ -128,10 +146,16 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   // Batch 2 was added after pin #1 was published. pins.json order must never change for pins already
   // sent (the worker keeps an index), so they stay first; new pins then alternate with the rest.
   const SENT_BEFORE_BATCH2 = 1;
-  const fresh = rows.slice(PINS.length);
+  const fresh = rows.slice(PINS.length, PINS.length + PINS2.length);
   const rest = order1.slice(SENT_BEFORE_BATCH2);
   const order = order1.slice(0, SENT_BEFORE_BATCH2);
   while (fresh.length || rest.length) { if (fresh.length) order.push(fresh.shift()); if (rest.length) order.push(rest.shift()); }
+  // Batch 3 (puzzle books) was added after SENT_BEFORE_BATCH3 pins had been published; same rule:
+  // never reorder what was already sent, then alternate the new pins with the remaining queue.
+  const SENT_BEFORE_BATCH3 = 3;
+  const fresh3 = rows.slice(PINS.length + PINS2.length);
+  const rest3 = order.splice(SENT_BEFORE_BATCH3);
+  while (fresh3.length || rest3.length) { if (rest3.length) order.push(rest3.shift()); if (fresh3.length) order.push(fresh3.shift()); }
   fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
     title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
     alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,

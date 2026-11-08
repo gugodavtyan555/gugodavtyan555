@@ -25,7 +25,7 @@ const BOARDS = {
   'sudoku-puzzle-book': 'Puzzle Books',
   'mazes-for-kids': 'Puzzle Books',
   'puzzle-bundle': 'Puzzle Books',
-  'christmas-party-games': 'Puzzle Books',
+  'christmas-party-games': 'Christmas Party Ideas',
   'holiday-budget-planner': 'Budget Templates',
   'free-budget-template': 'Budget Templates',
   'budget-planner': 'Budget Templates',

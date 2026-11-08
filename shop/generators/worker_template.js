@@ -32,7 +32,11 @@ function log(env, ctx, request, url, kind, path) {
   if (!env.DB) return;
   const ua = request.headers.get('user-agent') || '';
   if (BOT.test(ua)) return;
+  // Real browsers always send Accept-Language; scanners and most scripts don't.
+  if (!request.headers.get('accept-language')) return;
   const ref = request.headers.get('referer') || '';
+  // A real buy click comes from one of our own pages; crawlers that follow /go/ links directly don't.
+  if (kind === 'buy') { try { if (new URL(ref).hostname !== url.hostname) return; } catch { return; } }
   let refHost = '';
   try { refHost = ref ? new URL(ref).hostname : ''; } catch {}
   const row = [new Date().toISOString(), kind, path, source(url, ref), refHost.slice(0, 80),
@@ -97,7 +101,8 @@ export default {
     let f = FILES[p] || FILES[p + '.html'] || FILES[p + '/index.html'];
     const status = f ? 200 : 404;
     f = f || FILES['/404.html'];
-    if (request.method === 'GET' && f.t.startsWith('text/html')) log(env, ctx, request, url, 'view', status === 200 ? p.replace(/index\.html$/, '') : '404');
+    // 404s are almost all vulnerability scanners probing for /wp-admin, /.env and the like: don't count them.
+    if (request.method === 'GET' && status === 200 && f.t.startsWith('text/html')) log(env, ctx, request, url, 'view', p.replace(/index\.html$/, ''));
     const long = /\.(png|jpg|svg|webp)$/.test(p);
     return new Response(request.method === 'HEAD' ? null : body(f), {
       status,

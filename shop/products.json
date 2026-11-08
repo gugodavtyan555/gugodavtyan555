@@ -252,6 +252,29 @@
       "keywords": "puzzle book bundle, printable puzzles, activity book, brain games",
       "checkout": "https://pennyplanshop.gumroad.com/l/puzzle-bundle",
       "gumroad_id": "38fF29UnBkFsp5D1xlrDGQ=="
+    },
+    {
+      "id": "christmas-party-games",
+      "category": "puzzles",
+      "name": "Christmas Party Games Bundle",
+      "short": "9 printable Christmas games for kids, families and friends: scavenger hunt, trivia, 30 bingo cards, charades and more.",
+      "price": 8,
+      "format": "Printable PDF (Letter + A4)",
+      "files": [
+        "Christmas-Party-Games-US-Letter.pdf",
+        "Christmas-Party-Games-A4.pdf"
+      ],
+      "features": [
+        "Scavenger hunt with 12 rhyming clues and a hiding chart",
+        "Christmas trivia: 40 questions with answers",
+        "Bingo: 30 different cards plus a caller's sheet",
+        "Who Am I?, Charades and Would You Rather: 40 cards each",
+        "Word scramble, Finish the Carol and a Left-Right gift exchange story",
+        "64 pages, US Letter and A4, answer keys included"
+      ],
+      "keywords": "christmas party games, printable christmas games, christmas scavenger hunt, christmas bingo, family christmas games",
+      "checkout": "https://pennyplanshop.gumroad.com/l/christmas-games",
+      "gumroad_id": "xUMDGYyTM-GAPWg4QouIiw=="
     }
   ],
   "promo": {

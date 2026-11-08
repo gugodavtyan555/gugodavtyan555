@@ -27,6 +27,8 @@ const items = {
     [['mz2-48.png', 'right:30px;top:330px;transform:rotate(5deg)'], ['mz-04.png', 'right:300px;top:110px;transform:rotate(-3deg)']]),
   'puzzle-bundle': page('The Puzzle Book Bundle', 'Word search, sudoku and mazes in one download. Save $4.', ['3 books', '230 puzzles', 'Letter + A4'],
     [['mz-04.png', 'right:-30px;top:380px;transform:rotate(8deg);width:440px'], ['su-04.png', 'right:170px;top:300px;transform:rotate(1deg);width:440px'], ['ws-03.png', 'right:380px;top:190px;transform:rotate(-6deg);width:440px']]),
+  'christmas-party-games': page('Christmas Party Games', '9 printable games for kids, families and friends.', ['Scavenger hunt', 'Bingo', 'Trivia', '64 pages'],
+    [['xh-04.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['xb-12.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['xc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
 };
 
 (async () => {

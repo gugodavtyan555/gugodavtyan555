@@ -25,6 +25,7 @@ const BOARDS = {
   'sudoku-puzzle-book': 'Puzzle Books',
   'mazes-for-kids': 'Puzzle Books',
   'puzzle-bundle': 'Puzzle Books',
+  'christmas-party-games': 'Puzzle Books',
   'holiday-budget-planner': 'Budget Templates',
   'free-budget-template': 'Budget Templates',
   'budget-planner': 'Budget Templates',
@@ -95,6 +96,16 @@ const PINS3 = [
   ['puzzle-bundle', '230 Printable Puzzles With Answers', 'For kids and grown-ups', 'Large print word search, sudoku and mazes for kids in one bundle. Print as many copies as you like.', 'printable activities, puzzle printables, brain teasers, family game night'],
 ];
 
+// Batch 4 (Nov 8, 2026): Christmas Party Games. Seasonal, so these go to the front of the queue.
+const PINS4 = [
+  ['christmas-party-games', 'Christmas Party Games for the Whole Family', '9 printable games', 'Scavenger hunt, trivia, 30 bingo cards, charades, Who Am I? and more. Print at home and play tonight.', 'christmas party games, family christmas games, christmas activities, holiday party ideas'],
+  ['christmas-party-games', 'Christmas Scavenger Hunt with Rhyming Clues', 'Kids love it', '12 rhyming clues that lead around the house to a hidden prize, with a hiding chart for grown-ups.', 'christmas scavenger hunt, scavenger hunt for kids, christmas morning ideas, kids christmas activities'],
+  ['christmas-party-games', 'Printable Christmas Bingo: 30 Cards', 'Plus a caller sheet', '30 different bingo cards with festive words and a FREE square. Great for classrooms and family parties.', 'christmas bingo, printable bingo, classroom christmas party, christmas games for kids'],
+  ['christmas-party-games', 'Christmas Trivia: 40 Questions + Answers', 'For kids and grown-ups', 'From the Twelve Days of Christmas to Christmas in Japan: 40 fun questions with an answer key.', 'christmas trivia, christmas quiz, holiday trivia, christmas party ideas'],
+  ['christmas-party-games', 'Left-Right Christmas Gift Exchange Game', 'Original story included', 'Pass the presents left and right as the story is read aloud. Whoever holds a gift at the end keeps it!', 'left right game, gift exchange game, white elephant ideas, christmas party games'],
+  ['christmas-party-games', 'Christmas Games for Kids: Print & Play', 'Charades · Would You Rather', 'Screen-free fun for Christmas Eve: charades, Would You Rather, word scramble and Finish the Carol.', 'christmas games for kids, christmas eve activities, screen free christmas, kids printables'],
+];
+
 const THEMES = [
   { bg: '#EEF4F0', ink: '#1F2A37', accent: '#2F7D5B', band: '#2F7D5B', bandInk: '#FFFFFF' },
   { bg: '#FBF3E8', ink: '#2B2118', accent: '#B5622E', band: '#2B2118', bandInk: '#FBF3E8' },
@@ -127,7 +138,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1500 }, deviceScaleFactor: 1 });
   const rows = [];
-  const ALL = [...PINS, ...PINS2, ...PINS3];
+  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4];
   for (let i = 0; i < ALL.length; i++) {
     const [ref, headline, , description, keywords] = ALL[i];
     const file = `pin-${String(i + 1).padStart(2, '0')}-${ref.replace('blog:', '')}.jpg`;
@@ -153,9 +164,14 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   // Batch 3 (puzzle books) was added after SENT_BEFORE_BATCH3 pins had been published; same rule:
   // never reorder what was already sent, then alternate the new pins with the remaining queue.
   const SENT_BEFORE_BATCH3 = 3;
-  const fresh3 = rows.slice(PINS.length + PINS2.length);
+  const fresh3 = rows.slice(PINS.length + PINS2.length, PINS.length + PINS2.length + PINS3.length);
   const rest3 = order.splice(SENT_BEFORE_BATCH3);
   while (fresh3.length || rest3.length) { if (rest3.length) order.push(rest3.shift()); if (fresh3.length) order.push(fresh3.shift()); }
+  // Batch 4 (Christmas games) after SENT_BEFORE_BATCH4 pins: seasonal, so a new pin comes first in every pair.
+  const SENT_BEFORE_BATCH4 = 5;
+  const fresh4 = rows.slice(PINS.length + PINS2.length + PINS3.length);
+  const rest4 = order.splice(SENT_BEFORE_BATCH4);
+  while (fresh4.length || rest4.length) { if (fresh4.length) order.push(fresh4.shift()); if (rest4.length) order.push(rest4.shift()); }
   fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
     title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
     alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,

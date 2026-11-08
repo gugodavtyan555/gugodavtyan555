@@ -29,6 +29,7 @@ ZIPS = {
     "sudoku-puzzle-book": "Sudoku-Puzzle-Book.zip",
     "mazes-for-kids": "Mazes-for-Kids.zip",
     "puzzle-bundle": "Puzzle-Book-Bundle.zip",
+    "christmas-party-games": "Christmas-Party-Games.zip",
 }
 PERMALINKS = {
     "budget-planner": "budget-planner",
@@ -43,6 +44,7 @@ PERMALINKS = {
     "sudoku-puzzle-book": "sudoku",
     "mazes-for-kids": "mazes",
     "puzzle-bundle": "puzzle-bundle",
+    "christmas-party-games": "christmas-games",
 }
 
 

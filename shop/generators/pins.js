@@ -29,6 +29,7 @@ const BOARDS = {
   'thanksgiving-party-games': 'Puzzle Books',
   'murder-mystery-mistletoe-manor': 'Christmas Party Ideas',
   'new-years-eve-party-games': 'Christmas Party Ideas',
+  'escape-room-clockwork-lab': 'Puzzle Books',
   'holiday-budget-planner': 'Budget Templates',
   'free-budget-template': 'Budget Templates',
   'budget-planner': 'Budget Templates',
@@ -136,6 +137,14 @@ const PINS7 = [
   ['new-years-eve-party-games', "Printable New Year's Eve Bingo", '30 cards + caller sheet', 'Confetti, countdown, sparklers and more: 30 different bingo cards to play before midnight.', "new years eve bingo, printable bingo, nye games for kids, new years party printables"],
 ];
 
+// Batch 8 (Nov 9, 2026): escape room for kids. Evergreen, so spread out from queue position 16.
+const PINS8 = [
+  ['escape-room-clockwork-lab', 'Printable Escape Room for Kids', 'Ages 7–12 · 45 minutes', 'Six puzzles, one secret code: ciphers, a maze, Morse code and more. Set up at home in 15 minutes.', 'escape room for kids, printable escape room, kids party games, indoor activities for kids'],
+  ['escape-room-clockwork-lab', 'DIY Escape Room Party at Home', 'Birthday party idea', 'Hide the envelopes, start the timer and let the kids crack the code. Hint cards and certificates included.', 'kids birthday party ideas, escape room party, birthday games for kids, diy escape room'],
+  ['escape-room-clockwork-lab', 'Rainy Day Activity: Escape the Clockwork Lab', 'Screen-free fun', 'A story, six brain-teasing puzzles and a prize at the end. Every puzzle has one clear answer.', 'rainy day activities, screen free activities for kids, brain games for kids, boredom busters'],
+  ['escape-room-clockwork-lab', 'Escape Room Puzzles for Kids (Printable)', 'Cipher · maze · Morse code', 'Great for classrooms, homeschool and sleepovers: kids practise maths, logic and reading while racing the clock.', 'escape room classroom, homeschool activities, logic puzzles for kids, educational games'],
+];
+
 const THEMES = [
   { bg: '#EEF4F0', ink: '#1F2A37', accent: '#2F7D5B', band: '#2F7D5B', bandInk: '#FFFFFF' },
   { bg: '#FBF3E8', ink: '#2B2118', accent: '#B5622E', band: '#2B2118', bandInk: '#FBF3E8' },
@@ -168,7 +177,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1500 }, deviceScaleFactor: 1 });
   const rows = [];
-  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7];
+  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8];
   for (let i = 0; i < ALL.length; i++) {
     const [ref, headline, , description, keywords] = ALL[i];
     const file = `pin-${String(i + 1).padStart(2, '0')}-${ref.replace('blog:', '')}.jpg`;
@@ -214,9 +223,14 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   while (fresh6.length || rest6.length) { if (fresh6.length) order.push(fresh6.shift()); for (let k = 0; k < 2 && rest6.length; k++) order.push(rest6.shift()); }
   // Batch 7 (New Year's Eve): one every 3 pins starting at queue position 28.
   const START7 = 28;
-  const fresh7 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length);
+  const fresh7 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length, PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length + PINS7.length);
   const rest7 = order.splice(START7);
   while (fresh7.length || rest7.length) { if (fresh7.length) order.push(fresh7.shift()); for (let k = 0; k < 2 && rest7.length; k++) order.push(rest7.shift()); }
+  // Batch 8 (escape room): one every 6 pins from queue position 16.
+  const START8 = 16;
+  const fresh8 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length + PINS7.length);
+  const rest8 = order.splice(START8);
+  while (fresh8.length || rest8.length) { if (fresh8.length) order.push(fresh8.shift()); for (let k = 0; k < 5 && rest8.length; k++) order.push(rest8.shift()); }
   fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
     title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
     alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,

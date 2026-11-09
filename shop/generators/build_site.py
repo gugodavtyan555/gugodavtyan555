@@ -166,7 +166,7 @@ FAQ = [
 def home():
     order = ["holiday-budget-planner", "money-bundle", "free-budget-template", "budget-planner", "debt-payoff-planner", "small-business-tracker", "savings-goals-tracker", "2027-planner"]
     items = sorted([p for p in PRODUCTS if p.get("category") != "puzzles"], key=lambda p: order.index(p["id"]) if p["id"] in order else 99)
-    puzzles = sorted([p for p in PRODUCTS if p.get("category") == "puzzles"], key=lambda p: ({"thanksgiving-party-games": 0, "murder-mystery-mistletoe-manor": 1, "christmas-party-games": 2, "new-years-eve-party-games": 3, "puzzle-bundle": 4}.get(p["id"], 2)))
+    puzzles = sorted([p for p in PRODUCTS if p.get("category") == "puzzles"], key=lambda p: ({"thanksgiving-party-games": 0, "murder-mystery-mistletoe-manor": 1, "christmas-party-games": 2, "new-years-eve-party-games": 3, "escape-room-clockwork-lab": 4, "puzzle-bundle": 5}.get(p["id"], 2)))
     faq_ld = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in FAQ]}
     body = f"""
@@ -177,7 +177,7 @@ def home():
 <div class="trust"><span>✓ Instant download</span><span>✓ Excel &amp; Google Sheets</span><span>✓ No subscription</span><span>✓ 14-day help or refund</span></div>
 </div></section>
 <section id="shop"><div class="wrap"><h2 class="sec">Templates</h2><div class="grid">{''.join(card(p) for p in items)}</div></div></section>
-<section id="puzzles"><div class="wrap"><h2 class="sec">Puzzles &amp; Party Games</h2><p style="color:var(--muted);margin:-10px 0 22px">Printable puzzle books and party games with answers: a Christmas murder mystery, Thanksgiving, Christmas and New Year's Eve party games, large print word search, sudoku and mazes for kids. Print at home on Letter or A4 paper.</p><div class="grid">{''.join(card(p) for p in puzzles)}</div></div></section>
+<section id="puzzles"><div class="wrap"><h2 class="sec">Puzzles &amp; Party Games</h2><p style="color:var(--muted);margin:-10px 0 22px">Printable puzzle books and party games with answers: a Christmas murder mystery, Thanksgiving, Christmas and New Year's Eve party games, an escape room for kids, large print word search, sudoku and mazes for kids. Print at home on Letter or A4 paper.</p><div class="grid">{''.join(card(p) for p in puzzles)}</div></div></section>
 <section class="band"><div class="wrap"><div class="cols">
 <div><h3>Type a number, everything updates</h3><p>Dashboards, charts and totals are live formulas. No macros, no add-ons.</p></div>
 <div><h3>Made to be edited</h3><p>Rename categories, change the currency, add rows. Yellow cells are yours; the rest is calculated.</p></div>

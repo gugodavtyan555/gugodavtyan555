@@ -33,6 +33,7 @@ ZIPS = {
     "thanksgiving-party-games": "Thanksgiving-Party-Games.zip",
     "murder-mystery-mistletoe-manor": "Murder-Mystery-Mistletoe-Manor.zip",
     "new-years-eve-party-games": "New-Years-Eve-Party-Games.zip",
+    "escape-room-clockwork-lab": "Escape-Room-Clockwork-Lab.zip",
 }
 PERMALINKS = {
     "budget-planner": "budget-planner",
@@ -51,6 +52,7 @@ PERMALINKS = {
     "thanksgiving-party-games": "thanksgiving-games",
     "murder-mystery-mistletoe-manor": "murder-mystery",
     "new-years-eve-party-games": "new-years-eve-games",
+    "escape-room-clockwork-lab": "escape-room",
 }
 
 

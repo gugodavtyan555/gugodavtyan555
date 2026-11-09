@@ -347,6 +347,29 @@
       "keywords": "new years eve games, new years eve party games, printable new year games, family new years eve activities",
       "checkout": "https://pennyplanshop.gumroad.com/l/new-years-eve-games",
       "gumroad_id": "X690UTFtJeFajg2j_pcEYw=="
+    },
+    {
+      "id": "escape-room-clockwork-lab",
+      "category": "puzzles",
+      "name": "Escape the Clockwork Lab: Printable Escape Room for Kids",
+      "short": "A printable escape room for ages 7–12: six puzzles, one secret code and 45 minutes to restart time. Set up at home in 15 minutes.",
+      "price": 8,
+      "format": "Printable PDF (Letter + A4)",
+      "files": [
+        "Escape-Room-Clockwork-Lab-US-Letter.pdf",
+        "Escape-Room-Clockwork-Lab-A4.pdf"
+      ],
+      "features": [
+        "6 puzzles: shape maths, a secret cipher, a maze, a star hunt, a mini sudoku and Morse code",
+        "Every puzzle checked by computer so there is only one right answer",
+        "Story to read aloud, code sheet and envelope labels",
+        "Hint cards for when players get stuck",
+        "Parent guide, full answer key and a Master Escaper certificate",
+        "For 1–6 players aged 7–12, about 45 minutes, US Letter and A4"
+      ],
+      "keywords": "printable escape room for kids, escape room at home, kids party game, birthday party activity, puzzle game for kids",
+      "checkout": "https://pennyplanshop.gumroad.com/l/escape-room",
+      "gumroad_id": "2TvVv2-Q3hBsCGmwCS4H8A=="
     }
   ],
   "promo": {

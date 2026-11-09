@@ -35,6 +35,8 @@ const items = {
     [['me-27.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['mb-11.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['mc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
   'new-years-eve-party-games': page("New Year's Eve Party Games", '9 printable games to count down to 2027.', ['Trivia', 'Bingo', 'Year in Review', '67 pages'],
     [['nr-63.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['nb-12.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['nc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
+  'escape-room-clockwork-lab': page('Escape the Clockwork Lab', 'A printable escape room for kids aged 7–12.', ['6 puzzles', '45 minutes', 'Hint cards', 'Certificate'],
+    [['e8-08.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['e5-05.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['e1-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
 };
 
 (async () => {

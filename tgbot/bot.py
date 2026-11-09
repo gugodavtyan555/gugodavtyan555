@@ -10,6 +10,7 @@ TZ = ZoneInfo("Asia/Yerevan")
 PAYOUT = 0.80  # assumed payout on real pairs (used only for virtual P&L)
 STORE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "trades.json")
 LOCK = threading.Lock()
+TOP_N = 3  # best signals opened per 5-min cycle
 
 TOKEN = os.environ["TRADE_BOT_TOKEN"]
 API = f"https://api.telegram.org/bot{TOKEN}"
@@ -127,8 +128,9 @@ def run_cycle(boundary):
         if d["auto"]:
             res = rank_all()
             fresh = {p: r for p, r in res.items() if r[1]["bar"] >= boundary - pd.Timedelta(minutes=3)}
-            if fresh:
-                p = max(fresh, key=lambda x: fresh[x][1]["score"]); inf = fresh[p][1]
+            top = sorted(fresh, key=lambda x: fresh[x][1]["score"], reverse=True)[:TOP_N]
+            for p in top:
+                inf = fresh[p][1]
                 if inf["score"] >= 9:
                     d["trades"].append({"pair": p, "dir": inf["dir"], "open_at": str(boundary), "exit_at": str(boundary + pd.Timedelta(minutes=5)),
                                         "entry": inf["price"], "exit": None, "result": None, "score": round(inf["score"], 2)})
@@ -158,7 +160,7 @@ def history_text():
     td = [t for t in d["trades"] if loc(t).date() == today]
     lines = [f"📜 *Պատմություն · {today}*  (վիրտուալ գործարքներ)", f"Ավտո՝ {'🟢 միացված' if d['auto'] else '🔴 անջատված'}", ""]
     if not td: lines.append("Այսօր դեռ գործարք չկա։")
-    for t in td[-40:]:
+    for t in td[-45:]:
         ic = {"win": "✅", "loss": "❌", "draw": "➖", "error": "⚠️", None: "⏳"}[t["result"]]
         ex = f"{t['exit']:.5f}" if t["exit"] else "…"
         lines.append(f"{ic} {loc(t).strftime('%H:%M')} {t['pair'][:3]}/{t['pair'][3:]} {t['dir']} {t['entry']:.5f}→{ex}")

@@ -16,5 +16,5 @@ window.CONFIG = {
   ],
   sceneSec: 2.6,   // запасная длительность, если озвучки нет
   minSceneSec: 2.0,
-  voice: { id: 'IKne3meq5aSn9XLyUdCD', model: 'eleven_v3', stability: 0.5 }  // голос Charlie; ключ — в env ELEVENLABS_API_KEY  // ключ — в env ELEVENLABS_API_KEY
+  voice: { id: 'pNInz6obpgDQGcFmaJgB', model: 'eleven_v3', stability: 0.5, tempo: 1.15 }  // голос Adam, речь ускорена на 15%; ключ — в env ELEVENLABS_API_KEY  // ключ — в env ELEVENLABS_API_KEY
 };

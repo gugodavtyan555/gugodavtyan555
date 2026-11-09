@@ -4,7 +4,7 @@ const fs=require('fs'),path=require('path'),vm=require('vm'),crypto=require('cry
 const {execFileSync}=require('child_process');
 const dir=__dirname,ad=path.join(dir,'audio');fs.mkdirSync(ad,{recursive:true});
 const ctx={window:{}};vm.runInNewContext(fs.readFileSync(path.join(dir,'scenes.js'),'utf8'),ctx);
-const cfg=ctx.window.CONFIG,provider=process.env.PROVIDER||'elevenlabs';
+const cfg=ctx.window.CONFIG,tempo=(ctx.window.CONFIG.voice&&ctx.window.CONFIG.voice.tempo)||1,provider=process.env.PROVIDER||'elevenlabs';
 const sh=(c,a)=>execFileSync(c,a,{encoding:'utf8'});
 const dur=f=>parseFloat(sh('ffprobe',['-v','error','-show_entries','format=duration','-of','csv=p=0',f]));
 async function tts(text,out){
@@ -28,10 +28,10 @@ async function tts(text,out){
     let d;
     if(!sc.say){d=cfg.sceneSec;}
     else{if(c[f]!==h||!fs.existsSync(f)){process.stdout.write(`озвучиваю ${i+1}/${cfg.scenes.length}… `);await tts(sc.say,f);c[f]=h;console.log('ok');}
-      d=Math.max(cfg.minSceneSec||2,dur(f)+0.35);}
+      d=Math.max(cfg.minSceneSec||2,dur(f)/tempo+0.35);}
     timing.push(+d.toFixed(3));
     const seg=path.join(ad,`seg${i}.wav`);
-    if(sc.say)sh('ffmpeg',['-y','-v','error','-i',f,'-af',`apad=whole_dur=${d}`,'-ar','44100','-ac','1',seg]);
+    if(sc.say)sh('ffmpeg',['-y','-v','error','-i',f,'-af',`atempo=${tempo},apad=whole_dur=${d}`,'-ar','44100','-ac','1',seg]);
     else sh('ffmpeg',['-y','-v','error','-f','lavfi','-i',`anullsrc=r=44100:cl=mono`,'-t',String(d),seg]);
     parts.push(seg);
   }

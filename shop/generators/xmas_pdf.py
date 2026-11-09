@@ -173,7 +173,7 @@ def cover(b):
     c.roundRect(50, b.H * 0.28, b.W - 100, b.H * 0.46, 22, stroke=0, fill=1)
     b.t(b.W / 2, b.H * 0.64, T["cover_top"], 52 if len(T["cover_top"]) < 11 else 46, "Serif", RED, "c")
     b.t(b.W / 2, b.H * 0.575, "Party Games", 44, "Serif", GREEN, "c")
-    b.t(b.W / 2, b.H * 0.52, "9 printable games for kids, families & friends", 15, "Body", INK, "c")
+    b.t(b.W / 2, b.H * 0.52, T.get("cover_sub", "9 printable games for kids, families & friends"), 15, "Body", INK, "c")
     games = T["games"]
     for i, g in enumerate(games):
         col, row = i % 3, i // 3
@@ -186,7 +186,7 @@ def cover(b):
 def contents(b):
     b.page("How to use this bundle")
     y = b.H - 140
-    tips = [
+    tips = T.get("tips") or [
         "Print only the pages you need. Card pages have dashed lines: cut along them with scissors.",
         "Card stock or thicker paper makes the cards last for next year too.",
         "Answer keys are at the end of each game. Keep them away from sharp-eyed guests!",
@@ -426,7 +426,7 @@ def build(out, size, suffix):
     b = Book(out / f"{T['file']}-{suffix}.pdf", size)
     cover(b)
     contents(b)
-    scavenger(b)
+    T.get("hunt", scavenger)(b)
     trivia(b)
     bingo(b)
     simple_cards(b, "Who Am I?", X.WHO_AM_I, [

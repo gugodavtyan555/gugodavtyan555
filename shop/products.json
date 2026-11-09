@@ -437,6 +437,28 @@
       "keywords": "armenian alphabet, learn armenian, armenian for kids, armenian worksheets, armenian letters printable",
       "checkout": "https://pennyplanshop.gumroad.com/l/armenian-alphabet",
       "gumroad_id": "6_63YCNPvmrhCzglKrYT5w=="
+    },
+    {
+      "id": "wedding-planner-bundle",
+      "category": "more",
+      "name": "Wedding Planner Spreadsheet + Bridal Shower Games",
+      "short": "Plan the whole wedding in one spreadsheet (budget, guests, vendors, checklist) and host the shower with 9 printable games.",
+      "price": 15,
+      "format": "Excel + Google Sheets + PDF",
+      "files": [
+        "Wedding-Planner-and-Shower-Games.zip"
+      ],
+      "features": [
+        "Dashboard: days to go, budget vs. estimate, RSVPs, meal counts and your next tasks",
+        "Budget by category with suggested split, actual, paid and still to pay",
+        "Guest list with RSVP, meal choice, table, gifts and thank-you tracking",
+        "Vendor tracker and a 33-step checklist dated from your wedding day",
+        "Bridal shower games: Know the Bride, wedding trivia, 30 gift bingo cards, Purse Hunt, advice cards and more",
+        "Works in Excel and Google Sheets; games print on Letter or A4"
+      ],
+      "keywords": "wedding planner spreadsheet, wedding budget template, wedding guest list, bridal shower games, wedding checklist",
+      "checkout": "https://pennyplanshop.gumroad.com/l/wedding-planner",
+      "gumroad_id": "mDvxjQroVdtL0htKe71Rnw=="
     }
   ],
   "promo": {

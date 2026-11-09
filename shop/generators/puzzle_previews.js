@@ -41,6 +41,8 @@ const items = {
     [['rs-Executive-1.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['rs-Two-Column-1.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['rs-Modern-1.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
   'armenian-alphabet-kids': page('Armenian Alphabet for Kids', 'All 39 letters: colour, trace and learn. Հայոց այբուբեն.', ['39 letters', 'Tracing', 'Flashcards', 'Poster'],
     [['hl-04.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['hp-03.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['hc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
+  'wedding-planner-bundle': page('Wedding Planner + Shower Games', 'Budget, guests, vendors and checklist in one spreadsheet, plus 9 shower games.', ['Excel + Sheets', 'Guest list', 'Checklist', 'Shower games'],
+    [['bh-03.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['wd-02.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['bc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
 };
 
 (async () => {

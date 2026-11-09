@@ -37,6 +37,7 @@ ZIPS = {
     "resume-templates": "Resume-Templates-Bundle.zip",
     "boho-wall-art": "Boho-Wall-Art-Set.zip",
     "armenian-alphabet-kids": "Armenian-Alphabet-for-Kids.zip",
+    "wedding-planner-bundle": "Wedding-Planner-and-Shower-Games.zip",
 }
 PERMALINKS = {
     "budget-planner": "budget-planner",
@@ -59,6 +60,7 @@ PERMALINKS = {
     "resume-templates": "resume-templates",
     "boho-wall-art": "boho-wall-art",
     "armenian-alphabet-kids": "armenian-alphabet",
+    "wedding-planner-bundle": "wedding-planner",
 }
 
 

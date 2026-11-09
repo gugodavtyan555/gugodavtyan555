@@ -57,7 +57,9 @@ async function computeInfo(pair, now) {
   else if (all5) sc = ((d15 === "UP" && r5 > 70) || (d15 === "DOWN" && r5 < 30)) ? 9 : 10;
   else if (full) sc = 6; else sc = 3;
   const bar = tfs.M1.t[tfs.M1.t.length - 1];
-  return { pair, st, r5, r1, score: sc + (1 - Math.abs(r5 - 50) / 50) * 0.5, dir: d15, price: st.M1[1], bar, all5, full, agree: d15 === d5 };
+  const m5c = tfs.M5.c, n5 = m5c.length; let tr = 0; for (let i = n5 - 14; i < n5; i++) tr += Math.abs(m5c[i] - m5c[i - 1]);
+  const atr = tr / 14, feat = { hour: new Date(now * 1000).getUTCHours(), rsi5: +r5.toFixed(1), rsi1: +r1.toFixed(1), dist: +(Math.abs(st.M5[1] - st.M5[2]) / atr).toFixed(2), vol: +(atr / st.M5[1] * 1e4).toFixed(2) };
+  return { feat, pair, st, r5, r1, score: sc + (1 - Math.abs(r5 - 50) / 50) * 0.5, dir: d15, price: st.M1[1], bar, all5, full, agree: d15 === d5 };
 }
 
 // ---------- rendering ----------
@@ -180,7 +182,7 @@ async function rankAndSettle(env, boundary, wait) {
     const { results } = await env.DB.prepare("SELECT info, asof FROM scan WHERE asof = ?").bind(boundary).all();
     const rows = results.map(r => JSON.parse(r.info)).filter(i => i.bar >= boundary - 180).sort((a, b) => b.score - a.score).slice(0, TOP_N);
     for (const i of rows) if (i.score >= 9) {
-      await env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score) VALUES (?,?,?,?,?,?)").bind(i.pair, i.dir, boundary, boundary + 300, i.price, Math.round(i.score * 100) / 100).run();
+      await env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat) VALUES (?,?,?,?,?,?,?)").bind(i.pair, i.dir, boundary, boundary + 300, i.price, Math.round(i.score * 100) / 100, JSON.stringify(i.feat)).run();
       out.opened.push(i.pair);
     }
   }

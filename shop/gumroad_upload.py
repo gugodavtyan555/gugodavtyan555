@@ -36,6 +36,7 @@ ZIPS = {
     "escape-room-clockwork-lab": "Escape-Room-Clockwork-Lab.zip",
     "resume-templates": "Resume-Templates-Bundle.zip",
     "boho-wall-art": "Boho-Wall-Art-Set.zip",
+    "armenian-alphabet-kids": "Armenian-Alphabet-for-Kids.zip",
 }
 PERMALINKS = {
     "budget-planner": "budget-planner",
@@ -57,6 +58,7 @@ PERMALINKS = {
     "escape-room-clockwork-lab": "escape-room",
     "resume-templates": "resume-templates",
     "boho-wall-art": "boho-wall-art",
+    "armenian-alphabet-kids": "armenian-alphabet",
 }
 
 

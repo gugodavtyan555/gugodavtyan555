@@ -39,6 +39,8 @@ const items = {
     [['e8-08.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['e5-05.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['e1-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
   'resume-templates': page('Resume Templates Bundle', '5 one-page designs + cover letters for Word and Google Docs.', ['5 designs', 'Cover letters', 'Word + Docs', 'Letter + A4'],
     [['rs-Executive-1.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['rs-Two-Column-1.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['rs-Modern-1.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
+  'armenian-alphabet-kids': page('Armenian Alphabet for Kids', 'All 39 letters: colour, trace and learn. Հայոց այբուբեն.', ['39 letters', 'Tracing', 'Flashcards', 'Poster'],
+    [['hl-04.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['hp-03.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['hc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
 };
 
 (async () => {

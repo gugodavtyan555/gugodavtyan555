@@ -58,7 +58,7 @@ def main():
     offset = None; print("bot started")
     while True:
         try:
-            ups = requests.get(f"{API}/getUpdates", params={"timeout": 30, "offset": offset}, timeout=40).json().get("result", [])
+            ups = requests.get(f"{API}/getUpdates", params={"timeout": 8, "offset": offset}, timeout=20).json().get("result", [])
         except Exception as e:
             print("poll error", e); time.sleep(5); continue
         for u in ups:

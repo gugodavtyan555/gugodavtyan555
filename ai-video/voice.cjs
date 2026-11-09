@@ -14,8 +14,8 @@ async function tts(text,out){
   const v=cfg.voice;if(!v||/ВСТАВЬ/.test(v.id))throw new Error('Впиши voice.id в scenes.js');
   const r=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${v.id}?output_format=mp3_44100_128`,{
     method:'POST',headers:{'xi-api-key':key,'content-type':'application/json'},
-    body:JSON.stringify({text,model_id:v.model||'eleven_multilingual_v2',language_code:'ru',
-      voice_settings:{stability:.45,similarity_boost:.8,style:.35,speed:1.05}})});
+    body:JSON.stringify({text,model_id:v.model||'eleven_v3',
+      voice_settings:{stability:v.stability??0.5}})});
   if(!r.ok)throw new Error('ElevenLabs '+r.status+': '+(await r.text()).slice(0,200));
   fs.writeFileSync(out,Buffer.from(await r.arrayBuffer()));
 }

@@ -14,7 +14,8 @@
 4. Без озвучки: просто `node build.cjs out.mp4` (сцены по 2.6 сек, тихое видео).
 
 Нужны: node 18+, playwright (chromium), ffmpeg.
-`PROVIDER=mock node voice.cjs` — писк вместо голоса, только для проверки конвейера.
+`PROVIDER=mock node voice.cjs` — писк вместо голоса (проверка конвейера).
+После озвучки: `python3 mix.py` (нужен numpy) синтезирует музыку и SFX и миксует с дакингом → audio/mix.wav, затем `node build.cjs out.mp4`.
 
 Иконки: clock, timer, film, bulb, doc, wave, timeline, coin, arrow.
 Герои: робот «Пикс» и слизень «Глюк» — спрайты в `render.html`.

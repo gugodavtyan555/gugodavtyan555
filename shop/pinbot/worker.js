@@ -16,7 +16,12 @@ async function addLog(env, st, line) {
 }
 
 async function send(env, st, idx, sample = false) {
-  const pin = PINS[idx];
+  const pin = { ...PINS[idx] };
+  // Pinterest search reads keywords from the description; hashtags no longer help.
+  if (pin.keywords) {
+    const extra = `\n\nIdeas for: ${pin.keywords}.`;
+    if ((pin.description + extra).length <= 500) pin.description += extra;
+  }
   const r = await fetch(st.webhook, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },

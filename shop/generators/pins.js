@@ -30,6 +30,9 @@ const BOARDS = {
   'murder-mystery-mistletoe-manor': 'Christmas Party Ideas',
   'new-years-eve-party-games': 'Christmas Party Ideas',
   'escape-room-clockwork-lab': 'Puzzle Books',
+  'resume-templates': 'Resume Templates',
+  'boho-wall-art': 'Wall Art Prints',
+  'armenian-alphabet-kids': 'Armenian for Kids',
   'holiday-budget-planner': 'Budget Templates',
   'free-budget-template': 'Budget Templates',
   'budget-planner': 'Budget Templates',
@@ -145,6 +148,22 @@ const PINS8 = [
   ['escape-room-clockwork-lab', 'Escape Room Puzzles for Kids (Printable)', 'Cipher · maze · Morse code', 'Great for classrooms, homeschool and sleepovers: kids practise maths, logic and reading while racing the clock.', 'escape room classroom, homeschool activities, logic puzzles for kids, educational games'],
 ];
 
+// Batch 9 (Nov 9, 2026): resume templates, boho wall art and the Armenian alphabet pack.
+const PINS9 = [
+  ['resume-templates', 'Resume Templates for Word & Google Docs', '5 designs + cover letters', 'Classic, Modern, Two-Column, Minimal and Executive: one-page resumes you can edit in minutes. Letter and A4.', 'resume template, google docs resume, word resume template, job search tips'],
+  ['boho-wall-art', 'Boho Wall Art Set of 6', 'Printable · mid-century', 'Warm earth-tone prints for a gallery wall: sun and hills, rainbow arches, Bauhaus shapes and more. 5 sizes each.', 'boho wall art, mid century modern art, printable wall art, gallery wall ideas'],
+  ['armenian-alphabet-kids', 'Armenian Alphabet for Kids: Printable Pack', 'Հայոց այբուբեն', 'All 39 letters with colouring, tracing, an example word, flashcards and a poster. Eastern Armenian.', 'armenian alphabet, learn armenian, armenian for kids, armenian worksheets'],
+  ['resume-templates', 'One-Page Resume That Gets Interviews', 'Edit in 10 minutes', 'Professional resume and cover letter templates with an editing guide and tips for writing strong bullet points.', 'resume tips, one page resume, cover letter template, career advice'],
+  ['boho-wall-art', 'Gallery Wall Ideas: Earthy Abstract Prints', 'Download · print · frame', 'Six prints that work together in any room. Re-composed for every frame ratio, from 4x6 to 24x36 and A5 to A1.', 'gallery wall, living room wall decor, abstract art print, earthy home decor'],
+  ['armenian-alphabet-kids', 'Teach Your Child the Armenian Alphabet', 'Colour · trace · learn', 'One page a day: colour the letter, say the word, trace the letters. With flashcards and a certificate.', 'armenian language, armenian heritage, bilingual kids, alphabet tracing'],
+  ['resume-templates', 'Two-Column Resume Template', 'Modern and easy to edit', 'A clean two-column layout with a sidebar for skills and contact details. Word and Google Docs, Letter and A4.', 'two column resume, modern resume template, creative resume, resume design'],
+  ['boho-wall-art', 'Mid-Century Rainbow & Sun Prints', 'Printable wall art', 'Rainbow arches, a sunset over hills and golden waves: cheerful boho prints for a nursery, bedroom or office.', 'rainbow wall art, sun print, nursery wall art, boho bedroom decor'],
+  ['armenian-alphabet-kids', 'Armenian Flashcards for Kids', '39 letter cards', 'Capital and small letters with an example word and meaning on every card. Print, cut and play.', 'armenian flashcards, armenian school, diaspora kids, language learning'],
+  ['resume-templates', 'Executive Resume Template', 'Bold header, serif style', 'A confident resume design with a coloured header and matching cover letter. Edit in Word or Google Docs.', 'executive resume, professional resume template, cv template, job application'],
+  ['boho-wall-art', 'Bauhaus & Boho Leaf Wall Prints', 'Instant download', 'Geometric Bauhaus shapes and a boho leaf in terracotta, mustard and sage. 300 dpi, sharp up to 24x36.', 'bauhaus print, boho leaf art, geometric wall art, terracotta decor'],
+  ['armenian-alphabet-kids', 'Armenian Alphabet Poster + Tracing Pages', 'Ages 3–8', 'A colourful alphabet poster for the wall and tracing pages for every letter, from Ա to Ֆ.', 'armenian alphabet poster, armenian printables, kids learning, homeschool armenian'],
+];
+
 const THEMES = [
   { bg: '#EEF4F0', ink: '#1F2A37', accent: '#2F7D5B', band: '#2F7D5B', bandInk: '#FFFFFF' },
   { bg: '#FBF3E8', ink: '#2B2118', accent: '#B5622E', band: '#2B2118', bandInk: '#FBF3E8' },
@@ -177,7 +196,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1500 }, deviceScaleFactor: 1 });
   const rows = [];
-  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8];
+  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8, ...PINS9];
   for (let i = 0; i < ALL.length; i++) {
     const [ref, headline, , description, keywords] = ALL[i];
     const file = `pin-${String(i + 1).padStart(2, '0')}-${ref.replace('blog:', '')}.jpg`;
@@ -228,9 +247,14 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   while (fresh7.length || rest7.length) { if (fresh7.length) order.push(fresh7.shift()); for (let k = 0; k < 2 && rest7.length; k++) order.push(rest7.shift()); }
   // Batch 8 (escape room): one every 6 pins from queue position 16.
   const START8 = 16;
-  const fresh8 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length + PINS7.length);
+  const fresh8 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length + PINS7.length, PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length + PINS7.length + PINS8.length);
   const rest8 = order.splice(START8);
   while (fresh8.length || rest8.length) { if (fresh8.length) order.push(fresh8.shift()); for (let k = 0; k < 5 && rest8.length; k++) order.push(rest8.shift()); }
+  // Batch 9 (resume, wall art, Armenian): one every 3 pins from queue position 12.
+  const START9 = 12;
+  const fresh9 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length + PINS7.length + PINS8.length);
+  const rest9 = order.splice(START9);
+  while (fresh9.length || rest9.length) { if (fresh9.length) order.push(fresh9.shift()); for (let k = 0; k < 2 && rest9.length; k++) order.push(rest9.shift()); }
   fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
     title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
     alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,

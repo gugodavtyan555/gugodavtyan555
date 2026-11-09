@@ -7,7 +7,7 @@ await pg.goto('file://'+dir+'/render.html');
 const fps=await pg.evaluate(()=>CONFIG.fps),total=await pg.evaluate(()=>TOTAL());
 if(only){await pg.evaluate(t=>renderAt(t),+process.env.T||1);await pg.locator('#c').screenshot({path:only});await b.close();process.exit(0);}
 const n=Math.round(total*fps);
-const fs=require('fs');const voice=[path.join(dir,'audio','mix.wav'),path.join(dir,'audio','voice.wav')].find(f=>fs.existsSync(f))||'';
+const fs=require('fs');const voice=[path.join(process.env.AUDIO_DIR||path.join(dir,'audio'),'mix.wav'),path.join(process.env.AUDIO_DIR||path.join(dir,'audio'),'voice.wav')].find(f=>fs.existsSync(f))||'';
 const music=['music.mp3','music.wav','music.m4a'].map(f=>path.join(dir,f)).find(f=>fs.existsSync(f));
 const args=['-y','-v','error','-f','image2pipe','-framerate',String(fps),'-i','-'];
 if(voice){args.push('-i',voice);

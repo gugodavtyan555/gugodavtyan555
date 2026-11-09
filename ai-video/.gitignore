@@ -1,3 +1,4 @@
 audio/
 timing.js
+env.js
 out/*.mp4

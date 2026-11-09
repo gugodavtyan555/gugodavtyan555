@@ -1,7 +1,7 @@
 """Синтез музыки + звуковых эффектов и финальный микс (голос, музыка с дакингом, SFX).
 python3 mix.py  →  audio/mix.wav   (нужны: audio/voice.wav, timing.js; numpy)"""
 import numpy as np, wave, re, json, os
-SR=44100; D=os.path.dirname(os.path.abspath(__file__)); AD=os.path.join(D,'audio')
+SR=44100; D=os.path.dirname(os.path.abspath(__file__)); AD=os.environ.get('AUDIO_DIR') or os.path.join(D,'audio')
 rng=np.random.default_rng(7)
 def rd(p):
     w=wave.open(p); a=np.frombuffer(w.readframes(w.getnframes()),np.int16).astype(np.float32)/32768
@@ -67,16 +67,16 @@ def music(total,bpm=76):
             if rng.random()<.75:add(epiano(mf(int(rng.choice(pent))),2.4)*.11,st+pos*beat)
     m=reverb(out[:n]);return m/np.abs(m).max()*.9
 # ---------- Микс ----------
-timing=json.loads(re.search(r'\[.*\]',open(os.path.join(D,'timing.js')).read()).group(0))
+timing=json.loads(re.search(r'TIMING=(\[.*?\]);',open(os.path.join(AD,'timing.js')).read()).group(1))
 voice=rd(os.path.join(AD,'voice.wav'));total=len(voice)/SR
 mus=music(total)
 # fade in/out
 f=int(.8*SR);mus[:f]*=np.linspace(0,1,f);mus[-int(1.5*SR):]*=np.linspace(1,0,int(1.5*SR))
 # дакинг под голос
 absv=np.abs(voice);w=int(.12*SR);sm=np.convolve(absv,np.ones(w)/w,'same')
-duck=np.clip(1-sm*14,.22,1);duck=lp(duck,6.0)
+duck=np.clip(1-sm*18,.10,1);duck=lp(duck,6.0)
 n=len(voice);fit=lambda x:np.pad(x,(0,max(0,n-len(x))))[:n]
-mus=fit(mus)*fit(duck)*.42
+mus=fit(mus)*fit(duck)*.10
 sfx=np.zeros(len(voice)+SR*2);st=0
 def put(x,at):
     i=int(at*SR);m=min(len(x),len(sfx)-i)
@@ -84,9 +84,14 @@ def put(x,at):
 for k,d in enumerate(timing):
     put(whoosh()*.7,st)
     st+=d
-sfx=sfx[:len(voice)]*.28
+sfx=sfx[:len(voice)]*.22
 # голос: лёгкая компрессия/нормализация
 v=voice/ max(np.abs(voice).max(),1e-3)*1.05
 mix=v*1.0+mus+sfx
 mix=np.tanh(mix*1.0)*.97
 wr(os.path.join(AD,'mix.wav'),mix);print('mix.wav',round(total,1),'сек')
+
+# огибающая голоса (24 к/с) для синхронизации губ
+fps=24;hop=SR//fps;n=len(voice)//hop;env_=np.array([np.sqrt((voice[i*hop:(i+1)*hop]**2).mean()) for i in range(n)])
+env_=env_/max(np.percentile(env_,95),1e-6);env_=np.clip(env_,0,1.2)
+open(os.path.join(AD,'env.js'),'w').write('window.ENV='+json.dumps([round(float(x),2) for x in env_])+';\n')

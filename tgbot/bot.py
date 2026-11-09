@@ -57,7 +57,7 @@ def analyze(pair):
                   f"❌ Անվավեր, եթե M5 փակվի EMA20-ի {'ներքև' if d15=='UP' else 'վերև'} ({st['M5'][2]:.5f})"]
         if (d15 == "UP" and r5 > 70) or (d15 == "DOWN" and r5 < 30):
             lines.append("⚠️ M5 RSI-ն ծայրահեղ է՝ ռեվերսի ռիսկ")
-    return "\n".join(lines) + "\n\n" + DISCLAIMER
+    return "\n".join(lines)
 
 def keyboard():
     rows = [[{"text": f"{p[:3]}/{p[3:]}", "callback_data": p} for p in PAIRS[i:i+3]] for i in range(0, len(PAIRS), 3)]

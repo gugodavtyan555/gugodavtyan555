@@ -2,10 +2,14 @@
 Rule-based (same rule as the manual scans): follow trend when M15 & M5 agree.
 Run: TRADE_BOT_TOKEN=... python bot.py      (deps: requests, pandas)
 """
-import os, time, requests, pandas as pd
+import os, time, json, threading, requests, pandas as pd
 from concurrent.futures import ThreadPoolExecutor
+from zoneinfo import ZoneInfo
 
-SCORES = {}  # pair -> (score, direction)
+TZ = ZoneInfo("Asia/Yerevan")
+PAYOUT = 0.80  # assumed payout on real pairs (used only for virtual P&L)
+STORE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "trades.json")
+LOCK = threading.Lock()
 
 TOKEN = os.environ["TRADE_BOT_TOKEN"]
 API = f"https://api.telegram.org/bot{TOKEN}"
@@ -34,7 +38,7 @@ def closed(series, minutes, now):
     end = series.index + pd.Timedelta(minutes=minutes)
     return series[end <= now]
 
-def analyze(pair):
+def analyze_full(pair):
     raw = fetch(pair)
     now = pd.Timestamp.now("UTC").tz_localize(None)
     m1 = closed(raw, 1, now)
@@ -73,28 +77,100 @@ def analyze(pair):
     elif all5: sc = 10 if not ((d15 == "UP" and r5 > 70) or (d15 == "DOWN" and r5 < 30)) else 9
     elif full: sc = 6
     else: sc = 3
-    SCORES[pair] = (sc + (1 - abs(r5 - 50) / 50) * 0.5, d15)  # tiebreak: less extreme RSI
-    return "\n".join(lines)
+    info = {"score": sc + (1 - abs(r5 - 50) / 50) * 0.5, "dir": d15, "price": float(m1.iloc[-1]), "bar": m1.index[-1]}
+    return "\n".join(lines), info
 
-def best_signal():
-    SCORES.clear(); errs = 0
+def analyze(pair): return analyze_full(pair)[0]
+
+def rank_all():
     def run(p):
-        try: return p, analyze(p)
+        try: return p, analyze_full(p)
         except Exception: return p, None
     with ThreadPoolExecutor(8) as ex: res = dict(ex.map(run, PAIRS))
-    ok = [p for p in PAIRS if res[p] and p in SCORES]
-    if not ok: return None, "Տվյալներ չստացվեցին, փորձիր նորից։"
-    p = max(ok, key=lambda x: SCORES[x][0])
-    n5 = sum(1 for x in ok if SCORES[x][0] >= 9)
-    head = f"🔍 Սկանավորվեց {len(ok)} զույգ · 🔥 սիգնալներ՝ {n5}\n"
-    if SCORES[p][0] < 6: head += "Ուժեղ սիգնալ չկա, ամենալավը թույլ է։\n"
-    return p, head + "\n" + res[p]
+    return {p: r for p, r in res.items() if r}
+
+def best_signal():
+    res = rank_all()
+    if not res: return None, "Տվյալներ չստացվեցին, փորձիր նորից։"
+    p = max(res, key=lambda x: res[x][1]["score"])
+    n5 = sum(1 for x in res.values() if x[1]["score"] >= 9)
+    head = f"🔍 Սկանավորվեց {len(res)} զույգ · 🔥 սիգնալներ՝ {n5}\n"
+    if res[p][1]["score"] < 6: head += "Ուժեղ սիգնալ չկա, ամենալավը թույլ է։\n"
+    return p, head + "\n" + res[p][0]
+
+# ---------- virtual trade history ----------
+def load():
+    try: return json.load(open(STORE))
+    except Exception: return {"auto": True, "trades": []}
+
+def save(d): json.dump(d, open(STORE, "w"), ensure_ascii=False, indent=1)
+
+def settle_price(pair, bar_start):
+    raw = fetch(pair)
+    if bar_start in raw.index: return float(raw[bar_start])
+    return None
+
+def run_cycle(boundary):
+    """boundary: pd.Timestamp (UTC naive) of the M5 close that just happened."""
+    with LOCK:
+        d = load()
+        for t in d["trades"]:
+            if t["result"] is None and pd.Timestamp(t["exit_at"]) <= boundary:
+                px = settle_price(t["pair"], pd.Timestamp(t["exit_at"]) - pd.Timedelta(minutes=1))
+                t["tries"] = t.get("tries", 0) + 1
+                if px is None:
+                    if t["tries"] >= 4: t["result"] = "error"
+                    continue
+                t["exit"] = px
+                moved = px - t["entry"]
+                t["result"] = "draw" if moved == 0 else ("win" if (moved > 0) == (t["dir"] == "UP") else "loss")
+        if d["auto"]:
+            res = rank_all()
+            fresh = {p: r for p, r in res.items() if r[1]["bar"] >= boundary - pd.Timedelta(minutes=3)}
+            if fresh:
+                p = max(fresh, key=lambda x: fresh[x][1]["score"]); inf = fresh[p][1]
+                if inf["score"] >= 9:
+                    d["trades"].append({"pair": p, "dir": inf["dir"], "open_at": str(boundary), "exit_at": str(boundary + pd.Timedelta(minutes=5)),
+                                        "entry": inf["price"], "exit": None, "result": None, "score": round(inf["score"], 2)})
+        save(d)
+
+def scheduler():
+    while True:
+        try:
+            now = pd.Timestamp.now("UTC").tz_localize(None)
+            b = now.floor("5min")
+            wake = b + pd.Timedelta(seconds=20)
+            if now >= wake: b += pd.Timedelta(minutes=5); wake = b + pd.Timedelta(seconds=20)
+            time.sleep(max(0, (wake - pd.Timestamp.now("UTC").tz_localize(None)).total_seconds()))
+            run_cycle(b)
+        except Exception as e:
+            print("scheduler error", e); time.sleep(10)
+
+def stats(trs):
+    w = sum(t["result"] == "win" for t in trs); l = sum(t["result"] == "loss" for t in trs); dr = sum(t["result"] == "draw" for t in trs)
+    n = w + l
+    wr = f"{w/n:.1%}" if n else "—"
+    return f"✅ {w} · ❌ {l} · ➖ {dr} · Win rate {wr} · P&L {w * PAYOUT - l:+.2f} (1 միավոր/գործարք, վճար {int(PAYOUT*100)}%)"
+
+def history_text():
+    d = load(); today = pd.Timestamp.now(TZ).date()
+    loc = lambda t: pd.Timestamp(t["open_at"]).tz_localize("UTC").tz_convert(TZ)
+    td = [t for t in d["trades"] if loc(t).date() == today]
+    lines = [f"📜 *Պատմություն · {today}*  (վիրտուալ գործարքներ)", f"Ավտո՝ {'🟢 միացված' if d['auto'] else '🔴 անջատված'}", ""]
+    if not td: lines.append("Այսօր դեռ գործարք չկա։")
+    for t in td[-40:]:
+        ic = {"win": "✅", "loss": "❌", "draw": "➖", "error": "⚠️", None: "⏳"}[t["result"]]
+        ex = f"{t['exit']:.5f}" if t["exit"] else "…"
+        lines.append(f"{ic} {loc(t).strftime('%H:%M')} {t['pair'][:3]}/{t['pair'][3:]} {t['dir']} {t['entry']:.5f}→{ex}")
+    lines += ["", f"*Այսօր.* {stats(td)}", f"*Ընդհանուր ({len(d['trades'])}).* {stats(d['trades'])}",
+              f"Break-even ~{1/(1+PAYOUT):.1%}։ Շահույթի համար win rate-ը պետք է դրանից բարձր լինի՝ բավարար թվով գործարքների վրա։"]
+    return "\n".join(lines)
 
 def keyboard():
     rows = [[{"text": "🔍 Գտնել լավագույն սիգնալը", "callback_data": "BEST"}]] + [[{"text": f"{p[:3]}/{p[3:]}", "callback_data": p} for p in PAIRS[i:i+3]] for i in range(0, len(PAIRS), 3)]
     return {"inline_keyboard": rows}
 
-START_KB = {"keyboard": [[{"text": "▶️ Start"}, {"text": "🔍 Լավագույն սիգնալ"}]], "resize_keyboard": True, "is_persistent": True}
+START_KB = {"keyboard": [[{"text": "▶️ Start"}, {"text": "🔍 Լավագույն սիգնալ"}], [{"text": "📜 Պատմություն"}, {"text": "⚙️ Ավտո ON/OFF"}]], "resize_keyboard": True, "is_persistent": True}
 
 def send(chat, text, markup=None):
     requests.post(f"{API}/sendMessage", json={"chat_id": chat, "text": text, "parse_mode": "Markdown",
@@ -102,6 +178,8 @@ def send(chat, text, markup=None):
 
 def main():
     requests.post(f"{API}/setMyCommands", json={"commands": [{"command": "start", "description": "Բացել զույգերի ցանկը"}]}, timeout=10)
+    threading.Thread(target=scheduler, daemon=True).start()
+    for c in ALLOWED: send(c, "🔄 Բոտը թարմացվեց։ Ավելացվեցին «📜 Պատմություն» և «⚙️ Ավտո ON/OFF» կոճակները։", START_KB)
     offset = None; print("bot started")
     while True:
         try:
@@ -115,6 +193,12 @@ def main():
             if chat is None or (ALLOWED and chat not in ALLOWED): continue
             if msg:
                 text = msg.get("text", "")
+                if text.startswith("📜"):
+                    send(chat, history_text(), START_KB); continue
+                if text.startswith("⚙️"):
+                    with LOCK:
+                        d = load(); d["auto"] = not d["auto"]; save(d)
+                    send(chat, f"Ավտո վիրտուալ առևտուր՝ {'🟢 միացված' if d['auto'] else '🔴 անջատված'}", START_KB); continue
                 if text.startswith("🔍"):
                     send(chat, "🔍 Սկանավորում եմ 28 զույգը, սպասիր ~10 վայրկյան...")
                     try:

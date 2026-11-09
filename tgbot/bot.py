@@ -1,0 +1,75 @@
+"""Telegram bot: press a real-market FX pair -> get M15/M5/M1 trend analysis + 5-min direction.
+Rule-based (same rule as the manual scans): follow trend when M15 & M5 agree.
+Run: TRADE_BOT_TOKEN=... python bot.py      (deps: requests, pandas)
+"""
+import os, time, requests, pandas as pd
+
+TOKEN = os.environ["TRADE_BOT_TOKEN"]
+API = f"https://api.telegram.org/bot{TOKEN}"
+ALLOWED = {int(x) for x in os.environ.get("ALLOWED_CHAT_IDS", "").split(",") if x.strip()}  # empty = anyone
+PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","EURGBP","AUDCAD","EURJPY","AUDCHF","EURCHF","AUDNZD","CADJPY"]
+DISCLAIMER = ("⚠️ Ուղղությունը ենթադրություն է, ոչ երաշխիք։ Բեքթեսթում այս կանոնը իրական շուկայում ~49% էր "
+              "(break-even ~52–55%)։ Մեկ գործարք՝ փոքր գումարով։ Ոչ ֆինանսական խորհուրդ։")
+
+def ema(s, n): return s.ewm(span=n, adjust=False).mean()
+def rsi(s, n=14):
+    d = s.diff(); u = d.clip(lower=0).ewm(alpha=1/n, adjust=False).mean()
+    l = (-d.clip(upper=0)).ewm(alpha=1/n, adjust=False).mean()
+    return 100 - 100 / (1 + u / l)
+
+def fetch(pair):
+    j = requests.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{pair}=X",
+        params={"interval": "1m", "range": "1d"}, headers={"User-Agent": "Mozilla/5.0"}, timeout=20).json()["chart"]["result"][0]
+    return pd.Series(j["indicators"]["quote"][0]["close"], index=pd.to_datetime(j["timestamp"], unit="s")).dropna()
+
+def analyze(pair):
+    m1 = fetch(pair); m5 = m1.resample("5min").last().dropna(); m15 = m1.resample("15min").last().dropna()
+    st = {}
+    for name, s in (("M15", m15), ("M5", m5), ("M1", m1)):
+        e = ema(s, 20).iloc[-1]; st[name] = ("UP" if s.iloc[-1] > e else "DOWN", s.iloc[-1], e)
+    r5 = rsi(m5).iloc[-1]; r1 = rsi(m1).iloc[-1]
+    price = m1.iloc[-1]; ts = m1.index[-1].strftime("%H:%M")
+    ico = {"UP": "🟢", "DOWN": "🔴"}
+    lines = [f"📊 *{pair[:3]}/{pair[3:]}* · {ts} UTC · գին {price:.5f}", ""]
+    for k in ("M15", "M5", "M1"):
+        lines.append(f"{k}: {ico[st[k][0]]} {st[k][0]} (EMA20 {st[k][2]:.5f})")
+    lines.append(f"RSI M5 {r5:.0f} · RSI M1 {r1:.0f}\n")
+    d15, d5, d1 = st["M15"][0], st["M5"][0], st["M1"][0]
+    if d15 != d5:
+        lines += ["➡️ *WAIT / չմտնել*", "M15-ը և M5-ը հակասում են, ուղղություն չկա։"]
+    else:
+        full = d1 == d15
+        lines += [f"➡️ *{d15}* {ico[d15]} {'(երեք ժամկետն էլ համաձայն)' if full else '🟡 թույլ (M1-ը հակառակն է՝ պուլբեք)'}",
+                  "⏱ Expiry՝ *5 րոպե*",
+                  f"❌ Անվավեր, եթե M5 փակվի EMA20-ի {'ներքև' if d15=='UP' else 'վերև'} ({st['M5'][2]:.5f})"]
+        if (d15 == "UP" and r5 > 70) or (d15 == "DOWN" and r5 < 30):
+            lines.append("⚠️ M5 RSI-ն ծայրահեղ է՝ ռեվերսի ռիսկ")
+    return "\n".join(lines) + "\n\n" + DISCLAIMER
+
+def keyboard():
+    rows = [[{"text": f"{p[:3]}/{p[3:]}", "callback_data": p} for p in PAIRS[i:i+3]] for i in range(0, len(PAIRS), 3)]
+    return {"inline_keyboard": rows}
+
+def send(chat, text, markup=None):
+    requests.post(f"{API}/sendMessage", json={"chat_id": chat, "text": text, "parse_mode": "Markdown",
+        **({"reply_markup": markup} if markup else {})}, timeout=20)
+
+def main():
+    offset = None; print("bot started")
+    while True:
+        try:
+            ups = requests.get(f"{API}/getUpdates", params={"timeout": 30, "offset": offset}, timeout=40).json().get("result", [])
+        except Exception as e:
+            print("poll error", e); time.sleep(5); continue
+        for u in ups:
+            offset = u["update_id"] + 1
+            msg = u.get("message"); cb = u.get("callback_query")
+            chat = (msg or cb["message"])["chat"]["id"] if (msg or cb) else None
+            if chat is None or (ALLOWED and chat not in ALLOWED): continue
+            if msg: send(chat, "Ընտրիր զույգը 👇", keyboard())
+            elif cb:
+                requests.post(f"{API}/answerCallbackQuery", json={"callback_query_id": cb["id"]}, timeout=10)
+                try: send(chat, analyze(cb["data"]), keyboard())
+                except Exception as e: send(chat, f"Սխալ տվյալներ ստանալիս՝ {e}")
+
+if __name__ == "__main__": main()

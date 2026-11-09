@@ -19,7 +19,7 @@ def rsi(s, n=14):
 
 def fetch(pair):
     j = requests.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{pair}=X",
-        params={"interval": "1m", "range": "1d"}, headers={"User-Agent": "Mozilla/5.0"}, timeout=20).json()["chart"]["result"][0]
+        params={"interval": "1m", "range": "5d"}, headers={"User-Agent": "Mozilla/5.0"}, timeout=20).json()["chart"]["result"][0]
     return pd.Series(j["indicators"]["quote"][0]["close"], index=pd.to_datetime(j["timestamp"], unit="s")).dropna()
 
 def closed(series, minutes, now):
@@ -33,15 +33,17 @@ def analyze(pair):
     m1 = closed(raw, 1, now)
     m5 = closed(raw.resample("5min").last().dropna(), 5, now)
     m15 = closed(raw.resample("15min").last().dropna(), 15, now)
+    m30 = closed(raw.resample("30min").last().dropna(), 30, now)
+    h1 = closed(raw.resample("60min").last().dropna(), 60, now)
     st = {}
-    for name, s in (("M15", m15), ("M5", m5), ("M1", m1)):
+    for name, s in (("H1", h1), ("M30", m30), ("M15", m15), ("M5", m5), ("M1", m1)):
         e = ema(s, 20).iloc[-1]; st[name] = ("UP" if s.iloc[-1] > e else "DOWN", s.iloc[-1], e)
     r5 = rsi(m5).iloc[-1]; r1 = rsi(m1).iloc[-1]
     price = m1.iloc[-1]; ts = now.strftime("%H:%M:%S")
     since = (now.minute % 5) * 60 + now.second; nxt = 300 - since
     ico = {"UP": "🟢", "DOWN": "🔴"}
     lines = [f"📊 *{pair[:3]}/{pair[3:]}* · {ts} UTC · գին {price:.5f}", ""]
-    for k in ("M15", "M5", "M1"):
+    for k in ("H1", "M30", "M15", "M5", "M1"):
         lines.append(f"{k}: {ico[st[k][0]]} {st[k][0]} (EMA20 {st[k][2]:.5f})")
     lines.append(f"RSI M5 {r5:.0f} · RSI M1 {r1:.0f}")
     lines.append("_(հաշվարկը՝ միայն փակված մոմերով)_")
@@ -51,7 +53,9 @@ def analyze(pair):
         lines += ["➡️ *WAIT / չմտնել*", "M15-ը և M5-ը հակասում են, ուղղություն չկա։"]
     else:
         full = d1 == d15
-        lines += [f"➡️ *{d15}* {ico[d15]} {'(երեք ժամկետն էլ համաձայն)' if full else '🟡 թույլ (M1-ը հակառակն է՝ պուլբեք)'}",
+        all5 = full and st["M30"][0] == d15 and st["H1"][0] == d15
+        tag = "🔥 (բոլոր 5 ժամկետն էլ համաձայն)" if all5 else ("(M15, M5, M1 համաձայն)" if full else "🟡 թույլ (M1-ը հակառակն է՝ պուլբեք)")
+        lines += [f"➡️ *{d15}* {ico[d15]} {tag}",
                   "⏱ Expiry՝ *5 րոպե*",
                   ("✅ Մտիր հիմա (M5 մոմը նոր է փակվել)" if since <= 60 else f"⏳ Ավելի լավ է սպասել M5 փակմանը ({nxt} վ) և նոր մտնել"),
                   f"❌ Անվավեր, եթե M5 փակվի EMA20-ի {'ներքև' if d15=='UP' else 'վերև'} ({st['M5'][2]:.5f})"]

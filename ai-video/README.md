@@ -1,9 +1,20 @@
 # AI-ролик: генератор вертикальных видео кодом
 
-1. Отредактируй `scenes.js` (текст, иконки, ник).
-2. `node build.cjs out.mp4` — рендер 1080×1920, 24 fps (нужны playwright и ffmpeg).
-3. Озвучку (ElevenLabs и др.) и музыку добавь поверх через ffmpeg:
-   `ffmpeg -i out.mp4 -i voice.mp3 -map 0:v -map 1:a -c:v copy -shortest final.mp4`
+## Быстрый старт
+1. Правь `scenes.js`: `top`/`big`/`sub` (текст на экране), `icon`, `say` (реплика диктора), `handle` (твой ник).
+2. Озвучка (ElevenLabs):
+   ```
+   export ELEVENLABS_API_KEY=...        # ключ из elevenlabs.io
+   # в scenes.js впиши voice.id (Voices → выбери русский голос → Copy ID)
+   node voice.cjs                       # audio/voice.wav + timing.js
+   node build.cjs out.mp4               # видео с голосом, длина сцен = длина реплик
+   ```
+   Повторный запуск озвучивает только изменённые реплики (кэш по тексту).
+3. Музыка (по желанию): положи `music.mp3` рядом — она подмешается тихо и приглушается под голос.
+4. Без озвучки: просто `node build.cjs out.mp4` (сцены по 2.6 сек, тихое видео).
+
+Нужны: node 18+, playwright (chromium), ffmpeg.
+`PROVIDER=mock node voice.cjs` — писк вместо голоса, только для проверки конвейера.
 
 Иконки: clock, timer, film, bulb, doc, wave, timeline, coin, arrow.
 Герои: робот «Пикс» и слизень «Глюк» — спрайты в `render.html`.

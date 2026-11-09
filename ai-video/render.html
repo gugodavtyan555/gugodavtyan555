@@ -2,6 +2,7 @@
 <style>html,body{margin:0;background:#0d0b1e}canvas{display:block}</style>
 <canvas id="c" width="540" height="960"></canvas>
 <script src="scenes.js"></script>
+<script src="timing.js" onerror="void 0"></script>
 <script>
 const W=540,H=960,cv=document.getElementById('c'),g=cv.getContext('2d');
 const C={bg:'#0d0b1e',bg2:'#1a1440',ink:'#f4f1ff',lime:'#b6ff3b',cyan:'#3de8ff',pink:'#ff4fa3',dim:'#6d64a8',
@@ -112,9 +113,10 @@ function side(t,lt){
   sprite(SLIME,SC,x,y,s);g.restore();
 }
 function render(t){
-  const cfg=window.CONFIG,D=cfg.sceneSec,N=cfg.scenes.length,total=N*D;
+  const cfg=window.CONFIG,N=cfg.scenes.length,total=window.TOTAL();
   bg(t);
-  const i=Math.min(Math.floor(t/D),N-1),lt=t-i*D,sc=cfg.scenes[i];
+  const dur=sceneDurs();let i=0,st=0;while(i<N-1&&t>=st+dur[i]){st+=dur[i];i++;}
+  const D=dur[i],lt=t-st,sc=cfg.scenes[i];
   // верхний текст
   const a=ease(lt/.18);
   g.globalAlpha=a;
@@ -147,6 +149,7 @@ function render(t){
   // прогресс
   g.fillStyle=C.lime;g.fillRect(0,0,W*Math.min(t/total,1),6);
 }
-window.TOTAL=()=>window.CONFIG.scenes.length*window.CONFIG.sceneSec;
+function sceneDurs(){const c=window.CONFIG,T=window.TIMING;return c.scenes.map((_,k)=>T&&T[k]?T[k]:c.sceneSec);}
+window.TOTAL=()=>sceneDurs().reduce((a,b)=>a+b,0);
 window.renderAt=render;render(0.5);
 </script>

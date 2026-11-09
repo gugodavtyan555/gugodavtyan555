@@ -3,6 +3,9 @@ Rule-based (same rule as the manual scans): follow trend when M15 & M5 agree.
 Run: TRADE_BOT_TOKEN=... python bot.py      (deps: requests, pandas)
 """
 import os, time, requests, pandas as pd
+from concurrent.futures import ThreadPoolExecutor
+
+SCORES = {}  # pair -> (score, direction)
 
 TOKEN = os.environ["TRADE_BOT_TOKEN"]
 API = f"https://api.telegram.org/bot{TOKEN}"
@@ -62,13 +65,32 @@ def analyze(pair):
                   f"❌ Անվավեր, եթե M5 փակվի EMA20-ի {'ներքև' if d15=='UP' else 'վերև'} ({st['M5'][2]:.5f})"]
         if (d15 == "UP" and r5 > 70) or (d15 == "DOWN" and r5 < 30):
             lines.append("⚠️ M5 RSI-ն ծայրահեղ է՝ ռեվերսի ռիսկ")
+    if d15 != d5: sc = 0
+    elif all5: sc = 10 if not ((d15 == "UP" and r5 > 70) or (d15 == "DOWN" and r5 < 30)) else 9
+    elif full: sc = 6
+    else: sc = 3
+    SCORES[pair] = (sc + (1 - abs(r5 - 50) / 50) * 0.5, d15)  # tiebreak: less extreme RSI
     return "\n".join(lines)
 
+def best_signal():
+    SCORES.clear(); errs = 0
+    def run(p):
+        try: return p, analyze(p)
+        except Exception: return p, None
+    with ThreadPoolExecutor(8) as ex: res = dict(ex.map(run, PAIRS))
+    ok = [p for p in PAIRS if res[p] and p in SCORES]
+    if not ok: return None, "Տվյալներ չստացվեցին, փորձիր նորից։"
+    p = max(ok, key=lambda x: SCORES[x][0])
+    n5 = sum(1 for x in ok if SCORES[x][0] >= 9)
+    head = f"🔍 Սկանավորվեց {len(ok)} զույգ · 🔥 սիգնալներ՝ {n5}\n"
+    if SCORES[p][0] < 6: head += "Ուժեղ սիգնալ չկա, ամենալավը թույլ է։\n"
+    return p, head + "\n" + res[p]
+
 def keyboard():
-    rows = [[{"text": f"{p[:3]}/{p[3:]}", "callback_data": p} for p in PAIRS[i:i+3]] for i in range(0, len(PAIRS), 3)]
+    rows = [[{"text": "🔍 Գտնել լավագույն սիգնալը", "callback_data": "BEST"}]] + [[{"text": f"{p[:3]}/{p[3:]}", "callback_data": p} for p in PAIRS[i:i+3]] for i in range(0, len(PAIRS), 3)]
     return {"inline_keyboard": rows}
 
-START_KB = {"keyboard": [[{"text": "▶️ Start"}]], "resize_keyboard": True, "is_persistent": True}
+START_KB = {"keyboard": [[{"text": "▶️ Start"}, {"text": "🔍 Լավագույն սիգնալ"}]], "resize_keyboard": True, "is_persistent": True}
 
 def send(chat, text, markup=None):
     requests.post(f"{API}/sendMessage", json={"chat_id": chat, "text": text, "parse_mode": "Markdown",
@@ -89,10 +111,23 @@ def main():
             if chat is None or (ALLOWED and chat not in ALLOWED): continue
             if msg:
                 text = msg.get("text", "")
+                if text.startswith("🔍"):
+                    send(chat, "🔍 Սկանավորում եմ 28 զույգը, սպասիր ~10 վայրկյան...")
+                    try:
+                        p, t = best_signal()
+                        send(chat, t, {"inline_keyboard": [[{"text": f"🔄 {p[:3]}/{p[3:]}", "callback_data": p}] if p else [], [{"text": "🔍 Նորից գտնել", "callback_data": "BEST"}]]})
+                    except Exception as e: send(chat, f"Սխալ՝ {e}")
+                    continue
                 if text.startswith("/start"): send(chat, "Բարև 👋 Ներքևի «▶️ Start» կոճակով ցանկացած պահի կարող ես բացել զույգերի ցանկը։", START_KB)
                 send(chat, "Ընտրիր զույգը 👇", keyboard())
             elif cb:
                 requests.post(f"{API}/answerCallbackQuery", json={"callback_query_id": cb["id"]}, timeout=10)
+                if cb["data"] == "BEST":
+                    try:
+                        p, t = best_signal()
+                        send(chat, t, {"inline_keyboard": [[{"text": f"🔄 {p[:3]}/{p[3:]}", "callback_data": p}] if p else [], [{"text": "🔍 Նորից գտնել", "callback_data": "BEST"}]]})
+                    except Exception as e: send(chat, f"Սխալ՝ {e}")
+                    continue
                 try:
                     p = cb["data"]
                     send(chat, analyze(p), {"inline_keyboard": [[{"text": f"🔄 {p[:3]}/{p[3:]}", "callback_data": p}]]})

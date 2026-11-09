@@ -16,5 +16,5 @@ window.CONFIG = {
   ],
   sceneSec: 2.6,   // запасная длительность, если озвучки нет
   minSceneSec: 2.0,
-  voice: { id: 'ВСТАВЬ_VOICE_ID', model: 'eleven_multilingual_v2' }  // ключ — в env ELEVENLABS_API_KEY
+  voice: { id: 'pNInz6obpgDQGcFmaJgB', model: 'eleven_multilingual_v2' }  // ключ — в env ELEVENLABS_API_KEY
 };

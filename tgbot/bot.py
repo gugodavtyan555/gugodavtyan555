@@ -50,11 +50,14 @@ def keyboard():
     rows = [[{"text": f"{p[:3]}/{p[3:]}", "callback_data": p} for p in PAIRS[i:i+3]] for i in range(0, len(PAIRS), 3)]
     return {"inline_keyboard": rows}
 
+START_KB = {"keyboard": [[{"text": "▶️ Start"}]], "resize_keyboard": True, "is_persistent": True}
+
 def send(chat, text, markup=None):
     requests.post(f"{API}/sendMessage", json={"chat_id": chat, "text": text, "parse_mode": "Markdown",
         **({"reply_markup": markup} if markup else {})}, timeout=20)
 
 def main():
+    requests.post(f"{API}/setMyCommands", json={"commands": [{"command": "start", "description": "Բացել զույգերի ցանկը"}]}, timeout=10)
     offset = None; print("bot started")
     while True:
         try:
@@ -66,7 +69,10 @@ def main():
             msg = u.get("message"); cb = u.get("callback_query")
             chat = (msg or cb["message"])["chat"]["id"] if (msg or cb) else None
             if chat is None or (ALLOWED and chat not in ALLOWED): continue
-            if msg: send(chat, "Ընտրիր զույգը 👇", keyboard())
+            if msg:
+                text = msg.get("text", "")
+                if text.startswith("/start"): send(chat, "Բարև 👋 Ներքևի «▶️ Start» կոճակով ցանկացած պահի կարող ես բացել զույգերի ցանկը։", START_KB)
+                send(chat, "Ընտրիր զույգը 👇", keyboard())
             elif cb:
                 requests.post(f"{API}/answerCallbackQuery", json={"callback_query_id": cb["id"]}, timeout=10)
                 try: send(chat, analyze(cb["data"]), keyboard())

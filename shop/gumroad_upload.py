@@ -35,6 +35,7 @@ ZIPS = {
     "new-years-eve-party-games": "New-Years-Eve-Party-Games.zip",
     "escape-room-clockwork-lab": "Escape-Room-Clockwork-Lab.zip",
     "resume-templates": "Resume-Templates-Bundle.zip",
+    "boho-wall-art": "Boho-Wall-Art-Set.zip",
 }
 PERMALINKS = {
     "budget-planner": "budget-planner",
@@ -55,6 +56,7 @@ PERMALINKS = {
     "new-years-eve-party-games": "new-years-eve-games",
     "escape-room-clockwork-lab": "escape-room",
     "resume-templates": "resume-templates",
+    "boho-wall-art": "boho-wall-art",
 }
 
 

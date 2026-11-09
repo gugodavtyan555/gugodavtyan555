@@ -102,15 +102,19 @@ const oneKb = p => ({ inline_keyboard: [[{ text: `🔄 ${pairName(p)}`, callback
 const bestKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] : []), [{ text: "🔍 Նորից գտնել", callback_data: "BEST" }]] });
 
 async function bestSignal(env, now) {
+  // Fresh re-check at press time. Free plan allows 50 subrequests/invocation (2 per pair),
+  // so we re-check the pairs that were aligned (M15=M5) in the last scan, strongest first (max 21).
   const { results } = await env.DB.prepare("SELECT pair, asof, info FROM scan WHERE asof >= ?").bind(now - 900).all();
-  const rows = results.map(r => ({ asof: r.asof, ...JSON.parse(r.info) }));
-  if (!rows.length) return { pair: null, text: "Վերջին սկանավորման տվյալներ դեռ չկան (շուկան փակ է կամ ցիկլը նոր է սկսվում)։ Փորձիր 1–2 րոպե հետո։" };
-  rows.sort((a, b) => b.score - a.score);
-  const b = rows[0], n5 = rows.filter(r => r.full).length;
-  const age = now - b.asof;
-  let head = `🔍 Սկանավորվեց ${rows.length} զույգ · 🔥 սիգնալներ՝ ${n5}\n_(տվյալները ${mmss(age)} առաջվա են)_\n`;
-  if (!b.full) head += "Ուժեղ սիգնալ չկա, ամենալավը թույլ է։\n";
-  return { pair: b.pair, text: head + "\n" + render(b, now) };
+  const cached = results.map(r => ({ asof: r.asof, ...JSON.parse(r.info) }));
+  if (!cached.length) return { pair: null, text: "Վերջին սկանավորման տվյալներ դեռ չկան (շուկան փակ է կամ ցիկլը նոր է սկսվում)։ Փորձիր 1–2 րոպե հետո։" };
+  const cand = cached.filter(r => r.agree).sort((a, b) => b.score - a.score).slice(0, 21);
+  const fresh = (await Promise.all(cand.map(r => computeInfo(r.pair, now).catch(() => null)))).filter(i => i && i.bar >= now - 180);
+  if (!fresh.length) return { pair: null, text: "Թարմ տվյալներ չստացվեցին (շուկան կարող է փակ լինել)։ Փորձիր նորից։" };
+  fresh.sort((a, b) => b.score - a.score);
+  const b0 = fresh[0], n5 = fresh.filter(r => r.full).length;
+  let head = `🔍 Ստուգվեց ${fresh.length} զույգ հենց հիմա · 🔥 սիգնալներ՝ ${n5}\n`;
+  if (!b0.full) head += "Ուժեղ սիգնալ չկա, ամենալավը թույլ է։\n";
+  return { pair: b0.pair, text: head + "\n" + render(b0, now) };
 }
 
 async function historyText(env, now) {
@@ -159,7 +163,7 @@ async function handleUpdate(env, u) {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function scanGroup(env, g, boundary, wait) {
-  if (wait) await sleep(15000);
+  if (wait) await sleep(3000);
   const now = Math.floor(Date.now() / 1000);
   const mine = PAIRS.filter((_, i) => i % GROUPS === g);
   const res = await Promise.all(mine.map(p => computeInfo(p, now).catch(() => null)));
@@ -169,7 +173,7 @@ async function scanGroup(env, g, boundary, wait) {
 }
 
 async function rankAndSettle(env, boundary, wait) {
-  if (wait) await sleep(20000);  // give the other scan group time to finish
+  if (wait) await sleep(8000);  // give the other scan group time to finish
   const out = { settled: 0, opened: [] };
   // settle
   const { results: open } = await env.DB.prepare("SELECT * FROM trades WHERE result IS NULL AND exit_at <= ?").bind(boundary).all();

@@ -19,3 +19,9 @@
 
 Иконки: clock, timer, film, bulb, doc, wave, timeline, coin, arrow.
 Герои: робот «Пикс» и слизень «Глюк» — спрайты в `render.html`.
+
+## Серия роликов (производство)
+- `episodes/epNN.js` — один ролик (заголовок, подпись, хэштеги, сцены с `data` для центральных визуалов).
+- `base.js` — общие настройки (ник, голоса).
+- `node produce.cjs [ep02 ep03 …]` → `out/epNN.mp4`, `out/epNN.txt` (подпись), `out/schedule.csv` (даты/время).
+- Публикация в TikTok: TikTok Studio → Upload → Schedule (подпись и хэштеги из `.txt`).

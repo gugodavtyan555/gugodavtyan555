@@ -68,7 +68,6 @@ def music(total,bpm=76):
     m=reverb(out[:n]);return m/np.abs(m).max()*.9
 # ---------- Микс ----------
 timing=json.loads(re.search(r'\[.*\]',open(os.path.join(D,'timing.js')).read()).group(0))
-icons=re.findall(r'icon:\s*"(\w+)"',open(os.path.join(D,'scenes.js')).read())
 voice=rd(os.path.join(AD,'voice.wav'));total=len(voice)/SR
 mus=music(total)
 # fade in/out
@@ -76,14 +75,14 @@ f=int(.8*SR);mus[:f]*=np.linspace(0,1,f);mus[-int(1.5*SR):]*=np.linspace(1,0,int
 # дакинг под голос
 absv=np.abs(voice);w=int(.12*SR);sm=np.convolve(absv,np.ones(w)/w,'same')
 duck=np.clip(1-sm*14,.22,1);duck=lp(duck,6.0)
-mus=mus[:len(voice)]*duck[:len(mus)]*.42
+n=len(voice);fit=lambda x:np.pad(x,(0,max(0,n-len(x))))[:n]
+mus=fit(mus)*fit(duck)*.42
 sfx=np.zeros(len(voice)+SR*2);st=0
 def put(x,at):
     i=int(at*SR);m=min(len(x),len(sfx)-i)
     if m>0:sfx[i:i+m]+=x[:m]
 for k,d in enumerate(timing):
     put(whoosh()*.7,st)
-    for dt,x in ICON_SFX.get(icons[k],lambda:[])():put(x,st+dt)
     st+=d
 sfx=sfx[:len(voice)]*.28
 # голос: лёгкая компрессия/нормализация

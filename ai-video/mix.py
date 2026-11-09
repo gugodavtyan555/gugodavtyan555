@@ -38,7 +38,7 @@ def beepup():return np.concatenate([pop(500,500,.07),pop(800,800,.07),pop(1100,1
 def coin():
     return np.concatenate([pop(1700,1700,.06),ding(2093,.6)])
 def bounce():return np.concatenate([pop(600,300,.1),np.zeros(int(.1*SR)),pop(600,300,.1)])
-ICON_SFX={'clock':lambda:[(0.15,tick(2000)),(0.65,tick(1500)),(1.15,tick(2000)),(1.65,tick(1500))],
+ICON_SFX={'week':lambda:[(0.2+k*.16,click()) for k in range(5)],'gauge':lambda:[(0.15,rise(1.3))],'flow':lambda:[(0.15,pop()),(0.75,pop()),(1.35,ding(1318))],'crosslist':lambda:[(0.5+k*.6,snip()) for k in range(4)],'tools':lambda:[(0.2,pop()),(0.55,pop()),(0.9,pop())],'prompt':lambda:[(0.15+k*.05,click()) for k in range(14)]+[(1.0,pop()),(1.3,pop()),(1.6,pop())],'checklist':lambda:[(0.5,ding(1568)),(1.1,ding(1568)),(1.7,ding(1760))],'voicepick':lambda:[(0.2,pop()),(0.5,pop()),(1.3,beepup())],'progress':lambda:[(0.15,rise(1.6)),(0.6,ding(1318)),(1.1,ding(1568)),(1.6,ding(1760))],'free':lambda:[(0.2,coin())],'tg':lambda:[(0.3,bounce()),(0.9,bounce()),(1.5,bounce())],'clock':lambda:[(0.15,tick(2000)),(0.65,tick(1500)),(1.15,tick(2000)),(1.65,tick(1500))],
  'timer':lambda:[(0.2,rise(1.3))],'film':lambda:[(0.25,snip())],'bulb':lambda:[(0.25,ding(1568))],
  'doc':lambda:[(0.15+k*.25,click()) for k in range(6)],'wave':lambda:[(0.2,beepup())],
  'timeline':lambda:[(0.2,click()),(0.5,click()),(0.8,click())],'coin':lambda:[(0.3,coin())],

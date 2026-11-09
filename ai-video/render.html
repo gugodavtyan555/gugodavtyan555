@@ -1,6 +1,7 @@
 <!doctype html><meta charset="utf-8">
 <style>html,body{margin:0;background:#0d0b1e}canvas{display:block}</style>
 <canvas id="c" width="540" height="960"></canvas>
+<script src="assets/logos.js"></script>
 <script src="scenes.js"></script>
 <script src="timing.js" onerror="void 0"></script>
 <script src="env.js" onerror="void 0"></script>
@@ -152,7 +153,7 @@ const ICON={
 };
 
 /* ===== конкретные UI-визуалы (как «интерфейсы» в референсе) ===== */
-const GRN='#3dff96';const DT=()=>(window.CUR&&window.CUR.data)||{};
+const GRN='#3dff96';const logoCol=hx=>{const n=parseInt(hx.slice(1),16),r=n>>16,g_=(n>>8)&255,b=n&255;return (0.2126*r+0.7152*g_+0.0722*b)<60?'#ffffff':hx;};const DT=()=>(window.CUR&&window.CUR.data)||{};
 function win(x,y,w,h,title){rr(x,y,w,h,14);g.fillStyle=C.panel;g.fill();stroke(C.line,2.5);g.stroke();
   [C.red,C.dim,C.dim].forEach((c,i)=>{g.fillStyle=c;g.beginPath();g.arc(x+18+i*14,y+17,4,0,7);g.fill();});
   if(title)txt(title,x+w-14,y+23,14,C.dim,700,'right','DejaVu Sans Mono');}
@@ -181,10 +182,13 @@ Object.assign(ICON,{
    const sz=fit(s,205,25,700,FONT2);txt(s,-100,y+28,sz,C.ink,700,'left',FONT2);const sw=g.measureText(s).width;g.globalAlpha=1;
    stroke(C.red,4);g.beginPath();g.moveTo(-104,y+21);g.lineTo(-100+sw*k,y+21);g.stroke();
    if(k>.9){stroke(C.red,4);g.beginPath();g.moveTo(122,y+12);g.lineTo(136,y+30);g.moveTo(136,y+12);g.lineTo(122,y+30);g.stroke();}});},
- tools(t){(DT().cards||[['Claude','сценарий','C',null],['ElevenLabs','голос','E','лимит'],['Pexels','видео','P','бесплатно']]).forEach(([n,r,l,tag],i)=>{
+ tools(t){(DT().cards||[['Claude','сценарий','claude',null],['ElevenLabs','голос','elevenlabs','лимит'],['Pexels','видео','pexels','бесплатно']]).forEach(([n,r,l,tag],i)=>{
    const k=back(t*2.2-i*.35);if(k<=0)return;const x=-212+i*144;g.save();g.translate(x+66,10);g.scale(clamp(k),clamp(k));g.translate(-66,-10);
    rr(0,-120,132,220,14);g.fillStyle=C.panel;g.fill();stroke(i==0?C.red:C.line,3);g.stroke();
-   pill(r,16,-106,100,26,C.dim);g.beginPath();g.arc(66,-30,34,0,7);g.fillStyle='rgba(229,71,46,.18)';g.fill();stroke(C.red,3);g.stroke();txt(l,66,-17,40,C.red,900);
+   pill(r,16,-106,100,26,C.dim);const LG=window.LOGOS&&window.LOGOS[l];
+   if(LG){g.beginPath();g.arc(66,-30,38,0,7);g.fillStyle='#16224f';g.fill();stroke(logoCol(LG.hex),3);g.stroke();
+     g.save();g.translate(66,-30);const sc=34/24;g.scale(sc,sc);g.translate(-12,-12);g.fillStyle=logoCol(LG.hex);g.fill(new Path2D(LG.path));g.restore();}
+   else{g.beginPath();g.arc(66,-30,34,0,7);g.fillStyle='rgba(229,71,46,.18)';g.fill();stroke(C.red,3);g.stroke();txt(l,66,-17,40,C.red,900);}
    small(n,66,40,n.length>7?18:22,C.ink,800,'center');if(tag)pill(tag,16,62,100,26,GRN,'rgba(61,255,150,.08)');g.restore();});},
  prompt(t){win(-200,-135,400,250,'claude');
   const q=DT().q||'> 10 идей для роликов';const n=Math.floor(clamp(t*1.6)*q.length);g.font='700 20px DejaVu Sans Mono';g.textAlign='left';g.fillStyle=C.ink;g.fillText(q.slice(0,n),-178,-84);
@@ -229,7 +233,7 @@ function bigWord(str,y,lt){
   const k=back(lt/.32),a=clamp(lt/.1);g.globalAlpha=a;g.save();g.translate(W/2,y);g.scale(.5+.5*k,.5+.5*k);
   txt(str,0,0,bs,C.red,900);
   // выделяющая рамка с узлами
-  const bw=tw+34,bh=bs*1.05,x0=-bw/2,y0=-bs*.82,pr=ease((lt-.05)/.3);
+  const bw=tw+34,bh=bs*1.14,x0=-bw/2,y0=-bs*.93,pr=ease((lt-.05)/.3);
   stroke(C.red,2);g.setLineDash([bw*2*pr,1e4]);g.strokeRect(x0,y0,bw,bh);g.setLineDash([]);
   g.fillStyle=C.red;[[x0,y0],[x0+bw,y0],[x0,y0+bh],[x0+bw,y0+bh]].forEach(([x,y])=>{g.fillRect(x-3,y-3,6,6);});
   g.restore();g.globalAlpha=1;

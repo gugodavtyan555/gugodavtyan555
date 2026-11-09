@@ -75,7 +75,9 @@ def main():
                 send(chat, "Ընտրիր զույգը 👇", keyboard())
             elif cb:
                 requests.post(f"{API}/answerCallbackQuery", json={"callback_query_id": cb["id"]}, timeout=10)
-                try: send(chat, analyze(cb["data"]), keyboard())
+                try:
+                    p = cb["data"]
+                    send(chat, analyze(p), {"inline_keyboard": [[{"text": f"🔄 {p[:3]}/{p[3:]}", "callback_data": p}]]})
                 except Exception as e: send(chat, f"Սխալ տվյալներ ստանալիս՝ {e}")
 
 if __name__ == "__main__": main()

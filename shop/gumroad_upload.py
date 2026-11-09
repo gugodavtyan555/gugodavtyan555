@@ -30,6 +30,7 @@ ZIPS = {
     "mazes-for-kids": "Mazes-for-Kids.zip",
     "puzzle-bundle": "Puzzle-Book-Bundle.zip",
     "christmas-party-games": "Christmas-Party-Games.zip",
+    "thanksgiving-party-games": "Thanksgiving-Party-Games.zip",
 }
 PERMALINKS = {
     "budget-planner": "budget-planner",
@@ -45,6 +46,7 @@ PERMALINKS = {
     "mazes-for-kids": "mazes",
     "puzzle-bundle": "puzzle-bundle",
     "christmas-party-games": "christmas-games",
+    "thanksgiving-party-games": "thanksgiving-games",
 }
 
 

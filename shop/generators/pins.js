@@ -26,6 +26,7 @@ const BOARDS = {
   'mazes-for-kids': 'Puzzle Books',
   'puzzle-bundle': 'Puzzle Books',
   'christmas-party-games': 'Christmas Party Ideas',
+  'thanksgiving-party-games': 'Puzzle Books',
   'holiday-budget-planner': 'Budget Templates',
   'free-budget-template': 'Budget Templates',
   'budget-planner': 'Budget Templates',
@@ -106,6 +107,16 @@ const PINS4 = [
   ['christmas-party-games', 'Christmas Games for Kids: Print & Play', 'Charades · Would You Rather', 'Screen-free fun for Christmas Eve: charades, Would You Rather, word scramble and Finish the Carol.', 'christmas games for kids, christmas eve activities, screen free christmas, kids printables'],
 ];
 
+// Batch 5 (Nov 9, 2026): Thanksgiving Party Games (Thanksgiving is Nov 26), front of the queue.
+const PINS5 = [
+  ['thanksgiving-party-games', 'Thanksgiving Games for the Whole Family', '9 printable games', 'Trivia, 30 bingo cards, a scavenger hunt, charades and gratitude Table Talk cards. Print at home and play after dinner.', 'thanksgiving games, family thanksgiving activities, thanksgiving party ideas, printable games'],
+  ['thanksgiving-party-games', 'Thanksgiving Table Talk: 40 Gratitude Questions', 'Dinner conversation cards', 'Questions that get everyone sharing what they are thankful for, from kids to grandparents.', 'thanksgiving conversation starters, gratitude questions, thanksgiving table ideas, family dinner'],
+  ['thanksgiving-party-games', 'Printable Thanksgiving Bingo: 30 Cards', 'Plus a caller sheet', '30 different bingo cards with turkey, pie and harvest words. Great for classrooms and family gatherings.', 'thanksgiving bingo, printable bingo, thanksgiving classroom party, kids thanksgiving activities'],
+  ['thanksgiving-party-games', 'Thanksgiving Trivia: 40 Questions + Answers', 'From 1621 to pumpkin pie', 'The Mayflower, the Wampanoag, the first parade and turkey facts: 40 questions with an answer key.', 'thanksgiving trivia, thanksgiving quiz, thanksgiving facts, family game night'],
+  ['thanksgiving-party-games', 'Pass the Pie: Thanksgiving Left-Right Game', 'Original story included', 'Pass the pie left and right while the story is read aloud. Whoever holds it at the end keeps it!', 'left right game, thanksgiving party games, thanksgiving activities for adults, pass the parcel'],
+  ['thanksgiving-party-games', 'Thanksgiving Scavenger Hunt for Kids', '12 rhyming clues', 'Keep the kids busy while dinner cooks: rhyming clues lead around the house to a hidden prize.', 'thanksgiving scavenger hunt, kids thanksgiving games, thanksgiving activities for kids, scavenger hunt clues'],
+];
+
 const THEMES = [
   { bg: '#EEF4F0', ink: '#1F2A37', accent: '#2F7D5B', band: '#2F7D5B', bandInk: '#FFFFFF' },
   { bg: '#FBF3E8', ink: '#2B2118', accent: '#B5622E', band: '#2B2118', bandInk: '#FBF3E8' },
@@ -138,7 +149,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1500 }, deviceScaleFactor: 1 });
   const rows = [];
-  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4];
+  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5];
   for (let i = 0; i < ALL.length; i++) {
     const [ref, headline, , description, keywords] = ALL[i];
     const file = `pin-${String(i + 1).padStart(2, '0')}-${ref.replace('blog:', '')}.jpg`;
@@ -169,9 +180,14 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   while (fresh3.length || rest3.length) { if (rest3.length) order.push(rest3.shift()); if (fresh3.length) order.push(fresh3.shift()); }
   // Batch 4 (Christmas games) after SENT_BEFORE_BATCH4 pins: seasonal, so a new pin comes first in every pair.
   const SENT_BEFORE_BATCH4 = 5;
-  const fresh4 = rows.slice(PINS.length + PINS2.length + PINS3.length);
+  const fresh4 = rows.slice(PINS.length + PINS2.length + PINS3.length, PINS.length + PINS2.length + PINS3.length + PINS4.length);
   const rest4 = order.splice(SENT_BEFORE_BATCH4);
   while (fresh4.length || rest4.length) { if (fresh4.length) order.push(fresh4.shift()); if (rest4.length) order.push(rest4.shift()); }
+  // Batch 5 (Thanksgiving) after SENT_BEFORE_BATCH5 pins: seasonal, new pin first in every pair.
+  const SENT_BEFORE_BATCH5 = 7;
+  const fresh5 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length);
+  const rest5 = order.splice(SENT_BEFORE_BATCH5);
+  while (fresh5.length || rest5.length) { if (fresh5.length) order.push(fresh5.shift()); if (rest5.length) order.push(rest5.shift()); }
   fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
     title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
     alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,

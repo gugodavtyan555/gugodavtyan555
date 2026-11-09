@@ -275,6 +275,30 @@
       "keywords": "christmas party games, printable christmas games, christmas scavenger hunt, christmas bingo, family christmas games",
       "checkout": "https://pennyplanshop.gumroad.com/l/christmas-games",
       "gumroad_id": "xUMDGYyTM-GAPWg4QouIiw=="
+    },
+    {
+      "id": "thanksgiving-party-games",
+      "category": "puzzles",
+      "name": "Thanksgiving Party Games Bundle",
+      "short": "9 printable Thanksgiving games for the whole family: trivia, 30 bingo cards, a scavenger hunt, gratitude Table Talk cards and more.",
+      "price": 6,
+      "format": "Printable PDF (Letter + A4)",
+      "files": [
+        "Thanksgiving-Party-Games-US-Letter.pdf",
+        "Thanksgiving-Party-Games-A4.pdf"
+      ],
+      "features": [
+        "Thanksgiving trivia: 40 questions with answers",
+        "Bingo: 30 different cards plus a caller's sheet",
+        "Scavenger hunt with 12 rhyming clues and a hiding chart",
+        "Table Talk: 40 gratitude questions for the dinner table",
+        "Who Am I?, Charades and Would You Rather: 40 cards each",
+        "Word scramble and the Pass the Pie Left-Right game",
+        "67 pages, US Letter and A4, answer keys included"
+      ],
+      "keywords": "thanksgiving games, printable thanksgiving games, thanksgiving trivia, thanksgiving bingo, family thanksgiving activities",
+      "checkout": "https://pennyplanshop.gumroad.com/l/thanksgiving-games",
+      "gumroad_id": "XLLH7dXukXnhfOqISajrFQ=="
     }
   ],
   "promo": {

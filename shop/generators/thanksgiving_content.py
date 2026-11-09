@@ -1,0 +1,192 @@
+"""Text content for the Thanksgiving Party Games Bundle. All original writing; no trademarked names."""
+
+HUNT = [
+    ("Gobble, gobble, the hunt has begun!\nLook where we keep the mail, everyone!", "Where the mail is kept"),
+    ("Pumpkin pie is cooling, the turkey's in too,\nlook in the fridge where the milk waits for you.", "Inside the fridge"),
+    ("You're doing great, now don't be shy,\nlook where we wash our hands and dry.", "By the bathroom sink"),
+    ("Leaves are falling, red, orange and brown,\nlook under the pillow where you lay your head down.", "Under a bed pillow"),
+    ("Grandma's arriving, the doorbell will ring,\nlook under a cushion, you'll find the next thing!", "Under a sofa cushion"),
+    ("Plates and forks and napkins too,\nlook where we set the table, the next clue's for you.", "By the dining table"),
+    ("Corn and squash and apples red,\nlook on the shelf where the books are read.", "On a bookshelf"),
+    ("Stirring the gravy, mashing the spuds,\nlook where the pots and the pans have their tubs.", "In a pots-and-pans cupboard"),
+    ("After the feast our clothes need a clean,\nlook by the washing machine!", "By the washing machine"),
+    ("Before a walk in the crisp autumn air,\nlook where the shoes wait in a pair.", "In the shoe rack or closet"),
+    ("So thankful for teeth to eat turkey and pie,\nlook where the toothbrushes stand nearby.", "By the toothbrushes"),
+    ("Last clue of all, you've done it, hooray!\nLook where the pies are, your prize is today!", "Your prize: by the pies or dessert table"),
+]
+
+TRIVIA = [
+    ("In what year is the famous Plymouth harvest feast, often called the first Thanksgiving, usually dated?", "1621"),
+    ("Which Native American nation shared that 1621 harvest feast with the Pilgrims?", "The Wampanoag"),
+    ("Who was the Wampanoag leader at the 1621 feast?", "Massasoit (Ousamequin)"),
+    ("What was the name of the Pilgrims' ship?", "The Mayflower"),
+    ("In what year did the Mayflower land?", "1620"),
+    ("About how many passengers sailed on the Mayflower?", "About 100 (102)"),
+    ("Which Patuxet man spoke English and helped the Pilgrims?", "Tisquantum (Squanto)"),
+    ("Plymouth Colony was in which present-day state?", "Massachusetts"),
+    ("Which president proclaimed a national day of thanksgiving in 1789?", "George Washington"),
+    ("Which president made Thanksgiving a yearly national holiday in 1863?", "Abraham Lincoln"),
+    ("Which writer campaigned for years to make Thanksgiving a national holiday?", "Sarah Josepha Hale"),
+    ("Which nursery rhyme did that writer also write?", "Mary Had a Little Lamb"),
+    ("Which president moved Thanksgiving one week earlier in 1939?", "Franklin D. Roosevelt"),
+    ("On which Thursday of November is Thanksgiving celebrated in the USA?", "The fourth Thursday"),
+    ("Which country celebrates Thanksgiving on the second Monday of October?", "Canada"),
+    ("In which city is the famous Thanksgiving Day parade held?", "New York City"),
+    ("In what year did that parade begin?", "1924"),
+    ("What is a male turkey called?", "A tom (or gobbler)"),
+    ("What is a female turkey called?", "A hen"),
+    ("What is a baby turkey called?", "A poult"),
+    ("What is the fleshy flap that hangs over a turkey's beak called?", "A snood"),
+    ("What is the red skin under a turkey's chin called?", "A wattle"),
+    ("Can wild turkeys fly?", "Yes, for short distances"),
+    ("Which US state raises the most turkeys?", "Minnesota"),
+    ("What does the US president traditionally do to a turkey each November?", "Pardon it"),
+    ("Which Founding Father praised the turkey as a more respectable bird than the bald eagle?", "Benjamin Franklin"),
+    ("Which tart red berry is made into a classic Thanksgiving sauce?", "Cranberry"),
+    ("What is the horn-shaped basket overflowing with food called?", "A cornucopia"),
+    ("What does 'cornucopia' mean?", "Horn of plenty"),
+    ("What is the scientific name for a turkey's wishbone?", "The furcula"),
+    ("What do two people do with the wishbone?", "Pull it: whoever gets the bigger piece makes a wish"),
+    ("Which sport do many families watch on Thanksgiving Day?", "American football"),
+    ("Which two NFL teams traditionally play at home on Thanksgiving?", "Detroit Lions and Dallas Cowboys"),
+    ("What is the day after Thanksgiving, famous for shopping deals, called?", "Black Friday"),
+    ("Which vegetable casserole is often topped with crispy fried onions?", "Green bean casserole"),
+    ("What are sweet potatoes often topped with at Thanksgiving?", "Marshmallows"),
+    ("Which spiced pie is the most traditional Thanksgiving dessert?", "Pumpkin pie"),
+    ("What is the bread mixture cooked inside or beside the turkey called?", "Stuffing (or dressing)"),
+    ("What sauce is made from the turkey's pan drippings?", "Gravy"),
+    ("What sound does a turkey make?", "Gobble gobble"),
+]
+
+BINGO = ["TURKEY", "PILGRIM", "PUMPKIN PIE", "CRANBERRY", "STUFFING", "GRAVY", "CORN", "HARVEST", "AUTUMN", "LEAVES",
+         "ACORN", "SCARECROW", "WISHBONE", "CORNUCOPIA", "MAYFLOWER", "FEAST", "FAMILY", "THANKFUL", "GRATEFUL", "PARADE",
+         "FOOTBALL", "APPLE PIE", "SWEET POTATO", "MASHED POTATOES", "ROLLS", "BUTTER", "GOURD", "SQUASH", "PECAN PIE",
+         "HAY BALE", "NAPKIN", "TABLE", "CANDLE", "OVEN", "NOVEMBER", "BLESSINGS", "PLATE", "MAPLE LEAF", "APPLE CIDER",
+         "FRIENDS"]
+
+WHO_AM_I = ["A turkey", "A pilgrim", "A pumpkin pie", "A scarecrow", "A cornucopia", "A wishbone", "Cranberry sauce",
+            "Mashed potatoes", "Gravy", "Stuffing", "A corn cob", "A falling leaf", "An acorn", "A squirrel",
+            "A pumpkin", "A hay bale", "An apple pie", "A football", "A parade balloon", "The Mayflower",
+            "A dinner roll", "A sweet potato", "A pecan pie", "A gourd", "A maple tree", "A candle on the table",
+            "A chef", "Grandma", "A sleepy uncle after dinner", "A dog begging under the table", "A farmer",
+            "A tractor", "A gravy boat", "A slice of pie with whipped cream", "A pie crust", "Apple cider",
+            "A harvest moon", "A rake", "A pile of leaves", "A Thanksgiving card"]
+
+CHARADES = ["Carving the turkey", "Eating too much and loosening your belt", "Falling asleep on the sofa after dinner",
+            "A turkey running away", "Raking leaves", "Jumping into a pile of leaves", "Baking a pie",
+            "Mashing potatoes", "Pulling a wishbone", "Watching a football game", "Catching a football",
+            "Saying grace before dinner", "Setting the table", "Washing a mountain of dishes",
+            "Smelling a delicious pie", "Picking apples", "A scarecrow in a windy field", "Walking in a parade",
+            "Holding a giant parade balloon", "Stirring the gravy", "Stuck in holiday traffic", "Hugging a relative",
+            "Taking a family photo", "Passing the mashed potatoes", "Spilling the cranberry sauce",
+            "A pilgrim stepping off a ship", "Carving a pumpkin", "Riding on a hay wagon", "Drinking hot apple cider",
+            "Writing what you are thankful for", "Opening a jar that won't open", "A turkey gobbling",
+            "Sneaking a taste from the kitchen", "Taking the pie out of the oven", "Chasing a turkey around a farm",
+            "Eating corn on the cob", "Waiting for the turkey to be ready", "Squirrels gathering acorns",
+            "Doing a happy dance when dessert arrives", "Shopping on Black Friday"]
+
+WOULD_YOU_RATHER = [
+    "Would you rather eat only turkey or only pie on Thanksgiving?",
+    "Would you rather cook the whole dinner or wash all the dishes?",
+    "Would you rather have mashed potatoes or stuffing?",
+    "Would you rather watch the parade or the football game?",
+    "Would you rather be a turkey or a pilgrim for a day?",
+    "Would you rather jump in a giant pile of leaves or carve a giant pumpkin?",
+    "Would you rather eat pumpkin pie or apple pie?",
+    "Would you rather have Thanksgiving dinner for breakfast or breakfast for Thanksgiving dinner?",
+    "Would you rather sit at the kids' table or the grown-ups' table?",
+    "Would you rather have gravy on everything or cranberry sauce on everything?",
+    "Would you rather host 30 relatives or travel 10 hours to see them?",
+    "Would you rather get the big side of the wishbone or eat the last slice of pie?",
+    "Would you rather say what you're thankful for in a song or in a poem?",
+    "Would you rather have a turkey as a pet or a scarecrow as a friend?",
+    "Would you rather drink hot apple cider or hot cocoa?",
+    "Would you rather eat dinner outside in the cold or inside in a tiny room?",
+    "Would you rather take a nap after dinner or go for a walk?",
+    "Would you rather have only side dishes or only desserts?",
+    "Would you rather be the best cook in the family or the funniest storyteller?",
+    "Would you rather ride in a parade float or hold a parade balloon?",
+    "Would you rather eat cold leftovers for a week or no leftovers at all?",
+    "Would you rather have a turkey that talks or a pie that never runs out?",
+    "Would you rather go apple picking or pumpkin picking?",
+    "Would you rather sail on the Mayflower or ride a hay wagon for a day?",
+    "Would you rather eat with your fingers or with chopsticks at Thanksgiving dinner?",
+    "Would you rather tell everyone one thing you're thankful for or write them a thank-you note?",
+    "Would you rather wear a turkey hat all day or a pilgrim hat all day?",
+    "Would you rather have Thanksgiving every month or never again?",
+    "Would you rather have too much food or too many guests?",
+    "Would you rather bake pies with Grandma or play football with the cousins?",
+    "Would you rather have whipped cream or ice cream on your pie?",
+    "Would you rather sleep in a pile of leaves or in a hay bale?",
+    "Would you rather have the turkey legs or the turkey wings?",
+    "Would you rather celebrate in a cabin in the woods or a house by the sea?",
+    "Would you rather lose your sense of smell or taste on Thanksgiving?",
+    "Would you rather cook a turkey with no recipe or bake a pie with no oven?",
+    "Would you rather know every football score or every pie recipe in the world?",
+    "Would you rather be stuck in traffic for 5 hours or eat dinner 5 hours late?",
+    "Would you rather have a gravy fountain or a chocolate fountain?",
+    "Would you rather say thank you in five languages or sing it in one?",
+]
+
+TABLE_TALK = [
+    "What is one thing that made you smile this year?",
+    "Who is someone you're thankful for, and why?",
+    "What is your favourite Thanksgiving food?",
+    "What is a small thing you're grateful for that most people don't notice?",
+    "What is the best gift you have ever received that wasn't a thing?",
+    "What is a family tradition you love?",
+    "What is something new you learned this year?",
+    "If you could invite anyone to dinner tonight, who would it be?",
+    "What is a moment this year you felt proud of yourself?",
+    "What is your favourite memory with someone at this table?",
+    "What is a place you're thankful to have visited?",
+    "What is a skill you're grateful to have?",
+    "Who taught you something important?",
+    "What is your favourite thing about autumn?",
+    "What made you laugh the hardest this year?",
+    "What is a book, song or film you're thankful for?",
+    "What is one thing about our home you love?",
+    "If you could thank your younger self for something, what would it be?",
+    "What is a kind thing someone did for you recently?",
+    "What is one thing you're looking forward to next year?",
+    "Which friend would you like to thank today?",
+    "What is something about your body or health you're grateful for?",
+    "What is a hard thing that taught you something good?",
+    "What is your favourite way to relax?",
+    "What would you put in a time capsule from this year?",
+    "What is something you love about the person on your left?",
+    "What is something you love about the person on your right?",
+    "What is a dish you'd like to learn to cook?",
+    "What is the funniest thing that happened at a family dinner?",
+    "What is one way you could help someone this week?",
+    "What is a tradition you'd like to start?",
+    "What is your favourite smell of the season?",
+    "What is a teacher or coach you're thankful for?",
+    "What is something simple that makes your day better?",
+    "What would a perfect day look like for you?",
+    "Which animal or pet are you thankful for?",
+    "What is a goal you reached this year?",
+    "What is a word that describes this year for you?",
+    "What is something you can do now that you couldn't do last year?",
+    "What are three things you're thankful for right now?",
+]
+
+SCRAMBLE = ["TURKEY", "PILGRIM", "PUMPKIN", "HARVEST", "AUTUMN", "GRAVY", "STUFFING", "CRANBERRY", "THANKFUL",
+            "GRATEFUL", "FEAST", "FAMILY", "ACORN", "SCARECROW", "WISHBONE", "CORNUCOPIA", "MAYFLOWER", "PARADE",
+            "FOOTBALL", "NOVEMBER", "LEAVES", "SQUASH", "CIDER", "PECAN", "BLESSINGS"]
+
+LEFT_RIGHT = """It was Thanksgiving morning, and the whole family was in the kitchen. Grandma looked RIGHT at the oven and said, "Before we eat, let's play a game. Every time you hear LEFT or RIGHT, pass the pie that way!"
+
+Dad was in charge of the turkey. He opened the oven, turned to the LEFT, turned to the RIGHT, and realized he had LEFT the oven mitts on the counter. "That's not RIGHT," he said, and ran to get them.
+
+Aunt Rosa arrived with three pies. She carried the pumpkin pie in her RIGHT hand, the apple pie in her LEFT hand, and the pecan pie balanced RIGHT on her head. Nobody knows how she rang the doorbell.
+
+The kids set the table. They put forks on the LEFT and knives on the RIGHT, then argued about where the spoons should go. In the end, the dog took one spoon and ran out the door to the LEFT.
+
+Uncle Ben was sure the football game started RIGHT at noon. He turned the TV on, but the remote was LEFT in the car. By the time he came back, the first quarter was over and there was nothing LEFT to watch but the commercials.
+
+At dinner, everyone said what they were thankful for. Cousin Mia said she was thankful the turkey was cooked RIGHT this year. Grandpa said he was thankful there was still gravy LEFT. Everyone laughed RIGHT away.
+
+After dinner, the family went for a walk. They turned LEFT at the old oak tree, RIGHT at the pumpkin patch, and LEFT again until they were RIGHT back where they started.
+
+Now the sun is setting and there is no story LEFT to tell. The pie that is RIGHT in front of you is yours to enjoy. Happy Thanksgiving, everyone!"""

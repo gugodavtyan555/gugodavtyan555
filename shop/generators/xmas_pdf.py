@@ -29,6 +29,33 @@ LINE = HexColor("#D9CFC0")
 FLAKE = HexColor("#E9DFCF")
 SITE = "penny-and-plan.pages.dev"
 
+# Everything holiday-specific lives here so other holidays (see thanksgiving_pdf.py) can reuse this module.
+T = {
+    "name": "Christmas",
+    "file": "Christmas-Party-Games",
+    "cover_top": "Christmas",
+    "cover_fleck": "#C9474E",
+    "games": ["Scavenger Hunt", "Trivia", "Bingo (30 cards)", "Who Am I?", "Charades", "Would You Rather",
+              "Word Scramble", "Finish the Carol", "Left-Right Gift Game"],
+    "inside": [("Scavenger Hunt", "12 rhyming clues that lead around the house to a prize"),
+               ("Christmas Trivia", "40 questions with an answer key"),
+               ("Christmas Bingo", "30 different bingo cards and a caller's sheet"),
+               ("Who Am I?", "40 guessing cards"), ("Charades", "40 acting cards"),
+               ("Would You Rather", "40 silly and cosy questions"),
+               ("Word Scramble", "25 festive words to unscramble, with answers"),
+               ("Finish the Carol", "16 lines from traditional carols"),
+               ("Left-Right Gift Game", "an original story for passing presents around")],
+    "prize_spot": "by the stockings",
+    "tie_break": "'How many lights are on our tree?'",
+    "whoami_hint": "'Am I food?' or 'Do I live at the North Pole?'",
+    "lr_title": "Left-Right Gift Game",
+    "lr_story_title": "The Night Before Christmas Game",
+    "lr_rules": ["Everyone sits in a circle holding a wrapped gift.",
+                 "One person reads the story out loud, slowly.",
+                 "Every time you hear LEFT, pass your gift to the person on your left. Every time you hear RIGHT, pass it to the right.",
+                 "When the story ends, the gift in your hands is yours to keep!"],
+}
+
 
 def wrap(text, font, size, width):
     out = []
@@ -49,7 +76,7 @@ class Book:
     def __init__(self, path, size):
         self.W, self.H = size
         self.c = canvas.Canvas(str(path), pagesize=size)
-        self.c.setTitle("Christmas Party Games Bundle")
+        self.c.setTitle(f"{T['name']} Party Games Bundle")
         self.c.setAuthor("Penny & Plan")
         self.n = 0
         self.rng = random.Random(25)
@@ -97,7 +124,7 @@ class Book:
 
     def end(self):
         self.n += 1
-        self.t(self.W / 2, 20, f"{self.n}  ·  Christmas Party Games  ·  {SITE}", 8, color=MUTED, anchor="c")
+        self.t(self.W / 2, 20, f"{self.n}  ·  {T['name']} Party Games  ·  {SITE}", 8, color=MUTED, anchor="c")
         self.c.showPage()
 
     def cut_cards(self, items, cols, rows, render, top_pad=120, bottom=50, gap=0):
@@ -138,14 +165,13 @@ def cover(b):
     c.rect(0, 0, b.W, b.H, stroke=0, fill=1)
     rng = random.Random(3)
     for _ in range(26):
-        b.flake(rng.uniform(20, b.W - 20), rng.uniform(20, b.H - 20), rng.uniform(8, 26), HexColor("#C9474E"), 1.6)
+        b.flake(rng.uniform(20, b.W - 20), rng.uniform(20, b.H - 20), rng.uniform(8, 26), HexColor(T["cover_fleck"]), 1.6)
     c.setFillColor(CREAM)
     c.roundRect(50, b.H * 0.28, b.W - 100, b.H * 0.46, 22, stroke=0, fill=1)
-    b.t(b.W / 2, b.H * 0.64, "Christmas", 52, "Serif", RED, "c")
+    b.t(b.W / 2, b.H * 0.64, T["cover_top"], 52 if len(T["cover_top"]) < 11 else 46, "Serif", RED, "c")
     b.t(b.W / 2, b.H * 0.575, "Party Games", 44, "Serif", GREEN, "c")
     b.t(b.W / 2, b.H * 0.52, "9 printable games for kids, families & friends", 15, "Body", INK, "c")
-    games = ["Scavenger Hunt", "Trivia", "Bingo (30 cards)", "Who Am I?", "Charades", "Would You Rather",
-             "Word Scramble", "Finish the Carol", "Left-Right Gift Game"]
+    games = T["games"]
     for i, g in enumerate(games):
         col, row = i % 3, i // 3
         b.t(b.W / 2 + (col - 1) * (b.W - 140) / 3, b.H * 0.45 - row * 24, "★ " + g, 12, "Bold", GREEN, "c")
@@ -170,14 +196,7 @@ def contents(b):
     y -= 10
     b.t(60, y, "What's inside", 18, "Serif", GREEN)
     y -= 30
-    for name, desc in [("Scavenger Hunt", "12 rhyming clues that lead around the house to a prize"),
-                       ("Christmas Trivia", "40 questions with an answer key"),
-                       ("Christmas Bingo", "30 different bingo cards and a caller's sheet"),
-                       ("Who Am I?", "40 guessing cards"), ("Charades", "40 acting cards"),
-                       ("Would You Rather", "40 silly and cosy questions"),
-                       ("Word Scramble", "25 festive words to unscramble, with answers"),
-                       ("Finish the Carol", "16 lines from traditional carols"),
-                       ("Left-Right Gift Game", "an original story for passing presents around")]:
+    for name, desc in T["inside"]:
         b.t(70, y, name, 13, "Bold", RED)
         b.t(230, y, desc, 12)
         y -= 24
@@ -198,9 +217,9 @@ def rules(b, title, steps, extra=None):
 
 
 def scavenger(b):
-    rules(b, "Christmas Scavenger Hunt", [
+    rules(b, f"{T['name']} Scavenger Hunt", [
         "Cut out the 12 clue cards on the next pages.",
-        "Use the hiding chart below: hide each card in the place listed BEFORE the hunt starts. Hide a small prize by the stockings (or wherever you like).",
+        "Use the hiding chart below: hide each card in the place listed BEFORE the hunt starts. Hide a small prize " + T["prize_spot"] + " (or wherever you like).",
         "Hand card 1 to the players. Each clue tells them where the next card is hidden.",
         "Kids who can't read yet can team up with an older helper who reads the clues aloud.",
     ], extra=lambda y: hiding_chart(b, y))
@@ -228,14 +247,14 @@ def hiding_chart(b, y):
 
 
 def trivia(b):
-    rules(b, "Christmas Trivia", [
+    rules(b, f"{T['name']} Trivia", [
         "Play in teams or on your own. Give each team a pen and the question sheets, or read the questions aloud.",
         "One point for each correct answer. The host has the answer key on the last page.",
-        "Tie? Each team writes down a guess for: 'How many lights are on our tree?' Closest wins!",
+        "Tie? Each team writes down a guess for: " + T["tie_break"] + " Closest wins!",
     ])
     qs = X.TRIVIA
     for k in range(0, len(qs), 20):
-        b.page("Christmas Trivia", f"Questions {k + 1}–{k + 20}")
+        b.page(f"{T['name']} Trivia", f"Questions {k + 1}–{k + 20}")
         y = b.H - 130
         for i, (q, _a) in enumerate(qs[k:k + 20], k + 1):
             b.t(50, y, f"{i}.", 11, "Bold", RED)
@@ -266,7 +285,7 @@ def bingo(b):
         seen.add(key)
         cards.append(pick[:12] + ["FREE"] + pick[12:])
     assert len({tuple(cd) for cd in cards}) == 30
-    rules(b, "Christmas Bingo", [
+    rules(b, f"{T['name']} Bingo", [
         "Give each player a different bingo card (there are 30) and some markers: buttons, sweets or a pen.",
         "The caller cuts up the caller's sheet, mixes the words in a bowl and reads them out one by one.",
         "Players mark a word when it's called. The FREE square in the middle is already marked.",
@@ -286,7 +305,7 @@ def bingo(b):
     b.end()
     size = min(b.W - 110, b.H - 230)
     for k, cd in enumerate(cards):
-        b.page("Christmas Bingo")
+        b.page(f"{T['name']} Bingo")
         x = (b.W - size) / 2
         top = b.H - 115
         cell = size / 5
@@ -341,7 +360,7 @@ def scramble(b):
         while s == w:
             s = "".join(rng.sample(w, len(w)))
         pairs.append((s, w))
-    b.page("Christmas Word Scramble", "Unscramble each festive word")
+    b.page(f"{T['name']} Word Scramble", "Unscramble each festive word")
     y = b.H - 135
     for i, (s, _w) in enumerate(pairs, 1):
         col = 0 if i <= 13 else 1
@@ -377,19 +396,14 @@ def carols(b):
 
 
 def left_right(b):
-    rules(b, "Left-Right Gift Game", [
-        "Everyone sits in a circle holding a wrapped gift.",
-        "One person reads the story out loud, slowly.",
-        "Every time you hear LEFT, pass your gift to the person on your left. Every time you hear RIGHT, pass it to the right.",
-        "When the story ends, the gift in your hands is yours to keep!",
-    ])
-    b.page("The Night Before Christmas Game", "Read aloud: pass LEFT or RIGHT every time you hear the word")
+    rules(b, T["lr_title"], T["lr_rules"])
+    b.page(T["lr_story_title"], "Read aloud: pass LEFT or RIGHT every time you hear the word")
     y = b.H - 130
     for p in X.LEFT_RIGHT.split("\n\n"):
         lines = wrap(p, "Body", 12.5, b.W - 110)
         if y - len(lines) * 18 < 50:
             b.end()
-            b.page("The Night Before Christmas Game", "continued")
+            b.page(T["lr_story_title"], "continued")
             y = b.H - 130
         for ln in lines:
             # draw LEFT/RIGHT in bold colour
@@ -405,7 +419,7 @@ def left_right(b):
 
 
 def build(out, size, suffix):
-    b = Book(out / f"Christmas-Party-Games-{suffix}.pdf", size)
+    b = Book(out / f"{T['file']}-{suffix}.pdf", size)
     cover(b)
     contents(b)
     scavenger(b)
@@ -414,10 +428,10 @@ def build(out, size, suffix):
     simple_cards(b, "Who Am I?", X.WHO_AM_I, [
         "Cut out the cards and put them face down in a pile.",
         "One player takes a card and holds it on their forehead without looking (or tapes it to their back).",
-        "They ask yes-or-no questions like 'Am I food?' or 'Do I live at the North Pole?' until they guess who or what they are.",
+        "They ask yes-or-no questions like " + T["whoami_hint"] + " until they guess who or what they are.",
         "Take turns. The player who needs the fewest questions wins.",
     ], "WHO AM I?")
-    simple_cards(b, "Christmas Charades", X.CHARADES, [
+    simple_cards(b, f"{T['name']} Charades", X.CHARADES, [
         "Split into two teams and put the cut-out cards in a bowl.",
         "One player draws a card and acts it out without speaking, pointing at words or making sounds.",
         "Their team has one minute to guess. One point for each correct guess.",
@@ -429,7 +443,7 @@ def build(out, size, suffix):
         "For a twist: everyone points left or right at the same time to vote, then the minority side tells their reasons.",
     ], "WOULD YOU RATHER", cols=2, rows=5, size=12)
     scramble(b)
-    carols(b)
+    T.get("extra", carols)(b)
     left_right(b)
     b.save()
     return b.n

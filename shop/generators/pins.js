@@ -33,6 +33,7 @@ const BOARDS = {
   'resume-templates': 'Resume Templates',
   'boho-wall-art': 'Wall Art Prints',
   'armenian-alphabet-kids': 'Armenian for Kids',
+  'wedding-planner-bundle': 'Wedding Planning',
   'holiday-budget-planner': 'Budget Templates',
   'free-budget-template': 'Budget Templates',
   'budget-planner': 'Budget Templates',
@@ -164,6 +165,16 @@ const PINS9 = [
   ['armenian-alphabet-kids', 'Armenian Alphabet Poster + Tracing Pages', 'Ages 3–8', 'A colourful alphabet poster for the wall and tracing pages for every letter, from Ա to Ֆ.', 'armenian alphabet poster, armenian printables, kids learning, homeschool armenian'],
 ];
 
+// Batch 10 (Nov 9, 2026): wedding planner + bridal shower games.
+const PINS10 = [
+  ['wedding-planner-bundle', 'Wedding Planner Spreadsheet (Excel + Google Sheets)', 'Budget · guests · checklist', 'Plan the whole wedding in one file: days to go, budget vs. actual, RSVPs, meal counts and a dated checklist.', 'wedding planner, wedding planning checklist, wedding spreadsheet, wedding organization'],
+  ['wedding-planner-bundle', 'Wedding Budget Template with Suggested Split', 'Know where every dollar goes', 'Enter your total budget and see a suggested split for venue, catering, photos and more. Track what is paid and still due.', 'wedding budget, wedding budget breakdown, budget wedding ideas, wedding planning tips'],
+  ['wedding-planner-bundle', 'Wedding Guest List & RSVP Tracker', 'Meals · tables · thank-yous', 'Track RSVPs, meal choices, table numbers, gifts and thank-you cards for up to 300 guests.', 'wedding guest list, rsvp tracker, wedding seating chart, wedding organization'],
+  ['wedding-planner-bundle', 'Bridal Shower Games: 9 Printable Games', 'Know the Bride · Bingo · Trivia', 'How well do you know the bride, wedding trivia, gift bingo, purse hunt, advice cards and more. Print and play.', 'bridal shower games, bridal shower ideas, printable shower games, bachelorette games'],
+  ['wedding-planner-bundle', 'Wedding Checklist: 12 Months to I Do', '33 steps, dated for you', 'Every task from booking the venue to the rehearsal dinner, with due dates counted back from your wedding day.', 'wedding checklist, wedding timeline, engaged now what, wedding to do list'],
+  ['wedding-planner-bundle', 'Bridal Shower Advice Cards for the Bride', 'Keepsake idea', '40 sweet and funny prompts for guests to finish: a keepsake the bride can read on her first anniversary.', 'bridal shower advice cards, advice for the bride, bridal shower keepsake, shower activities'],
+];
+
 const THEMES = [
   { bg: '#EEF4F0', ink: '#1F2A37', accent: '#2F7D5B', band: '#2F7D5B', bandInk: '#FFFFFF' },
   { bg: '#FBF3E8', ink: '#2B2118', accent: '#B5622E', band: '#2B2118', bandInk: '#FBF3E8' },
@@ -196,7 +207,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1500 }, deviceScaleFactor: 1 });
   const rows = [];
-  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8, ...PINS9];
+  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8, ...PINS9, ...PINS10];
   for (let i = 0; i < ALL.length; i++) {
     const [ref, headline, , description, keywords] = ALL[i];
     const file = `pin-${String(i + 1).padStart(2, '0')}-${ref.replace('blog:', '')}.jpg`;
@@ -252,9 +263,14 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   while (fresh8.length || rest8.length) { if (fresh8.length) order.push(fresh8.shift()); for (let k = 0; k < 5 && rest8.length; k++) order.push(rest8.shift()); }
   // Batch 9 (resume, wall art, Armenian): one every 3 pins from queue position 12.
   const START9 = 12;
-  const fresh9 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length + PINS7.length + PINS8.length);
+  const fresh9 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length + PINS7.length + PINS8.length, PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length + PINS7.length + PINS8.length + PINS9.length);
   const rest9 = order.splice(START9);
   while (fresh9.length || rest9.length) { if (fresh9.length) order.push(fresh9.shift()); for (let k = 0; k < 2 && rest9.length; k++) order.push(rest9.shift()); }
+  // Batch 10 (wedding): one every 5 pins from queue position 14.
+  const START10 = 14;
+  const fresh10 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length + PINS7.length + PINS8.length + PINS9.length);
+  const rest10 = order.splice(START10);
+  while (fresh10.length || rest10.length) { if (fresh10.length) order.push(fresh10.shift()); for (let k = 0; k < 4 && rest10.length; k++) order.push(rest10.shift()); }
   fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
     title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
     alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,

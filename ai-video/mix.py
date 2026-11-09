@@ -43,38 +43,42 @@ ICON_SFX={'clock':lambda:[(0.15,tick(2000)),(0.65,tick(1500)),(1.15,tick(2000)),
  'doc':lambda:[(0.15+k*.25,click()) for k in range(6)],'wave':lambda:[(0.2,beepup())],
  'timeline':lambda:[(0.2,click()),(0.5,click()),(0.8,click())],'coin':lambda:[(0.3,coin())],
  'arrow':lambda:[(0.3,bounce()),(0.9,bounce()),(1.5,bounce())]}
-# ---------- Музыка: 100 BPM, Am–F–C–G ----------
-def music(total,bpm=100):
-    n=int(total*SR);out=np.zeros(n+SR*2);beat=60/bpm;bar=beat*4
-    chords=[(57,[57,60,64]),(53,[53,57,60]),(48,[48,52,55]),(55,[55,59,62])]
+# ---------- Музыка: спокойный lo-fi, 76 BPM, Cmaj7–Am7–Fmaj7–G6 ----------
+def reverb(x,sec=1.8,wet=.32):
+    n=int(sec*SR);ir=rng.standard_normal(n)*np.exp(-np.arange(n)/SR*3.2);ir=lp(ir,3500);ir/=np.abs(ir).sum()*.06
+    L=len(x)+n;N=1<<(L-1).bit_length();y=np.fft.irfft(np.fft.rfft(x,N)*np.fft.rfft(ir,N),N)[:len(x)]
+    return x*(1-wet)+y*wet*3
+def epiano(f,d):
+    t=t_(d);mod=np.sin(2*np.pi*f*t)*1.6*np.exp(-t*5)
+    y=np.sin(2*np.pi*f*t+mod)+.25*np.sin(2*np.pi*f*2*t+mod*.5)*np.exp(-t*3)
+    return y*env(len(t),.004,.9)*.5
+def music(total,bpm=76):
+    n=int(total*SR);out=np.zeros(n+SR*4);beat=60/bpm;bar=beat*4
+    chords=[[48,55,59,64],[45,52,55,60],[41,48,52,57],[43,50,55,59]]
     mf=lambda m:440*2**((m-69)/12)
-    nb=int(total/bar)+1
+    pent=[72,74,76,79,81,84]
     def add(x,at):
         i=int(at*SR);m=min(len(x),len(out)-i)
         if m>0:out[i:i+m]+=x[:m]
-    # ударные
-    t=t_(.3);kick=np.sin(2*np.pi*np.cumsum(45+110*np.exp(-t*28))/SR)*env(len(t),.001,.1)
-    hat=lp(rng.standard_normal(int(.06*SR)),9000);hat=(rng.standard_normal(int(.06*SR))-lp(rng.standard_normal(int(.06*SR)),3000))*env(int(.06*SR),.0005,.012)
-    clap=(rng.standard_normal(int(.18*SR)))*env(int(.18*SR),.001,.05)
+    nb=int(total/bar)+2;tk=t_(.28);kick=np.sin(2*np.pi*np.cumsum(48+70*np.exp(-tk*30))/SR)*env(len(tk),.002,.09)
+    hat=lp(rng.standard_normal(int(.08*SR)),7000)*env(int(.08*SR),.002,.02)
     for b in range(nb):
-        root,ch=chords[b%4];st=b*bar
-        for k in range(4):
-            add(kick*.9,st+k*beat)
-            if k in(1,3):add(clap*.22,st+k*beat)
-        for k in range(8):add(hat*(.16 if k%2 else .09),st+k*beat/2)
+        ch=chords[b%4];st=b*bar
+        add(kick*.22,st);add(kick*.15,st+2*beat)               # очень мягкий бочонок
+        for k in range(8):add(hat*(.10 if k%2 else .05),st+k*beat/2)  # щёточки
         # бас
-        for k,(off,div) in enumerate([(0,1),(1.5,1),(2,1),(3,1)]):
-            f=mf(root-12);tb=t_(beat*.9);x=np.sin(2*np.pi*f*tb)+.35*np.sin(4*np.pi*f*tb)
-            add(x*env(len(tb),.005,.35)*.38,st+off*beat)
+        tb=t_(bar*.95);f=mf(ch[0]-12);add((np.sin(2*np.pi*f*tb)+.2*np.sin(4*np.pi*f*tb))*np.minimum(tb/.05,1)*np.minimum((bar-tb)/.3,1)*.30,st)
         # пэд
-        tp=t_(bar);pad=sum(np.sin(2*np.pi*mf(m)*tp)+.5*np.sin(2*np.pi*mf(m)*1.004*tp) for m in ch)/6
-        add(pad*np.minimum(tp/.3,1)*np.minimum((bar-tp)/.3,1)*.16,st)
-        # арпеджио 16-е
-        for k in range(16):
-            m=ch[[0,1,2,1][k%4]]+12*(1 if k%8>=4 else 0)+12;f=mf(m);ta=t_(beat/4*1.6)
-            x=(np.sign(np.sin(2*np.pi*f*ta))*.4+np.sin(2*np.pi*f*ta)*.6)
-            add(x*env(len(ta),.002,.07)*.1,st+k*beat/4)
-    m=out[:n];return m/np.abs(m).max()*.9
+        tp=t_(bar*1.05);pad=sum(np.sin(2*np.pi*mf(m)*tp)+.4*np.sin(2*np.pi*mf(m)*1.003*tp) for m in ch)/9
+        add(pad*np.minimum(tp/.6,1)*np.minimum((bar*1.05-tp)/.6,1)*.20,st)
+        # аккорд на пианино (мягко) + арпеджио 8-ми
+        for k,m in enumerate(ch):add(epiano(mf(m+12),1.4)*.10,st+k*beat/2*.06)
+        for k in range(8):
+            m=ch[[0,2,1,3,2,1,3,2][k]]+12;add(epiano(mf(m),.9)*.09,st+k*beat/2)
+        # мелодия — пентатоника, редкие ноты
+        for pos in([0,1.5,2.5] if b%2==0 else [0.5,2,3]):
+            if rng.random()<.8:add(epiano(mf(int(rng.choice(pent))),1.6)*.16,st+pos*beat)
+    m=reverb(out[:n]);return m/np.abs(m).max()*.9
 # ---------- Микс ----------
 timing=json.loads(re.search(r'\[.*\]',open(os.path.join(D,'timing.js')).read()).group(0))
 icons=re.findall(r'icon:\s*"(\w+)"',open(os.path.join(D,'scenes.js')).read())
@@ -84,8 +88,8 @@ mus=music(total)
 f=int(.8*SR);mus[:f]*=np.linspace(0,1,f);mus[-int(1.5*SR):]*=np.linspace(1,0,int(1.5*SR))
 # дакинг под голос
 absv=np.abs(voice);w=int(.12*SR);sm=np.convolve(absv,np.ones(w)/w,'same')
-duck=np.clip(1-sm*14,.28,1);duck=lp(duck,6.0)
-mus=mus[:len(voice)]*duck[:len(mus)]*.55
+duck=np.clip(1-sm*12,.38,1);duck=lp(duck,6.0)
+mus=mus[:len(voice)]*duck[:len(mus)]*.62
 sfx=np.zeros(len(voice)+SR*2);st=0
 def put(x,at):
     i=int(at*SR);m=min(len(x),len(sfx)-i)
@@ -94,7 +98,7 @@ for k,d in enumerate(timing):
     put(whoosh(),st);put(pop(),st+.12)
     for dt,x in ICON_SFX.get(icons[k],lambda:[])():put(x,st+dt)
     st+=d
-sfx=sfx[:len(voice)]*.75
+sfx=sfx[:len(voice)]*.5
 # голос: лёгкая компрессия/нормализация
 v=voice/ max(np.abs(voice).max(),1e-3)*.92
 mix=v*1.0+mus+sfx

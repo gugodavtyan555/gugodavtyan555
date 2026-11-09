@@ -4,14 +4,15 @@ const fs=require('fs'),path=require('path'),vm=require('vm'),crypto=require('cry
 const {execFileSync}=require('child_process');
 const dir=__dirname,ad=path.join(dir,'audio');fs.mkdirSync(ad,{recursive:true});
 const ctx={window:{}};vm.runInNewContext(fs.readFileSync(path.join(dir,'scenes.js'),'utf8'),ctx);
-const cfg=ctx.window.CONFIG,tempo=(ctx.window.CONFIG.voice&&ctx.window.CONFIG.voice.tempo)||1,provider=process.env.PROVIDER||'elevenlabs';
+const cfg=ctx.window.CONFIG,provider=process.env.PROVIDER||'elevenlabs';
 const sh=(c,a)=>execFileSync(c,a,{encoding:'utf8'});
 const dur=f=>parseFloat(sh('ffprobe',['-v','error','-show_entries','format=duration','-of','csv=p=0',f]));
-async function tts(text,out){
+const vc=sc=>cfg.voices[sc.who||'R'];
+async function tts(text,out,v){
   if(provider==='mock'){const d=Math.max(1.2,text.length*0.07);
     sh('ffmpeg',['-y','-v','error','-f','lavfi','-i',`sine=frequency=220:duration=${d}`,'-af','tremolo=f=6:d=0.9,volume=0.4','-ar','44100',out]);return;}
   const key=process.env.ELEVENLABS_API_KEY;if(!key)throw new Error('Нет ELEVENLABS_API_KEY');
-  const v=cfg.voice;if(!v||/ВСТАВЬ/.test(v.id))throw new Error('Впиши voice.id в scenes.js');
+  if(!v||/ВСТАВЬ/.test(v.id))throw new Error('Впиши voices.R/S.id в scenes.js');
   const r=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${v.id}?output_format=mp3_44100_128`,{
     method:'POST',headers:{'xi-api-key':key,'content-type':'application/json'},
     body:JSON.stringify({text,model_id:v.model||'eleven_v3',
@@ -23,11 +24,11 @@ async function tts(text,out){
   const cache=path.join(ad,'cache.json');const c=fs.existsSync(cache)?JSON.parse(fs.readFileSync(cache)):{};
   const timing=[],parts=[];
   for(let i=0;i<cfg.scenes.length;i++){
-    const sc=cfg.scenes[i],f=path.join(ad,String(i+1).padStart(2,'0')+(provider==='mock'?'.wav':'.mp3'));
-    const h=provider+crypto.createHash('md5').update((sc.say||'')+JSON.stringify(cfg.voice)).digest('hex');
+    const sc=cfg.scenes[i],v=vc(sc),tempo=v.tempo||1,f=path.join(ad,String(i+1).padStart(2,'0')+(provider==='mock'?'.wav':'.mp3'));
+    const h=provider+crypto.createHash('md5').update((sc.say||'')+JSON.stringify(v)).digest('hex');
     let d;
     if(!sc.say){d=cfg.sceneSec;}
-    else{if(c[f]!==h||!fs.existsSync(f)){process.stdout.write(`озвучиваю ${i+1}/${cfg.scenes.length}… `);await tts(sc.say,f);c[f]=h;console.log('ok');}
+    else{if(c[f]!==h||!fs.existsSync(f)){process.stdout.write(`озвучиваю ${i+1}/${cfg.scenes.length}… `);await tts(sc.say,f,v);c[f]=h;console.log('ok');}
       d=Math.max(cfg.minSceneSec||2,dur(f)/tempo+0.35);}
     timing.push(+d.toFixed(3));
     const seg=path.join(ad,`seg${i}.wav`);

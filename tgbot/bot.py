@@ -25,6 +25,10 @@ def fetch(pair):
         params={"interval": "1m", "range": "5d"}, headers={"User-Agent": "Mozilla/5.0"}, timeout=20).json()["chart"]["result"][0]
     return pd.Series(j["indicators"]["quote"][0]["close"], index=pd.to_datetime(j["timestamp"], unit="s")).dropna()
 
+def mmss(sec):
+    m, r = divmod(int(sec), 60)
+    return f"{m} ր {r:02d} վ" if m else f"{r} վ"
+
 def closed(series, minutes, now):
     """Keep only fully closed bars: bar start + length <= now."""
     end = series.index + pd.Timedelta(minutes=minutes)
@@ -50,7 +54,7 @@ def analyze(pair):
         lines.append(f"{k}: {ico[st[k][0]]} {st[k][0]} (EMA20 {st[k][2]:.5f})")
     lines.append(f"RSI M5 {r5:.0f} · RSI M1 {r1:.0f}")
     lines.append("_(հաշվարկը՝ միայն փակված մոմերով)_")
-    lines.append(f"🕒 M5 մոմը փակվեց {since} վ առաջ · հաջորդ փակումը՝ {nxt} վ հետո\n")
+    lines.append(f"🕒 M5 մոմը փակվեց {mmss(since)} առաջ · հաջորդ փակումը՝ {mmss(nxt)} հետո\n")
     d15, d5, d1 = st["M15"][0], st["M5"][0], st["M1"][0]
     if d15 != d5:
         lines += ["➡️ *WAIT / չմտնել*", "M15-ը և M5-ը հակասում են, ուղղություն չկա։"]
@@ -61,7 +65,7 @@ def analyze(pair):
         if all5: lines[0] = "🔥 " + lines[0]
         lines += [f"➡️ *{d15}* {ico[d15]} {tag}",
                   "⏱ Expiry՝ *5 րոպե*",
-                  ("✅ Մտիր հիմա (M5 մոմը նոր է փակվել)" if since <= 60 else f"⏳ Ավելի լավ է սպասել M5 փակմանը ({nxt} վ) և նոր մտնել"),
+                  ("✅ Մտիր հիմա (M5 մոմը նոր է փակվել)" if since <= 60 else f"⏳ Ավելի լավ է սպասել M5 փակմանը ({mmss(nxt)}) և նոր մտնել"),
                   f"❌ Անվավեր, եթե M5 փակվի EMA20-ի {'ներքև' if d15=='UP' else 'վերև'} ({st['M5'][2]:.5f})"]
         if (d15 == "UP" and r5 > 70) or (d15 == "DOWN" and r5 < 30):
             lines.append("⚠️ M5 RSI-ն ծայրահեղ է՝ ռեվերսի ռիսկ")

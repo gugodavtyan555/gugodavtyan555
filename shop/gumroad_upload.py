@@ -32,6 +32,7 @@ ZIPS = {
     "christmas-party-games": "Christmas-Party-Games.zip",
     "thanksgiving-party-games": "Thanksgiving-Party-Games.zip",
     "murder-mystery-mistletoe-manor": "Murder-Mystery-Mistletoe-Manor.zip",
+    "new-years-eve-party-games": "New-Years-Eve-Party-Games.zip",
 }
 PERMALINKS = {
     "budget-planner": "budget-planner",
@@ -49,6 +50,7 @@ PERMALINKS = {
     "christmas-party-games": "christmas-games",
     "thanksgiving-party-games": "thanksgiving-games",
     "murder-mystery-mistletoe-manor": "murder-mystery",
+    "new-years-eve-party-games": "new-years-eve-games",
 }
 
 

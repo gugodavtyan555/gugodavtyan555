@@ -33,6 +33,8 @@ const items = {
     [['th-04.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['tb-12.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['tc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
   'murder-mystery-mistletoe-manor': page('Murder at Mistletoe Manor', 'A Christmas murder mystery party for 6–8 players.', ['8 suspects', '20 clues', 'Host script', '34 pages'],
     [['me-27.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['mb-11.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['mc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
+  'new-years-eve-party-games': page("New Year's Eve Party Games", '9 printable games to count down to 2027.', ['Trivia', 'Bingo', 'Year in Review', '67 pages'],
+    [['nr-63.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['nb-12.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['nc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
 };
 
 (async () => {

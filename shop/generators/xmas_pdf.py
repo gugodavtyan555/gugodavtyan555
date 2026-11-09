@@ -118,7 +118,10 @@ class Book:
         c.setFillColor(GREEN)
         c.rect(0, 0, self.W, 8, stroke=0, fill=1)
         if title:
-            self.t(self.W / 2, self.H - 70, title, 30, "Serif", RED, "c")
+            fs = 30
+            while pdfmetrics.stringWidth(title, "Serif", fs) > self.W - 150:
+                fs -= 1
+            self.t(self.W / 2, self.H - 70, title, fs, "Serif", RED, "c")
             if sub:
                 self.t(self.W / 2, self.H - 96, sub, 13, "Body", MUTED, "c")
 
@@ -196,10 +199,11 @@ def contents(b):
     y -= 10
     b.t(60, y, "What's inside", 18, "Serif", GREEN)
     y -= 30
+    desc_x = max(230, 70 + max(pdfmetrics.stringWidth(n, "Bold", 13) for n, _d in T["inside"]) + 14)
     for name, desc in T["inside"]:
         b.t(70, y, name, 13, "Bold", RED)
-        b.t(230, y, desc, 12)
-        y -= 24
+        end = b.para(desc_x, y, desc, 12, b.W - desc_x - 45, lead=1.25)
+        y = min(y - 24, end - 9)
     b.end()
 
 

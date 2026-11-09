@@ -28,6 +28,7 @@ const BOARDS = {
   'christmas-party-games': 'Christmas Party Ideas',
   'thanksgiving-party-games': 'Puzzle Books',
   'murder-mystery-mistletoe-manor': 'Christmas Party Ideas',
+  'new-years-eve-party-games': 'Christmas Party Ideas',
   'holiday-budget-planner': 'Budget Templates',
   'free-budget-template': 'Budget Templates',
   'budget-planner': 'Budget Templates',
@@ -126,6 +127,15 @@ const PINS6 = [
   ['murder-mystery-mistletoe-manor', 'Printable Murder Mystery Party Kit', 'Invitations to solution', 'Everything you need to host: host guide, invitations, 8 character booklets, evidence cards, ballots and awards.', 'murder mystery kit, host a murder mystery, printable party kit, party planning'],
 ];
 
+// Batch 7 (Nov 9, 2026): New Year's Eve games. Placed from queue position 28 (about Nov 21) so they go out
+// 3-5 weeks before New Year's Eve, when people plan their parties.
+const PINS7 = [
+  ['new-years-eve-party-games', "New Year's Eve Games for Families", '9 printable games', 'Trivia on New Year traditions around the world, 30 bingo cards, a countdown hunt and Year in Review cards.', "new years eve games, family new years eve, new years eve with kids, nye party ideas"],
+  ['new-years-eve-party-games', "New Year's Eve Trivia: Traditions Around the World", '40 questions + answers', '12 grapes in Spain, plates in Denmark, polka dots in the Philippines: how well do you know New Year?', "new years eve trivia, new year traditions, new years eve party games, trivia night"],
+  ['new-years-eve-party-games', 'Year in Review + 2027 Wishes Cards', 'Look back · dream ahead', '40 conversation cards for New Year\'s Eve: the best moments of the year and big dreams for 2027.', "new years eve activities, year in review, 2027 goals, new years conversation starters"],
+  ['new-years-eve-party-games', "Printable New Year's Eve Bingo", '30 cards + caller sheet', 'Confetti, countdown, sparklers and more: 30 different bingo cards to play before midnight.', "new years eve bingo, printable bingo, nye games for kids, new years party printables"],
+];
+
 const THEMES = [
   { bg: '#EEF4F0', ink: '#1F2A37', accent: '#2F7D5B', band: '#2F7D5B', bandInk: '#FFFFFF' },
   { bg: '#FBF3E8', ink: '#2B2118', accent: '#B5622E', band: '#2B2118', bandInk: '#FBF3E8' },
@@ -158,7 +168,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1500 }, deviceScaleFactor: 1 });
   const rows = [];
-  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6];
+  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7];
   for (let i = 0; i < ALL.length; i++) {
     const [ref, headline, , description, keywords] = ALL[i];
     const file = `pin-${String(i + 1).padStart(2, '0')}-${ref.replace('blog:', '')}.jpg`;
@@ -199,9 +209,14 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   while (fresh5.length || rest5.length) { if (fresh5.length) order.push(fresh5.shift()); if (rest5.length) order.push(rest5.shift()); }
   // Batch 6 (murder mystery): one every 3 pins after the first unsent Thanksgiving pin, so Thanksgiving still leads.
   const SENT_BEFORE_BATCH6 = 8;
-  const fresh6 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length);
+  const fresh6 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length, PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length);
   const rest6 = order.splice(SENT_BEFORE_BATCH6);
   while (fresh6.length || rest6.length) { if (fresh6.length) order.push(fresh6.shift()); for (let k = 0; k < 2 && rest6.length; k++) order.push(rest6.shift()); }
+  // Batch 7 (New Year's Eve): one every 3 pins starting at queue position 28.
+  const START7 = 28;
+  const fresh7 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length);
+  const rest7 = order.splice(START7);
+  while (fresh7.length || rest7.length) { if (fresh7.length) order.push(fresh7.shift()); for (let k = 0; k < 2 && rest7.length; k++) order.push(rest7.shift()); }
   fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
     title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
     alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,

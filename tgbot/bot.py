@@ -55,6 +55,7 @@ def analyze(pair):
         full = d1 == d15
         all5 = full and st["M30"][0] == d15 and st["H1"][0] == d15
         tag = "🔥 (բոլոր 5 ժամկետն էլ համաձայն)" if all5 else ("(M15, M5, M1 համաձայն)" if full else "🟡 թույլ (M1-ը հակառակն է՝ պուլբեք)")
+        if all5: lines[0] = "🔥 " + lines[0]
         lines += [f"➡️ *{d15}* {ico[d15]} {tag}",
                   "⏱ Expiry՝ *5 րոպե*",
                   ("✅ Մտիր հիմա (M5 մոմը նոր է փակվել)" if since <= 60 else f"⏳ Ավելի լավ է սպասել M5 փակմանը ({nxt} վ) և նոր մտնել"),

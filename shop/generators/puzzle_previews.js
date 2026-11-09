@@ -31,6 +31,8 @@ const items = {
     [['xh-04.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['xb-12.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['xc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
   'thanksgiving-party-games': page('Thanksgiving Party Games', '9 printable games for the whole family.', ['Trivia', 'Bingo', 'Table Talk', '67 pages'],
     [['th-04.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['tb-12.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['tc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
+  'murder-mystery-mistletoe-manor': page('Murder at Mistletoe Manor', 'A Christmas murder mystery party for 6–8 players.', ['8 suspects', '20 clues', 'Host script', '34 pages'],
+    [['me-27.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['mb-11.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['mc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
 };
 
 (async () => {

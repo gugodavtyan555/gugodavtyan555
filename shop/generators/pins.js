@@ -27,6 +27,7 @@ const BOARDS = {
   'puzzle-bundle': 'Puzzle Books',
   'christmas-party-games': 'Christmas Party Ideas',
   'thanksgiving-party-games': 'Puzzle Books',
+  'murder-mystery-mistletoe-manor': 'Christmas Party Ideas',
   'holiday-budget-planner': 'Budget Templates',
   'free-budget-template': 'Budget Templates',
   'budget-planner': 'Budget Templates',
@@ -117,6 +118,14 @@ const PINS5 = [
   ['thanksgiving-party-games', 'Thanksgiving Scavenger Hunt for Kids', '12 rhyming clues', 'Keep the kids busy while dinner cooks: rhyming clues lead around the house to a hidden prize.', 'thanksgiving scavenger hunt, kids thanksgiving games, thanksgiving activities for kids, scavenger hunt clues'],
 ];
 
+// Batch 6 (Nov 9, 2026): the Christmas murder mystery party kit.
+const PINS6 = [
+  ['murder-mystery-mistletoe-manor', 'Host a Christmas Murder Mystery Party', '6–8 players · printable kit', 'Murder at Mistletoe Manor: 8 suspects, 20 evidence cards, invitations, a host script and a solution that really adds up.', 'murder mystery party, christmas murder mystery, christmas party ideas for adults, dinner party games'],
+  ['murder-mystery-mistletoe-manor', 'Murder Mystery Dinner Party Game for 8', 'Christmas Eve, a snowed-in manor', 'Who poisoned Sir Nicholas\'s cocoa? Character booklets, clues, name tags and awards: just print and play.', 'murder mystery dinner, printable party game, christmas dinner party, game night ideas'],
+  ['murder-mystery-mistletoe-manor', 'Christmas Party Idea: A Murder Mystery Night', 'Costumes · clues · suspects', 'Give every guest a secret, a motive and an alibi. Three rounds of clues lead to one killer.', 'christmas party theme, adult christmas party ideas, murder mystery night, holiday party games'],
+  ['murder-mystery-mistletoe-manor', 'Printable Murder Mystery Party Kit', 'Invitations to solution', 'Everything you need to host: host guide, invitations, 8 character booklets, evidence cards, ballots and awards.', 'murder mystery kit, host a murder mystery, printable party kit, party planning'],
+];
+
 const THEMES = [
   { bg: '#EEF4F0', ink: '#1F2A37', accent: '#2F7D5B', band: '#2F7D5B', bandInk: '#FFFFFF' },
   { bg: '#FBF3E8', ink: '#2B2118', accent: '#B5622E', band: '#2B2118', bandInk: '#FBF3E8' },
@@ -149,7 +158,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1500 }, deviceScaleFactor: 1 });
   const rows = [];
-  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5];
+  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6];
   for (let i = 0; i < ALL.length; i++) {
     const [ref, headline, , description, keywords] = ALL[i];
     const file = `pin-${String(i + 1).padStart(2, '0')}-${ref.replace('blog:', '')}.jpg`;
@@ -185,9 +194,14 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   while (fresh4.length || rest4.length) { if (fresh4.length) order.push(fresh4.shift()); if (rest4.length) order.push(rest4.shift()); }
   // Batch 5 (Thanksgiving) after SENT_BEFORE_BATCH5 pins: seasonal, new pin first in every pair.
   const SENT_BEFORE_BATCH5 = 7;
-  const fresh5 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length);
+  const fresh5 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length, PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length);
   const rest5 = order.splice(SENT_BEFORE_BATCH5);
   while (fresh5.length || rest5.length) { if (fresh5.length) order.push(fresh5.shift()); if (rest5.length) order.push(rest5.shift()); }
+  // Batch 6 (murder mystery): one every 3 pins after the first unsent Thanksgiving pin, so Thanksgiving still leads.
+  const SENT_BEFORE_BATCH6 = 8;
+  const fresh6 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length);
+  const rest6 = order.splice(SENT_BEFORE_BATCH6);
+  while (fresh6.length || rest6.length) { if (fresh6.length) order.push(fresh6.shift()); for (let k = 0; k < 2 && rest6.length; k++) order.push(rest6.shift()); }
   fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
     title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
     alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,

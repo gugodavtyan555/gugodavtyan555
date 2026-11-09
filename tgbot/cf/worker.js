@@ -5,7 +5,7 @@ const PAIRS = "EURUSD GBPUSD USDJPY AUDUSD USDCAD USDCHF NZDUSD EURGBP EURJPY EU
 const GROUPS = 2;                 // free plan: only 2 cron triggers available -> 2 groups of 14 pairs
 const CRONS = ["*/5 * * * *", "0-59/5 * * * *"];   // cron 1 also ranks + settles after scanning
 const PAYOUT = 0.80, TOP_N = 3, TZ_OFFSET = 4 * 3600;
-const START_KB = { keyboard: [[{ text: "▶️ Start" }, { text: "🔍 Լավագույն սիգնալ" }], [{ text: "📜 Պատմություն" }, { text: "⚙️ Ավտո ON/OFF" }]], resize_keyboard: true, is_persistent: true };
+const START_KB = { keyboard: [[{ text: "▶️ Start" }, { text: "🔍 Սկանավորում" }], [{ text: "📜 Պատմություն" }, { text: "⚙️ Ավտո ON/OFF" }]], resize_keyboard: true, is_persistent: true };
 
 // ---------- indicators ----------
 const ema = (v, n) => { const a = 2 / (n + 1); const o = new Array(v.length); o[0] = v[0]; for (let i = 1; i < v.length; i++) o[i] = a * v[i] + (1 - a) * o[i - 1]; return o; };
@@ -40,26 +40,34 @@ async function fetchYahoo(pair, interval, range) {
   return { t, c };
 }
 
+function mergeLive(base, step, m1) {
+  const t = base.t.slice(), c = base.c.slice();
+  if (m1.t.length) {
+    const b = Math.floor(m1.t[m1.t.length - 1] / step) * step, lc = m1.c[m1.c.length - 1];
+    if (t.length && t[t.length - 1] === b) c[c.length - 1] = lc; else if (!t.length || b > t[t.length - 1]) { t.push(b); c.push(lc); }
+  }
+  return { t, c };
+}
+
+// "Live snapshot" analysis: M15 / M5 / M1 vs EMA20 using the latest price incl. the unfinished candle.
 async function computeInfo(pair, now) {
-  const [m1raw, m5raw] = await Promise.all([fetchYahoo(pair, "1m", "1d"), fetchYahoo(pair, "5m", "5d")]);
-  const tfs = { H1: closedOnly(resample(m5raw, 60), 60, now), M30: closedOnly(resample(m5raw, 30), 30, now), M15: closedOnly(resample(m5raw, 15), 15, now), M5: closedOnly(resample(m5raw, 5), 5, now), M1: closedOnly(m1raw, 1, now) };
+  const [m1, m5raw] = await Promise.all([fetchYahoo(pair, "1m", "1d"), fetchYahoo(pair, "5m", "5d")]);
+  const m5 = mergeLive(m5raw, 300, m1);
+  const tfs = { M15: resample(m5, 15), M5: m5, M1: m1 };
   const st = {};
-  for (const k of ["H1", "M30", "M15", "M5", "M1"]) {
+  for (const k of ["M15", "M5", "M1"]) {
     const s = tfs[k]; if (s.c.length < 21) throw new Error("not enough data " + k);
     const e = ema(s.c, 20); const last = s.c[s.c.length - 1], el = e[e.length - 1];
     st[k] = [last > el ? "UP" : "DOWN", last, el];
   }
   const r5 = rsiLast(tfs.M5.c), r1 = rsiLast(tfs.M1.c);
   const d15 = st.M15[0], d5 = st.M5[0], d1 = st.M1[0];
-  const full = d1 === d15, all5 = full && st.M30[0] === d15 && st.H1[0] === d15;
-  let sc;
-  if (d15 !== d5) sc = 0;
-  else if (all5) sc = ((d15 === "UP" && r5 > 70) || (d15 === "DOWN" && r5 < 30)) ? 9 : 10;
-  else if (full) sc = 6; else sc = 3;
-  const bar = tfs.M1.t[tfs.M1.t.length - 1];
+  const agree = d15 === d5, full = agree && d1 === d15;
+  const sc = !agree ? 0 : full ? 10 : 3;
+  const bar = m1.t[m1.t.length - 1];
   const m5c = tfs.M5.c, n5 = m5c.length; let tr = 0; for (let i = n5 - 14; i < n5; i++) tr += Math.abs(m5c[i] - m5c[i - 1]);
   const atr = tr / 14, feat = { hour: new Date(now * 1000).getUTCHours(), rsi5: +r5.toFixed(1), rsi1: +r1.toFixed(1), dist: +(Math.abs(st.M5[1] - st.M5[2]) / atr).toFixed(2), vol: +(atr / st.M5[1] * 1e4).toFixed(2) };
-  return { feat, pair, st, r5, r1, score: sc + (1 - Math.abs(r5 - 50) / 50) * 0.5, dir: d15, price: st.M1[1], bar, all5, full, agree: d15 === d5 };
+  return { feat, pair, st, r5, r1, score: sc + (1 - Math.abs(r5 - 50) / 50) * 0.5, dir: d15, price: st.M1[1], bar, full, agree };
 }
 
 // ---------- rendering ----------
@@ -68,19 +76,16 @@ const pairName = p => `${p.slice(0, 3)}/${p.slice(3)}`;
 const ico = { UP: "🟢", DOWN: "🔴" };
 function render(info, now) {
   const { pair, st, r5, r1 } = info;
-  const since = (Math.floor(now / 60) % 5) * 60 + (now % 60), nxt = 300 - since;
   const ts = new Date(now * 1000).toISOString().slice(11, 19);
   const L = [`📊 *${pairName(pair)}* · ${ts} UTC · գին ${info.price.toFixed(5)}`, ""];
-  for (const k of ["H1", "M30", "M15", "M5", "M1"]) L.push(`${k}: ${ico[st[k][0]]} ${st[k][0]} (EMA20 ${st[k][2].toFixed(5)})`);
-  L.push(`RSI M5 ${r5.toFixed(0)} · RSI M1 ${r1.toFixed(0)}`, "_(հաշվարկը՝ միայն փակված մոմերով)_", `🕒 M5 մոմը փակվեց ${mmss(since)} առաջ · հաջորդ փակումը՝ ${mmss(nxt)} հետո\n`);
+  for (const k of ["M15", "M5", "M1"]) L.push(`${k}: ${ico[st[k][0]]} ${st[k][0]} (EMA20 ${st[k][2].toFixed(5)})`);
+  L.push(`RSI M5 ${r5.toFixed(0)} · RSI M1 ${r1.toFixed(0)}`, "_(վիճակը հենց այս պահի գնով)_", "");
   const d15 = st.M15[0];
   if (!info.agree) L.push("➡️ *WAIT / չմտնել*", "M15-ը և M5-ը հակասում են, ուղղություն չկա։");
   else {
-    const tag = info.all5 ? "🔥 (բոլոր 5 ժամկետն էլ համաձայն)" : info.full ? "(M15, M5, M1 համաձայն)" : "🟡 թույլ (M1-ը հակառակն է՝ պուլբեք)";
-    if (info.all5) L[0] = "🔥 " + L[0];
-    L.push(`➡️ *${d15}* ${ico[d15]} ${tag}`, "⏱ Expiry՝ *5 րոպե*",
-      since <= 60 ? "✅ Մտիր հիմա (M5 մոմը նոր է փակվել)" : `⏳ Ավելի լավ է սպասել M5 փակմանը (${mmss(nxt)}) և նոր մտնել`,
-      `❌ Անվավեր, եթե M5 փակվի EMA20-ի ${d15 === "UP" ? "ներքև" : "վերև"} (${st.M5[2].toFixed(5)})`);
+    L.push(`➡️ *${d15}* ${ico[d15]} ${info.full ? "(երեք ժամկետն էլ համաձայն)" : "🟡 թույլ (M1-ը հակառակն է՝ պուլբեք)"}`, "⏱ Expiry՝ *5 րոպե*",
+      "✅ Մտնելու համար՝ հիմա (սիգնալը ընթացիկ պահի համար է)",
+      `❌ Անվավեր, եթե M5 մոմը փակվի EMA20-ի ${d15 === "UP" ? "ներքև" : "վերև"} (${st.M5[2].toFixed(5)})`);
     if ((d15 === "UP" && r5 > 70) || (d15 === "DOWN" && r5 < 30)) L.push("⚠️ M5 RSI-ն ծայրահեղ է՝ ռեվերսի ռիսկ");
   }
   return L.join("\n");
@@ -91,7 +96,7 @@ async function tg(env, method, body) {
   return fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 }
 const send = (env, chat, text, markup) => tg(env, "sendMessage", { chat_id: chat, text, parse_mode: "Markdown", ...(markup ? { reply_markup: markup } : {}) });
-const pairKb = () => ({ inline_keyboard: [[{ text: "🔍 Գտնել լավագույն սիգնալը", callback_data: "BEST" }], ...Array.from({ length: Math.ceil(PAIRS.length / 3) }, (_, i) => PAIRS.slice(i * 3, i * 3 + 3).map(p => ({ text: pairName(p), callback_data: p })))] });
+const pairKb = () => ({ inline_keyboard: [[{ text: "🔍 Սկանավորել բոլոր զույգերը", callback_data: "BEST" }], ...Array.from({ length: Math.ceil(PAIRS.length / 3) }, (_, i) => PAIRS.slice(i * 3, i * 3 + 3).map(p => ({ text: pairName(p), callback_data: p })))] });
 const oneKb = p => ({ inline_keyboard: [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] });
 const bestKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] : []), [{ text: "🔍 Նորից գտնել", callback_data: "BEST" }]] });
 
@@ -99,12 +104,19 @@ async function bestSignal(env, now) {
   const { results } = await env.DB.prepare("SELECT pair, asof, info FROM scan WHERE asof >= ?").bind(now - 900).all();
   const rows = results.map(r => ({ asof: r.asof, ...JSON.parse(r.info) }));
   if (!rows.length) return { pair: null, text: "Վերջին սկանավորման տվյալներ դեռ չկան (շուկան փակ է կամ ցիկլը նոր է սկսվում)։ Փորձիր 1–2 րոպե հետո։" };
-  rows.sort((a, b) => b.score - a.score);
-  const b = rows[0], n5 = rows.filter(r => r.score >= 9).length;
-  const age = now - b.asof;
-  let head = `🔍 Սկանավորվեց ${rows.length} զույգ · 🔥 սիգնալներ՝ ${n5}\n_(տվյալները ${mmss(age)} առաջվա են)_\n`;
-  if (b.score < 6) head += "Ուժեղ սիգնալ չկա, ամենալավը թույլ է։\n";
-  return { pair: b.pair, text: head + "\n" + render(b, now) };
+  const age = now - Math.max(...rows.map(r => r.asof));
+  const names = a => a.map(r => pairName(r.pair)).join(", ") || "—";
+  const up = rows.filter(r => r.full && r.dir === "UP"), dn = rows.filter(r => r.full && r.dir === "DOWN");
+  const weak = rows.filter(r => r.agree && !r.full), skip = rows.filter(r => !r.agree);
+  const L = [`📋 *Սկանավորում* · ${new Date(now * 1000).toISOString().slice(11, 16)} UTC _(տվյալները ${mmss(age)} առաջվա են)_`, "",
+    `🟢 *UP* · 5 րոպե (երեք ժամկետն էլ համաձայն)\n${names(up)}`, "", `🔴 *DOWN* · 5 րոպե (երեք ժամկետն էլ համաձայն)\n${names(dn)}`, "",
+    `🟡 *Թույլ* (M1-ը հակառակն է)\n${names(weak)}`, "", `⚪️ *Չմտնել* (M15-ը և M5-ը հակասում են)\n${names(skip)}`];
+  const aligned = up.length + dn.length;
+  if (aligned >= 4 && Math.max(up.length, dn.length) >= 0.6 * aligned) L.push("", "ℹ️ Շուկան միակողմանի է. սրանք մեծ մասամբ նույն շարժի կրկնություններ են (~1 անկախ սիգնալ), ուստի մեկ գործարք բավական է։");
+  const full = rows.filter(r => r.full).sort((a, b) => b.score - a.score);
+  const best = full[0] || [...rows].sort((a, b) => b.score - a.score)[0];
+  L.push("", `*Առաջարկվող (RSI-ով ամենաչեզոք).* ${pairName(best.pair)}`, "", render(best, now));
+  return { pair: best.pair, text: L.join("\n") };
 }
 
 async function historyText(env, now) {
@@ -170,7 +182,7 @@ async function rankAndSettle(env, boundary, wait) {
   const cache = {};
   for (const t of open) {
     let px = null;
-    try { cache[t.pair] = cache[t.pair] || await fetchYahoo(t.pair, "1m", "1d"); const s = cache[t.pair]; const i = s.t.indexOf(t.exit_at - 60); if (i >= 0) px = s.c[i]; } catch (e) {}
+    try { cache[t.pair] = cache[t.pair] || await fetchYahoo(t.pair, "1m", "1d"); const s = cache[t.pair]; if (s.t.length && s.t[s.t.length - 1] >= t.exit_at) px = s.c[s.c.length - 1]; } catch (e) {}
     const tries = t.tries + 1;
     if (px == null) { await env.DB.prepare("UPDATE trades SET tries=?, result=? WHERE id=?").bind(tries, tries >= 4 ? "error" : null, t.id).run(); continue; }
     const moved = px - t.entry; const res = moved === 0 ? "draw" : ((moved > 0) === (t.dir === "UP") ? "win" : "loss");
@@ -181,7 +193,7 @@ async function rankAndSettle(env, boundary, wait) {
   if (auto) {
     const { results } = await env.DB.prepare("SELECT info, asof FROM scan WHERE asof = ?").bind(boundary).all();
     const rows = results.map(r => JSON.parse(r.info)).filter(i => i.bar >= boundary - 180).sort((a, b) => b.score - a.score).slice(0, TOP_N);
-    for (const i of rows) if (i.score >= 9) {
+    for (const i of rows) if (i.score >= 10) {
       await env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat) VALUES (?,?,?,?,?,?,?)").bind(i.pair, i.dir, boundary, boundary + 300, i.price, Math.round(i.score * 100) / 100, JSON.stringify(i.feat)).run();
       out.opened.push(i.pair);
     }

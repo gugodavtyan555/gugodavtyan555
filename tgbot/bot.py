@@ -7,7 +7,7 @@ import os, time, requests, pandas as pd
 TOKEN = os.environ["TRADE_BOT_TOKEN"]
 API = f"https://api.telegram.org/bot{TOKEN}"
 ALLOWED = {int(x) for x in os.environ.get("ALLOWED_CHAT_IDS", "").split(",") if x.strip()}  # empty = anyone
-PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","EURGBP","AUDCAD","EURJPY","AUDCHF","EURCHF","AUDNZD","CADJPY"]
+PAIRS = "EURUSD GBPUSD USDJPY AUDUSD USDCAD USDCHF NZDUSD EURGBP EURJPY EURCHF EURAUD EURCAD EURNZD GBPJPY GBPAUD GBPCAD GBPCHF GBPNZD AUDJPY AUDCAD AUDCHF AUDNZD CADJPY CADCHF CHFJPY NZDJPY NZDCAD NZDCHF".split()
 DISCLAIMER = ("⚠️ Ուղղությունը ենթադրություն է, ոչ երաշխիք։ Բեքթեսթում այս կանոնը իրական շուկայում ~49% էր "
               "(break-even ~52–55%)։ Մեկ գործարք՝ փոքր գումարով։ Ոչ ֆինանսական խորհուրդ։")
 

@@ -22,18 +22,30 @@ def fetch(pair):
         params={"interval": "1m", "range": "1d"}, headers={"User-Agent": "Mozilla/5.0"}, timeout=20).json()["chart"]["result"][0]
     return pd.Series(j["indicators"]["quote"][0]["close"], index=pd.to_datetime(j["timestamp"], unit="s")).dropna()
 
+def closed(series, minutes, now):
+    """Keep only fully closed bars: bar start + length <= now."""
+    end = series.index + pd.Timedelta(minutes=minutes)
+    return series[end <= now]
+
 def analyze(pair):
-    m1 = fetch(pair); m5 = m1.resample("5min").last().dropna(); m15 = m1.resample("15min").last().dropna()
+    raw = fetch(pair)
+    now = pd.Timestamp.now("UTC").tz_localize(None)
+    m1 = closed(raw, 1, now)
+    m5 = closed(raw.resample("5min").last().dropna(), 5, now)
+    m15 = closed(raw.resample("15min").last().dropna(), 15, now)
     st = {}
     for name, s in (("M15", m15), ("M5", m5), ("M1", m1)):
         e = ema(s, 20).iloc[-1]; st[name] = ("UP" if s.iloc[-1] > e else "DOWN", s.iloc[-1], e)
     r5 = rsi(m5).iloc[-1]; r1 = rsi(m1).iloc[-1]
-    price = m1.iloc[-1]; ts = m1.index[-1].strftime("%H:%M")
+    price = m1.iloc[-1]; ts = now.strftime("%H:%M:%S")
+    since = (now.minute % 5) * 60 + now.second; nxt = 300 - since
     ico = {"UP": "🟢", "DOWN": "🔴"}
     lines = [f"📊 *{pair[:3]}/{pair[3:]}* · {ts} UTC · գին {price:.5f}", ""]
     for k in ("M15", "M5", "M1"):
         lines.append(f"{k}: {ico[st[k][0]]} {st[k][0]} (EMA20 {st[k][2]:.5f})")
-    lines.append(f"RSI M5 {r5:.0f} · RSI M1 {r1:.0f}\n")
+    lines.append(f"RSI M5 {r5:.0f} · RSI M1 {r1:.0f}")
+    lines.append("_(հաշվարկը՝ միայն փակված մոմերով)_")
+    lines.append(f"🕒 M5 մոմը փակվեց {since} վ առաջ · հաջորդ փակումը՝ {nxt} վ հետո\n")
     d15, d5, d1 = st["M15"][0], st["M5"][0], st["M1"][0]
     if d15 != d5:
         lines += ["➡️ *WAIT / չմտնել*", "M15-ը և M5-ը հակասում են, ուղղություն չկա։"]
@@ -41,6 +53,7 @@ def analyze(pair):
         full = d1 == d15
         lines += [f"➡️ *{d15}* {ico[d15]} {'(երեք ժամկետն էլ համաձայն)' if full else '🟡 թույլ (M1-ը հակառակն է՝ պուլբեք)'}",
                   "⏱ Expiry՝ *5 րոպե*",
+                  ("✅ Մտիր հիմա (M5 մոմը նոր է փակվել)" if since <= 60 else f"⏳ Ավելի լավ է սպասել M5 փակմանը ({nxt} վ) և նոր մտնել"),
                   f"❌ Անվավեր, եթե M5 փակվի EMA20-ի {'ներքև' if d15=='UP' else 'վերև'} ({st['M5'][2]:.5f})"]
         if (d15 == "UP" and r5 > 70) or (d15 == "DOWN" and r5 < 30):
             lines.append("⚠️ M5 RSI-ն ծայրահեղ է՝ ռեվերսի ռիսկ")

@@ -37,6 +37,8 @@ const items = {
     [['nr-63.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['nb-12.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['nc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
   'escape-room-clockwork-lab': page('Escape the Clockwork Lab', 'A printable escape room for kids aged 7–12.', ['6 puzzles', '45 minutes', 'Hint cards', 'Certificate'],
     [['e8-08.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['e5-05.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['e1-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
+  'resume-templates': page('Resume Templates Bundle', '5 one-page designs + cover letters for Word and Google Docs.', ['5 designs', 'Cover letters', 'Word + Docs', 'Letter + A4'],
+    [['rs-Executive-1.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['rs-Two-Column-1.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['rs-Modern-1.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
 };
 
 (async () => {

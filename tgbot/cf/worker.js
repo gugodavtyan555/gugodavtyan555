@@ -5,7 +5,7 @@ const PAIRS = "EURUSD GBPUSD USDJPY AUDUSD USDCAD USDCHF NZDUSD EURGBP EURJPY EU
 const GROUPS = 2;                 // free plan: only 2 cron triggers available -> 2 groups of 14 pairs
 const CRONS = ["*/5 * * * *", "0-59/5 * * * *"];   // cron 1 also ranks + settles after scanning
 const PAYOUT = 0.80, TOP_N = 3, TZ_OFFSET = 4 * 3600;
-const START_KB = { keyboard: [[{ text: "▶️ Start" }, { text: "🔍 Սկանավորում" }], [{ text: "📜 Պատմություն" }, { text: "⚙️ Ավտո ON/OFF" }]], resize_keyboard: true, is_persistent: true };
+const START_KB = { keyboard: [[{ text: "▶️ Start" }, { text: "🔍 Լավագույն սիգնալ" }], [{ text: "📜 Պատմություն" }, { text: "⚙️ Ավտո ON/OFF" }]], resize_keyboard: true, is_persistent: true };
 
 // ---------- indicators ----------
 const ema = (v, n) => { const a = 2 / (n + 1); const o = new Array(v.length); o[0] = v[0]; for (let i = 1; i < v.length; i++) o[i] = a * v[i] + (1 - a) * o[i - 1]; return o; };
@@ -83,7 +83,8 @@ function render(info, now) {
   const d15 = st.M15[0];
   if (!info.agree) L.push("➡️ *WAIT / չմտնել*", "M15-ը և M5-ը հակասում են, ուղղություն չկա։");
   else {
-    L.push(`➡️ *${d15}* ${ico[d15]} ${info.full ? "(երեք ժամկետն էլ համաձայն)" : "🟡 թույլ (M1-ը հակառակն է՝ պուլբեք)"}`, "⏱ Expiry՝ *5 րոպե*",
+    if (info.full) L[0] = "🔥 " + L[0];
+    L.push(`➡️ *${d15}* ${ico[d15]} ${info.full ? "🔥 (երեք ժամկետն էլ համաձայն)" : "🟡 թույլ (M1-ը հակառակն է՝ պուլբեք)"}`, "⏱ Expiry՝ *5 րոպե*",
       "✅ Մտնելու համար՝ հիմա (սիգնալը ընթացիկ պահի համար է)",
       `❌ Անվավեր, եթե M5 մոմը փակվի EMA20-ի ${d15 === "UP" ? "ներքև" : "վերև"} (${st.M5[2].toFixed(5)})`);
     if ((d15 === "UP" && r5 > 70) || (d15 === "DOWN" && r5 < 30)) L.push("⚠️ M5 RSI-ն ծայրահեղ է՝ ռեվերսի ռիսկ");
@@ -96,7 +97,7 @@ async function tg(env, method, body) {
   return fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 }
 const send = (env, chat, text, markup) => tg(env, "sendMessage", { chat_id: chat, text, parse_mode: "Markdown", ...(markup ? { reply_markup: markup } : {}) });
-const pairKb = () => ({ inline_keyboard: [[{ text: "🔍 Սկանավորել բոլոր զույգերը", callback_data: "BEST" }], ...Array.from({ length: Math.ceil(PAIRS.length / 3) }, (_, i) => PAIRS.slice(i * 3, i * 3 + 3).map(p => ({ text: pairName(p), callback_data: p })))] });
+const pairKb = () => ({ inline_keyboard: [[{ text: "🔍 Գտնել լավագույն սիգնալը", callback_data: "BEST" }], ...Array.from({ length: Math.ceil(PAIRS.length / 3) }, (_, i) => PAIRS.slice(i * 3, i * 3 + 3).map(p => ({ text: pairName(p), callback_data: p })))] });
 const oneKb = p => ({ inline_keyboard: [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] });
 const bestKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] : []), [{ text: "🔍 Նորից գտնել", callback_data: "BEST" }]] });
 
@@ -104,19 +105,12 @@ async function bestSignal(env, now) {
   const { results } = await env.DB.prepare("SELECT pair, asof, info FROM scan WHERE asof >= ?").bind(now - 900).all();
   const rows = results.map(r => ({ asof: r.asof, ...JSON.parse(r.info) }));
   if (!rows.length) return { pair: null, text: "Վերջին սկանավորման տվյալներ դեռ չկան (շուկան փակ է կամ ցիկլը նոր է սկսվում)։ Փորձիր 1–2 րոպե հետո։" };
-  const age = now - Math.max(...rows.map(r => r.asof));
-  const names = a => a.map(r => pairName(r.pair)).join(", ") || "—";
-  const up = rows.filter(r => r.full && r.dir === "UP"), dn = rows.filter(r => r.full && r.dir === "DOWN");
-  const weak = rows.filter(r => r.agree && !r.full), skip = rows.filter(r => !r.agree);
-  const L = [`📋 *Սկանավորում* · ${new Date(now * 1000).toISOString().slice(11, 16)} UTC _(տվյալները ${mmss(age)} առաջվա են)_`, "",
-    `🟢 *UP* · 5 րոպե (երեք ժամկետն էլ համաձայն)\n${names(up)}`, "", `🔴 *DOWN* · 5 րոպե (երեք ժամկետն էլ համաձայն)\n${names(dn)}`, "",
-    `🟡 *Թույլ* (M1-ը հակառակն է)\n${names(weak)}`, "", `⚪️ *Չմտնել* (M15-ը և M5-ը հակասում են)\n${names(skip)}`];
-  const aligned = up.length + dn.length;
-  if (aligned >= 4 && Math.max(up.length, dn.length) >= 0.6 * aligned) L.push("", "ℹ️ Շուկան միակողմանի է. սրանք մեծ մասամբ նույն շարժի կրկնություններ են (~1 անկախ սիգնալ), ուստի մեկ գործարք բավական է։");
-  const full = rows.filter(r => r.full).sort((a, b) => b.score - a.score);
-  const best = full[0] || [...rows].sort((a, b) => b.score - a.score)[0];
-  L.push("", `*Առաջարկվող (RSI-ով ամենաչեզոք).* ${pairName(best.pair)}`, "", render(best, now));
-  return { pair: best.pair, text: L.join("\n") };
+  rows.sort((a, b) => b.score - a.score);
+  const b = rows[0], n5 = rows.filter(r => r.full).length;
+  const age = now - b.asof;
+  let head = `🔍 Սկանավորվեց ${rows.length} զույգ · 🔥 սիգնալներ՝ ${n5}\n_(տվյալները ${mmss(age)} առաջվա են)_\n`;
+  if (!b.full) head += "Ուժեղ սիգնալ չկա, ամենալավը թույլ է։\n";
+  return { pair: b.pair, text: head + "\n" + render(b, now) };
 }
 
 async function historyText(env, now) {

@@ -122,18 +122,22 @@ const bestKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`
 // ---------- "clear signal" rules (strict) ----------
 // Trend: M15, M5, M1 all agree AND M5 RSI not extreme (35-65) AND price not stretched (<= 2 ATR from M5 EMA20)
 // Fade:  M15, M5, M1 all agree AND price stretched (>= 2.5 ATR from M5 EMA20) -> trade against the move
-const isClearTrend = i => i.full && i.r5 > 35 && i.r5 < 65 && i.feat.dist <= 2;
-const isClearFade = i => i.full && i.feat.dist >= 2.5;
+const fadeDir = i => i.dir === "UP" ? "DOWN" : "UP";
+const isClearTrend = i => i.full && i.r5 > 35 && i.r5 < 65 && i.feat.dist <= 2 && tvAgree(i.tv, i.dir) === 3;   // + TradingView agrees on 1/5/15 min
+const isClearFade = i => i.full && i.feat.dist >= 2.5 && tvAgree(i.tv, fadeDir(i)) === 3;
 const dot = d => ico[d];
 
 // Signal is for entering RIGHT NOW (expiry 5 minutes from entry).
 const entryLine = now => "✅ Մտիր հիմա (սիգնալը ընթացիկ պահի համար է)";
+function tvWhy(i, dir) { return !i.tv ? "TradingView-ի տվյալներ չկան" : `TradingView-ը համաձայն չէ (${tvAgree(i.tv, dir)}/3)`; }
 function whyNotTrend(i) {
   if (!i.agree) return "M15-ը և M5-ը հակասում են";
   if (!i.full) return "M1-ը հակառակ կողմում է (պուլբեք)";
   if (i.r5 <= 35 || i.r5 >= 65) return `RSI-ն ծայրահեղ է (${i.r5.toFixed(0)})՝ ռեվերսի ռիսկ`;
-  return `գինը շատ է հեռացել EMA-ից (${i.feat.dist} ATR)`;
+  if (i.feat.dist > 2) return `գինը շատ է հեռացել EMA-ից (${i.feat.dist} ATR)`;
+  return tvWhy(i, i.dir);
 }
+
 // TradingView rating helpers: value in [-1, 1]
 const tvDir = v => v >= 0.1 ? "UP" : v <= -0.1 ? "DOWN" : "FLAT";
 const tvIcon = v => v >= 0.5 ? "🟢🟢" : v >= 0.1 ? "🟢" : v > -0.1 ? "⚪️" : v > -0.5 ? "🔴" : "🔴🔴";
@@ -156,7 +160,7 @@ function renderClear(i, now) {
 }
 function renderFadeClear(i, now) {
   const hh = new Date(now * 1000).toISOString().slice(11, 19), p = pairName(i.pair);
-  if (!isClearFade(i)) return `↩️ ⚪️ *WAIT* · ${p}\nՀակառակ հստակ սիգնալ չկա. ` + (!i.full ? "երեք ժամկետը համաձայն չեն" : `գինը բավականաչափ հեռու չէ EMA-ից (${i.feat.dist} ATR, պետք է ≥ 2.5)`) + "։";
+  if (!isClearFade(i)) return `↩️ ⚪️ *WAIT* · ${p}\nՀակառակ հստակ սիգնալ չկա. ` + (!i.full ? "երեք ժամկետը համաձայն չեն" : i.feat.dist < 2.5 ? `գինը բավականաչափ հեռու չէ EMA-ից (${i.feat.dist} ATR, պետք է ≥ 2.5)` : tvWhy(i, fadeDir(i))) + "։";
   const trend = i.dir, fade = trend === "UP" ? "DOWN" : "UP";
   return [`↩️ ${dot(fade)} *${fade} · 5 րոպե* — ${p} (հակառակ)`,
     `Գինը EMA-ից ${i.feat.dist} ATR ${trend === "UP" ? "վերև" : "ներքև"} է (ձգված շարժում) · RSI ${i.r5.toFixed(0)}`,
@@ -308,7 +312,7 @@ async function rankAndSettle(env, boundary, wait) {
     const { results } = await env.DB.prepare("SELECT info, asof FROM scan WHERE asof = ?").bind(boundary).all();
     const all = results.map(r => JSON.parse(r.info)).filter(i => i.bar >= boundary - 180);
     const tvm = await fetchTV(PAIRS).catch(() => ({}));
-    for (const i of all) { const v = tvm[i.pair]; if (v) i.feat.tv = [v.m1, v.m5, v.m15].map(x => +x.toFixed(2)); }
+    for (const i of all) { const v = tvm[i.pair]; i.tv = v; if (v) i.feat.tv = [v.m1, v.m5, v.m15].map(x => +x.toFixed(2)); }
     const ins = (i, dir, strat) => env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat, strat) VALUES (?,?,?,?,?,?,?,?)")
       .bind(i.pair, dir, boundary, boundary + 300, i.price, Math.round(i.score * 100) / 100, JSON.stringify(i.feat), strat);
     // T = trend (best aligned pair, RSI-neutral). F = fade (aligned pair farthest from EMA, trade AGAINST the trend)

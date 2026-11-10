@@ -117,6 +117,11 @@ const isClearTrend = i => i.full && i.r5 > 35 && i.r5 < 65 && i.feat.dist <= 2;
 const isClearFade = i => i.full && i.feat.dist >= 2.5;
 const dot = d => ico[d];
 
+// Signal applies to the NEXT 5-minute candle (enter at its open, expiry 5 min).
+function entryLine(now) {
+  const nxt = Math.ceil(now / 300) * 300, wait = nxt - now, t = x => new Date((x + TZ_OFFSET) * 1000).toISOString().slice(11, 16);
+  return `🕒 Հաջորդ մոմ՝ ${t(nxt)}–${t(nxt + 300)} (քո ժամով)\n` + (wait <= 5 ? "✅ Մտիր հիմա" : `⏳ Մտիր ${t(nxt)}:00-ին (${mmss(wait)} հետո)`) + " · սիգնալը կարող է փոխվել մինչև մոմի փակումը";
+}
 function whyNotTrend(i) {
   if (!i.agree) return "M15-ը և M5-ը հակասում են";
   if (!i.full) return "M1-ը հակառակ կողմում է (պուլբեք)";
@@ -127,9 +132,10 @@ function renderClear(i, now) {
   const hh = new Date(now * 1000).toISOString().slice(11, 19), p = pairName(i.pair);
   if (!isClearTrend(i)) return `⚪️ *WAIT* · ${p}\nՏրենդային հստակ սիգնալ չկա. ${whyNotTrend(i)}։`;
   const d = i.dir, lvl = i.st.M5[2];
-  return [`${dot(d)} *${d} · 5 րոպե* — ${p} 🔥`,
+  return [`${dot(d)} *${d} · հաջորդ 5 րոպե* — ${p} 🔥`,
     `M15 ${dot(i.st.M15[0])} M5 ${dot(i.st.M5[0])} M1 ${dot(i.st.M1[0])} համաձայն · RSI ${i.r5.toFixed(0)} · EMA-ից ${i.feat.dist} ATR`,
-    `Գին ${i.price.toFixed(5)} · ${hh} UTC · ✅ մտիր հիմա`,
+    `Գին ${i.price.toFixed(5)} · ${hh} UTC`,
+    entryLine(now),
     `❌ Անվավեր, եթե M5 փակվի ${lvl.toFixed(5)}-ից ${d === "UP" ? "ներքև" : "վերև"}`].join("\n");
 }
 function renderFadeClear(i, now) {
@@ -137,9 +143,10 @@ function renderFadeClear(i, now) {
   if (!isClearFade(i)) return `↩️ ⚪️ *WAIT* · ${p}\nՀակառակ հստակ սիգնալ չկա. ` + (!i.full ? "երեք ժամկետը համաձայն չեն" : `գինը բավականաչափ հեռու չէ EMA-ից (${i.feat.dist} ATR, պետք է ≥ 2.5)`) + "։";
   const trend = i.dir, fade = trend === "UP" ? "DOWN" : "UP";
   const atr = Math.abs(i.st.M5[1] - i.st.M5[2]) / i.feat.dist, lvl = trend === "UP" ? i.price + atr : i.price - atr;
-  return [`↩️ ${dot(fade)} *${fade} · 5 րոպե* — ${p} (հակառակ)`,
+  return [`↩️ ${dot(fade)} *${fade} · հաջորդ 5 րոպե* — ${p} (հակառակ)`,
     `Գինը EMA-ից ${i.feat.dist} ATR ${trend === "UP" ? "վերև" : "ներքև"} է (ձգված շարժում) · RSI ${i.r5.toFixed(0)}`,
-    `Գին ${i.price.toFixed(5)} · ${hh} UTC · ✅ մտիր հիմա`,
+    `Գին ${i.price.toFixed(5)} · ${hh} UTC`,
+    entryLine(now),
     `❌ Անվավեր, եթե գինը ևս 1 ATR հեռանա (${lvl.toFixed(5)})`].join("\n");
 }
 

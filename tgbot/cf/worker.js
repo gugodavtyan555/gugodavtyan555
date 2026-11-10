@@ -132,8 +132,7 @@ function renderClear(i, now) {
   return [`${dot(d)} *${d} · 5 րոպե* — ${p} 🔥`,
     `M15 ${dot(i.st.M15[0])} M5 ${dot(i.st.M5[0])} M1 ${dot(i.st.M1[0])} համաձայն · RSI ${i.r5.toFixed(0)} · EMA-ից ${i.feat.dist} ATR`,
     `Գին ${i.price.toFixed(5)} · ${hh} UTC`,
-    entryLine(now),
-    `❌ Անվավեր, եթե M5 փակվի ${lvl.toFixed(5)}-ից ${d === "UP" ? "ներքև" : "վերև"}`].join("\n");
+    entryLine(now)].join("\n");
 }
 function renderFadeClear(i, now) {
   const hh = new Date(now * 1000).toISOString().slice(11, 19), p = pairName(i.pair);
@@ -143,8 +142,7 @@ function renderFadeClear(i, now) {
   return [`↩️ ${dot(fade)} *${fade} · 5 րոպե* — ${p} (հակառակ)`,
     `Գինը EMA-ից ${i.feat.dist} ATR ${trend === "UP" ? "վերև" : "ներքև"} է (ձգված շարժում) · RSI ${i.r5.toFixed(0)}`,
     `Գին ${i.price.toFixed(5)} · ${hh} UTC`,
-    entryLine(now),
-    `❌ Անվավեր, եթե գինը ևս 1 ATR հեռանա (${lvl.toFixed(5)})`].join("\n");
+    entryLine(now)].join("\n");
 }
 
 const scanFresh = async now => (await Promise.all(PAIRS.map(p => computeInfo(p, now, true).catch(() => null)))).filter(i => i && i.bar >= now - 180);

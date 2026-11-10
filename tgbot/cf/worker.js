@@ -157,16 +157,24 @@ function fadeFrom(fresh, now) {
   return { pair: clear[0].pair, text: renderFadeClear(clear[0], now) };
 }
 
-// "Best signal" = ONE pair, two signals (trend + opposite) from one fresh scan of all pairs
+// "Best signal" = ONE pair, two signals (trend + opposite). Each press shows the NEXT-best pair (rotates through clear signals).
 async function bestSignal(env, now) {
   const fresh = await scanFresh(now);
   if (!fresh.length) return { pair: null, text: "Թարմ տվյալներ չստացվեցին (շուկան կարող է փակ լինել)։ Փորձիր նորից։" };
   const tr = fresh.filter(isClearTrend).sort((a, b) => b.score - a.score);
   const fd = fresh.filter(isClearFade).sort((a, b) => b.feat.dist - a.feat.dist);
-  const head = `🔍 Սկանավորվեց ${fresh.length} զույգ հենց հիմա · հստակ սիգնալներ՝ տրենդային ${tr.length}, հակառակ ${fd.length}`;
-  const best = tr[0] || fd[0];
-  if (!best) return { pair: null, text: `${head}\n\n⚪️ *Հստակ սիգնալ չկա հիմա։* Սպասիր կամ սեղմիր նորից մի քանի րոպեից։` };
-  return { pair: best.pair, text: `${head}\n\n${renderClear(best, now)}\n\n━━━━━━━━━━\n\n${renderFadeClear(best, now)}` };
+  const order = [...tr, ...fd.filter(f => !tr.some(t => t.pair === f.pair))];   // trend-clear first, then fade-only
+  const head0 = `🔍 Սկանավորվեց ${fresh.length} զույգ հենց հիմա · հստակ սիգնալներ՝ տրենդային ${tr.length}, հակառակ ${fd.length}`;
+  if (!order.length) return { pair: null, text: `${head0}\n\n⚪️ *Հստակ սիգնալ չկա հիմա։* Սպասիր կամ սեղմիր նորից մի քանի րոպեից։` };
+  // rotation memory (reset after 15 min without presses)
+  let shown = [];
+  try { const r = await env.DB.prepare("SELECT v FROM kv WHERE k='shown'").first(); if (r) { const o = JSON.parse(r.v); if (now - o.t < 900) shown = o.p; } } catch (e) {}
+  let idx = order.findIndex(i => !shown.includes(i.pair)), wrapped = false;
+  if (idx < 0) { shown = []; idx = 0; wrapped = true; }
+  const pick = order[idx]; shown.push(pick.pair);
+  await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('shown', ?)").bind(JSON.stringify({ t: now, p: shown })).run();
+  const head = `${head0}\nՍիգնալ ${shown.length}/${order.length}${wrapped ? " (բոլորը ցուցադրվեցին, սկսում եմ նորից)" : ""} · սեղմիր նորից՝ հաջորդ սիգնալի համար`;
+  return { pair: pick.pair, text: `${head}\n\n${renderClear(pick, now)}\n\n━━━━━━━━━━\n\n${renderFadeClear(pick, now)}` };
 }
 
 function renderFade(i, now, note) {

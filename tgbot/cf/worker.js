@@ -272,17 +272,15 @@ async function historyText(env, now) {
   const today = dayStr(now);
   const { results } = await env.DB.prepare("SELECT * FROM trades ORDER BY open_at ASC, id ASC").all();
   const auto = (await env.DB.prepare("SELECT v FROM kv WHERE k='auto'").first())?.v === "1";
-  const td = results.filter(t => dayStr(t.open_at) === today);
+  const td = results.filter(t => t.strat === "R" && dayStr(t.open_at) === today);
   const stats = trs => { const w = trs.filter(t => t.result === "win").length, l = trs.filter(t => t.result === "loss").length, d = trs.filter(t => t.result === "draw").length; const n = w + l;
     return `✅ ${w} · ❌ ${l} · ➖ ${d} · Win rate ${n ? (100 * w / n).toFixed(1) + "%" : "—"} · P&L ${(w * PAYOUT - l >= 0 ? "+" : "") + (w * PAYOUT - l).toFixed(2)}`; };
   const T = x => x.filter(t => (t.strat || "T") === "T"), F = x => x.filter(t => t.strat === "F"), R = x => x.filter(t => t.strat === "R");
-  const L = [`📜 *Պատմություն · ${today}*  (վիրտուալ գործարքներ)`, `Ավտո՝ ${auto ? "🟢 միացված" : "🔴 անջատված"}`, "↩️ = հակառակ ուղղությամբ թեստ · 🔁 = RSI գերծայրահեղ, 60 րոպե", ""];
+  const L = [`📜 *Պատմություն · ${today}*  (վիրտուալ գործարքներ)`, `Ավտո՝ ${auto ? "🟢 միացված" : "🔴 անջատված"}`, "🔁 RSI գերծայրահեղ → հակառակ, 60 րոպե", ""];
   if (!td.length) L.push("Այսօր դեռ գործարք չկա։");
   const icon = { win: "✅", loss: "❌", draw: "➖", error: "⚠️" };
   for (const t of td.slice(-40)) L.push(`${icon[t.result] || "⏳"}${t.strat === "F" ? "↩️" : t.strat === "R" ? "🔁" : ""} ${loc(t.open_at).toISOString().slice(11, 16)} ${pairName(t.pair)} ${t.dir} ${t.entry.toFixed(5)}→${t.exit != null ? t.exit.toFixed(5) : "…"}`);
-  L.push("", "*Տրենդով (հիմնական)*", `Այսօր. ${stats(T(td))}`, `Ընդհանուր (${T(results).length}). ${stats(T(results))}`,
-    "", "*↩️ Հակառակ (թեստ)*", `Այսօր. ${stats(F(td))}`, `Ընդհանուր (${F(results).length}). ${stats(F(results))}`,
-    "", "*🔁 RSI գերծայրահեղ → հակառակ (60 ր, թեստ)*", `Այսօր. ${stats(R(td))}`, `Ընդհանուր (${R(results).length}). ${stats(R(results))}`,
+  L.push("", "*🔁 RSI գերծայրահեղ → հակառակ (60 ր, թեստ)*", `Այսօր. ${stats(R(td))}`, `Ընդհանուր (${R(results).length}). ${stats(R(results))}`,
     "", `1 միավոր/գործարք, վճար ${Math.round(PAYOUT * 100)}%։ Break-even ~${(100 / (1 + PAYOUT)).toFixed(1)}%։ Շահույթի համար win rate-ը պետք է դրանից բարձր լինի՝ բավարար թվով գործարքների վրա։`);
   return L.join("\n");
 }
@@ -356,10 +354,7 @@ async function rankAndSettle(env, boundary, infos) {
   if (auto) {
     const ins = (i, dir, strat) => env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat, strat) VALUES (?,?,?,?,?,?,?,?)")
       .bind(i.pair, dir, boundary, boundary + 300, i.price, Math.round(i.score * 100) / 100, JSON.stringify(i.feat), strat);
-    const t = infos.filter(isClearTrend).sort((a, b) => b.score - a.score).slice(0, TOP_N);
-    for (const i of t) { await ins(i, i.dir, "T").run(); out.opened.push("T:" + i.pair); }
-    const f = infos.filter(isClearFade).sort((a, b) => b.feat.dist - a.feat.dist)[0];
-    if (f) { await ins(f, f.dir === "UP" ? "DOWN" : "UP", "F").run(); out.opened.push("F:" + f.pair); }
+    // (trend "T" and fade "F" virtual trades were switched off at the user's request; old rows stay in the DB)
     // R = RSI-extreme reversion, 60-minute expiry (RSI14 on M5 < 30 -> UP, > 70 -> DOWN). Test candidate from the strategy search.
     const { results: openR } = await env.DB.prepare("SELECT pair FROM trades WHERE strat='R' AND result IS NULL").all();
     const busy = new Set(openR.map(r => r.pair));

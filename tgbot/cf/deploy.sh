@@ -8,7 +8,7 @@ print(json.dumps({"main_module":"worker.js","compatibility_date":"2025-01-01","b
  {"type":"d1","name":"DB","id":os.environ["D1_ID"]},
  {"type":"secret_text","name":"BOT_TOKEN","text":os.environ["BOT_TOKEN"]},
  {"type":"secret_text","name":"WEBHOOK_SECRET","text":os.environ["WEBHOOK_SECRET"]},
- {"type":"plain_text","name":"ALLOWED_CHAT","text":os.environ["ALLOWED_CHAT"]}],
+ {"type":"plain_text","name":"ALLOWED_CHAT","text":os.environ["ALLOWED_CHAT"]}] + ([{"type":"secret_text","name":"API_TOKEN","text":os.environ["API_TOKEN"]}] if os.environ.get("API_TOKEN") else []),
  "keep_bindings":[]}))
 PY
 )

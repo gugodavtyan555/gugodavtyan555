@@ -361,6 +361,7 @@ async function maybeAlert(env, infos, now) {
   if (last && now - last.t < 300) return false;
   if (last && last.pair === pick.pair && last.dir === pick.dir && now - last.t < 1200) return false;
   await send(env, env.ALLOWED_CHAT, `🔔 *Ավտոմատ սիգնալ*\n\n${renderClear(pick, now)}\n\n━━━━━━━━━━\n\n${renderFadeClear(pick, now)}`, oneKb(pick.pair));
+  await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('signal', ?)").bind(JSON.stringify({ id: now, pair: pick.pair, dir: pick.dir, expiry_sec: 300, strength: "strongest", price: pick.price, t: now })).run();
   await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('lastalert', ?)").bind(JSON.stringify({ pair: pick.pair, dir: pick.dir, t: now })).run();
   return true;
 }
@@ -388,6 +389,10 @@ export default {
       if (kind === "best") { const r = await bestSignal(env, now); return new Response(r.text + "\n\nms=" + (Date.now() - t0)); }
       if (kind === "tick") return new Response(JSON.stringify({ r: await cronTick(env, Math.floor(now / 60) * 60), ms: Date.now() - t0 }));
       if (kind === "boundary") return new Response(JSON.stringify({ r: await cronTick(env, Math.floor(now / 300) * 300), ms: Date.now() - t0 }));
+    }
+    if (url.pathname === "/api/signal" && env.API_TOKEN && url.searchParams.get("key") === env.API_TOKEN) {
+      const r = await env.DB.prepare("SELECT v FROM kv WHERE k='signal'").first();
+      return new Response(r ? r.v : "{}", { headers: { "content-type": "application/json", "cache-control": "no-store" } });
     }
     return new Response("FX analyzer bot");
   },

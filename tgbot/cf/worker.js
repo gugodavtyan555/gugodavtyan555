@@ -1,7 +1,7 @@
 // FX analysis Telegram bot on Cloudflare Workers (webhook + cron, D1 storage).
 // Bindings: DB (D1), BOT_TOKEN, WEBHOOK_SECRET, ALLOWED_CHAT (secrets/vars)
 
-const PAIRS = "EURUSD GBPUSD USDJPY AUDUSD USDCAD USDCHF NZDUSD EURGBP EURJPY EURCHF EURAUD EURCAD EURNZD GBPJPY GBPAUD GBPCAD GBPCHF GBPNZD AUDJPY AUDCAD AUDCHF AUDNZD CADJPY CADCHF CHFJPY NZDJPY NZDCAD NZDCHF".split(" ");
+const PAIRS = "EURUSD GBPUSD USDJPY AUDUSD USDCAD USDCHF NZDUSD EURGBP EURJPY EURCHF EURAUD EURCAD EURNZD GBPJPY GBPAUD GBPCAD GBPCHF GBPNZD AUDJPY AUDCAD AUDNZD CADJPY CADCHF CHFJPY NZDJPY NZDCAD NZDCHF".split(" ");
 const GROUPS = 2;                 // free plan: only 2 cron triggers available -> 2 groups of 14 pairs
 const CRONS = ["*/1 * * * *"];   // one trigger: scans all 28 pairs every minute; ranks + settles on 5-min boundaries
 const PAYOUT = 0.80, TOP_N = 1, TZ_OFFSET = 4 * 3600;

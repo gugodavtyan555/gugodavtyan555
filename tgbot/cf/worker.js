@@ -5,7 +5,7 @@ const PAIRS = "EURUSD GBPUSD USDJPY AUDUSD USDCAD USDCHF NZDUSD EURGBP EURJPY EU
 const GROUPS = 2;                 // free plan: only 2 cron triggers available -> 2 groups of 14 pairs
 const CRONS = ["*/5 * * * *", "0-59/5 * * * *"];   // cron 1 also ranks + settles after scanning
 const PAYOUT = 0.80, TOP_N = 1, TZ_OFFSET = 4 * 3600;
-const START_KB = { keyboard: [[{ text: "▶️ Start" }, { text: "🔍 Լավագույն սիգնալ" }], [{ text: "📜 Պատմություն" }, { text: "⚙️ Ավտո ON/OFF" }]], resize_keyboard: true, is_persistent: true };
+const START_KB = { keyboard: [[{ text: "▶️ Start" }, { text: "🔍 Լավագույն սիգնալ" }], [{ text: "📜 Պատմություն" }, { text: "⚙️ Ավտո ON/OFF" }], [{ text: "↩️ Հակառակ սիգնալ" }]], resize_keyboard: true, is_persistent: true };
 
 // ---------- indicators ----------
 const ema = (v, n) => { const a = 2 / (n + 1); const o = new Array(v.length); o[0] = v[0]; for (let i = 1; i < v.length; i++) o[i] = a * v[i] + (1 - a) * o[i - 1]; return o; };
@@ -102,7 +102,7 @@ async function tg(env, method, body) {
   return fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 }
 const send = (env, chat, text, markup) => tg(env, "sendMessage", { chat_id: chat, text, parse_mode: "Markdown", ...(markup ? { reply_markup: markup } : {}) });
-const pairKb = () => ({ inline_keyboard: [[{ text: "🔍 Գտնել լավագույն սիգնալը", callback_data: "BEST" }], ...Array.from({ length: Math.ceil(PAIRS.length / 3) }, (_, i) => PAIRS.slice(i * 3, i * 3 + 3).map(p => ({ text: pairName(p), callback_data: p })))] });
+const pairKb = () => ({ inline_keyboard: [[{ text: "🔍 Գտնել լավագույն սիգնալը", callback_data: "BEST" }], [{ text: "↩️ Հակառակ սիգնալ", callback_data: "FADE" }], ...Array.from({ length: Math.ceil(PAIRS.length / 3) }, (_, i) => PAIRS.slice(i * 3, i * 3 + 3).map(p => ({ text: pairName(p), callback_data: p })))] });
 const oneKb = p => ({ inline_keyboard: [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] });
 const bestKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] : []), [{ text: "🔍 Նորից գտնել", callback_data: "BEST" }]] });
 
@@ -115,6 +115,25 @@ async function bestSignal(env, now) {
   let head = `🔍 Սկանավորվեց ${fresh.length} զույգ հենց հիմա · 🔥 սիգնալներ՝ ${n5}\n`;
   if (!b0.full) head += "Ուժեղ սիգնալ չկա, ամենալավը թույլ է։\n";
   return { pair: b0.pair, text: head + "\n" + render(b0, now) };
+}
+
+async function fadeSignal(env, now) {
+  const fresh = (await Promise.all(PAIRS.map(p => computeInfo(p, now, true).catch(() => null)))).filter(i => i && i.bar >= now - 180);
+  if (!fresh.length) return { text: "Թարմ տվյալներ չստացվեցին (շուկան կարող է փակ լինել)։ Փորձիր նորից։" };
+  const full = fresh.filter(i => i.full);
+  if (!full.length) return { text: `↩️ Սկանավորվեց ${fresh.length} զույգ հենց հիմա։ Հակառակ սիգնալ չկա. չկա զույգ, որտեղ M15, M5, M1 երեքն էլ համաձայն են։` };
+  full.sort((a, b) => b.feat.dist - a.feat.dist);
+  const i = full[0], trend = i.dir, fade = trend === "UP" ? "DOWN" : "UP";
+  const atr = i.feat.dist > 0 ? Math.abs(i.st.M5[1] - i.st.M5[2]) / i.feat.dist : 0;
+  const lvl = trend === "UP" ? i.price + atr : i.price - atr;
+  const ts = new Date(now * 1000).toISOString().slice(11, 19);
+  const L = [`↩️ *Հակառակ սիգնալ* · ${pairName(i.pair)} · ${ts} UTC · գին ${i.price.toFixed(5)}`, `_(սկանավորվեց ${fresh.length} զույգ հենց հիմա, ${full.length}-ում երեք ժամկետն էլ համաձայն են)_`, ""];
+  for (const k of ["M15", "M5", "M1"]) L.push(`${k}: ${ico[i.st[k][0]]} ${i.st[k][0]} (EMA20 ${i.st[k][2].toFixed(5)})`);
+  L.push(`RSI M5 ${i.r5.toFixed(0)} · RSI M1 ${i.r1.toFixed(0)}`, `Հեռավորություն EMA20-ից՝ ${i.feat.dist} ATR (ամենամեծը ${full.length} զույգից)`, "",
+    `➡️ *${fade}* ${ico[fade]} (տրենդին հակառակ՝ վերադարձի վրա)`, "⏱ Expiry՝ *5 րոպե*", "✅ Մտնելու համար՝ հիմա (սիգնալը ընթացիկ պահի համար է)",
+    `❌ Անվավեր, եթե գինը ևս 1 ATR հեռանա՝ ${trend === "UP" ? "վերև" : "ներքև"} (${lvl.toFixed(5)})`,
+    "", "⚠️ Սա փորձնական (վիրտուալ թեստով ստուգվող) ռազմավարություն է, ապացուցված առավելություն չունի։");
+  return { pair: i.pair, text: L.join("\n") };
 }
 
 async function historyText(env, now) {
@@ -145,7 +164,8 @@ async function handleUpdate(env, u) {
   if (cb) {
     await tg(env, "answerCallbackQuery", { callback_query_id: cb.id });
     try {
-      if (cb.data === "BEST") { const r = await bestSignal(env, now); await send(env, chat, r.text, bestKb(r.pair)); }
+      if (cb.data === "FADE") { const r = await fadeSignal(env, now); await send(env, chat, r.text, { inline_keyboard: [[{ text: "↩️ Նորից գտնել", callback_data: "FADE" }]] }); }
+      else if (cb.data === "BEST") { const r = await bestSignal(env, now); await send(env, chat, r.text, bestKb(r.pair)); }
       else if (PAIRS.includes(cb.data)) { const info = await computeInfo(cb.data, now); await send(env, chat, render(info, now), oneKb(cb.data)); }
     } catch (e) { await send(env, chat, "Սխալ տվյալներ ստանալիս՝ " + e.message); }
     return;
@@ -157,6 +177,7 @@ async function handleUpdate(env, u) {
     await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('auto', ?)").bind(cur ? "0" : "1").run();
     return void await send(env, chat, `Ավտո վիրտուալ առևտուր՝ ${cur ? "🔴 անջատված" : "🟢 միացված"}`, START_KB);
   }
+  if (text.startsWith("↩️")) { const r = await fadeSignal(env, now); return void await send(env, chat, r.text, { inline_keyboard: [[{ text: "↩️ Նորից գտնել", callback_data: "FADE" }]] }); }
   if (text.startsWith("🔍")) { const r = await bestSignal(env, now); return void await send(env, chat, r.text, bestKb(r.pair)); }
   if (text.startsWith("/start")) await send(env, chat, "Բարև 👋 Ներքևի «▶️ Start» կոճակով ցանկացած պահի կարող ես բացել զույգերի ցանկը։", START_KB);
   await send(env, chat, "Ընտրիր զույգը 👇", pairKb());

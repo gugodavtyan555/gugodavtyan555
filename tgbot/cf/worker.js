@@ -177,6 +177,7 @@ function renderClear(i, now) {
     `M15 ${dot(i.st.M15[0])} M5 ${dot(i.st.M5[0])} M1 ${dot(i.st.M1[0])} համաձայն · RSI ${i.r5.toFixed(0)} · EMA-ից ${i.feat.dist} ATR`,
     tvLine(i.tv, d),
     `Գին ${i.price.toFixed(5)} · ${hh} UTC`,
+    `📋 Որոնիր հարթակում՝ \`${pairName(i.pair)}\` (սեղմիր՝ պատճենելու համար)`,
     entryLine(now)].filter(Boolean).join("\n");
 }
 function renderFadeClear(i, now) {
@@ -187,6 +188,7 @@ function renderFadeClear(i, now) {
     `Գինը EMA-ից ${i.feat.dist} ATR ${trend === "UP" ? "վերև" : "ներքև"} է (ձգված շարժում) · RSI ${i.r5.toFixed(0)}`,
     tvLine(i.tv, fade),
     `Գին ${i.price.toFixed(5)} · ${hh} UTC`,
+    `📋 Որոնիր հարթակում՝ \`${pairName(i.pair)}\` (սեղմիր՝ պատճենելու համար)`,
     entryLine(now)].filter(Boolean).join("\n");
 }
 

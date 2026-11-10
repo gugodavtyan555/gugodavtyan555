@@ -302,6 +302,11 @@ async function handleUpdate(env, u) {
   }
   if (text.startsWith("↩️")) { const r = await fadeSignal(env, now); return void await send(env, chat, r.text, { inline_keyboard: [[{ text: "↩️ Նորից գտնել", callback_data: "FADE" }]] }); }
   if (text.startsWith("🔍")) { const r = await bestSignal(env, now); return void await send(env, chat, r.text, bestKb(r.pair)); }
+  if (text.startsWith("/alerts")) {
+    const cur = (await env.DB.prepare("SELECT v FROM kv WHERE k='alerts'").first())?.v !== "0";
+    await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('alerts', ?)").bind(cur ? "0" : "1").run();
+    return void await send(env, chat, `🔔 Ավտոմատ ծանուցումներ՝ ${cur ? "🔴 անջատված" : "🟢 միացված"}`, START_KB);
+  }
   if (text.startsWith("/start")) await send(env, chat, "Բարև 👋 Ներքևի «▶️ Start» կոճակով ցանկացած պահի կարող ես բացել զույգերի ցանկը։", START_KB);
   await send(env, chat, modeText(), pairKb());
 }
@@ -338,11 +343,27 @@ async function rankAndSettle(env, boundary, infos) {
   return out;
 }
 
+// Automatic alert: when a strongest signal appears (trend signal with TradingView 3/3), push it to the chat.
+// Anti-spam: at most one alert per 5 minutes; the same pair+direction is not repeated within 20 minutes.
+async function maybeAlert(env, infos, now) {
+  const on = (await env.DB.prepare("SELECT v FROM kv WHERE k='alerts'").first())?.v;
+  if (on === "0" || !env.ALLOWED_CHAT) return false;
+  const pick = infos.filter(i => isClearTrend(i) && tvAgree(i.tv, i.dir) === 3).sort((a, b) => b.score - a.score)[0];
+  if (!pick) return false;
+  let last = null; try { const r = await env.DB.prepare("SELECT v FROM kv WHERE k='lastalert'").first(); if (r) last = JSON.parse(r.v); } catch (e) {}
+  if (last && now - last.t < 300) return false;
+  if (last && last.pair === pick.pair && last.dir === pick.dir && now - last.t < 1200) return false;
+  await send(env, env.ALLOWED_CHAT, `🔔 *Ավտոմատ սիգնալ*\n\n${renderClear(pick, now)}\n\n━━━━━━━━━━\n\n${renderFadeClear(pick, now)}`, oneKb(pick.pair));
+  await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('lastalert', ?)").bind(JSON.stringify({ pair: pick.pair, dir: pick.dir, t: now })).run();
+  return true;
+}
+
 async function cronTick(env, scheduledSec) {
   if (!marketOpen(scheduledSec)) return { closed: true };
   const infos = await cronScan(env, scheduledSec);
+  const alerted = await maybeAlert(env, infos, scheduledSec).catch(() => false);
   const onBoundary = Math.floor(scheduledSec / 60) % 5 === 0;
-  return { scanned: infos.length, ...(onBoundary ? await rankAndSettle(env, Math.floor(scheduledSec / 300) * 300, infos) : {}) };
+  return { scanned: infos.length, alerted, ...(onBoundary ? await rankAndSettle(env, Math.floor(scheduledSec / 300) * 300, infos) : {}) };
 }
 
 export default {

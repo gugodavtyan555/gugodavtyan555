@@ -102,7 +102,12 @@ async function tg(env, method, body) {
   return fetch(`https://api.telegram.org/bot${env.BOT_TOKEN}/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 }
 const send = (env, chat, text, markup) => tg(env, "sendMessage", { chat_id: chat, text, parse_mode: "Markdown", ...(markup ? { reply_markup: markup } : {}) });
-const pairKb = () => ({ inline_keyboard: [[{ text: "🔍 Գտնել լավագույն սիգնալը", callback_data: "BEST" }], [{ text: "↩️ Հակառակ սիգնալ", callback_data: "FADE" }], ...Array.from({ length: Math.ceil(PAIRS.length / 3) }, (_, i) => PAIRS.slice(i * 3, i * 3 + 3).map(p => ({ text: pairName(p), callback_data: p })))] });
+const getMode = async env => ((await env.DB.prepare("SELECT v FROM kv WHERE k='mode'").first())?.v) === "F" ? "F" : "T";
+const modeText = m => m === "F" ? "↩️ *Հակառակ ռեժիմ*. ընտրիր զույգը՝ կստանաս նրա հակառակ սիգնալը 👇" : "Ընտրիր զույգը 👇";
+const pairKb = (mode = "T") => ({ inline_keyboard: [
+  [{ text: mode === "F" ? "🔍 Լավագույն հակառակ սիգնալը" : "🔍 Գտնել լավագույն սիգնալը", callback_data: "BEST" }],
+  [{ text: mode === "F" ? "↩️ Հակառակ ռեժիմ ✅ (սեղմիր՝ վերադառնալ տրենդին)" : "↩️ Անցնել հակառակ ռեժիմի", callback_data: "MODE" }],
+  ...Array.from({ length: Math.ceil(PAIRS.length / 3) }, (_, i) => PAIRS.slice(i * 3, i * 3 + 3).map(p => ({ text: (mode === "F" ? "↩️ " : "") + pairName(p), callback_data: p })))] });
 const oneKb = p => ({ inline_keyboard: [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] });
 const bestKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] : []), [{ text: "🔍 Նորից գտնել", callback_data: "BEST" }]] });
 
@@ -117,23 +122,30 @@ async function bestSignal(env, now) {
   return { pair: b0.pair, text: head + "\n" + render(b0, now) };
 }
 
+function renderFade(i, now, note) {
+  const trend = i.dir, fade = trend === "UP" ? "DOWN" : "UP";
+  const atr = i.feat.dist > 0 ? Math.abs(i.st.M5[1] - i.st.M5[2]) / i.feat.dist : 0;
+  const lvl = trend === "UP" ? i.price + atr : i.price - atr;
+  const ts = new Date(now * 1000).toISOString().slice(11, 19);
+  const L = [`↩️ *Հակառակ սիգնալ* · ${pairName(i.pair)} · ${ts} UTC · գին ${i.price.toFixed(5)}`];
+  if (note) L.push(`_(${note})_`);
+  L.push("");
+  for (const k of ["M15", "M5", "M1"]) L.push(`${k}: ${ico[i.st[k][0]]} ${i.st[k][0]} (EMA20 ${i.st[k][2].toFixed(5)})`);
+  L.push(`RSI M5 ${i.r5.toFixed(0)} · RSI M1 ${i.r1.toFixed(0)} · հեռավորություն EMA20-ից՝ ${i.feat.dist} ATR`, "");
+  if (!i.full) { L.push("➡️ *WAIT / չմտնել*", "Հակառակ սիգնալ չկա. M15, M5, M1 երեքն էլ համաձայն չեն։"); return L.join("\n"); }
+  L.push(`➡️ *${fade}* ${ico[fade]} (տրենդին հակառակ՝ վերադարձի վրա)`, "⏱ Expiry՝ *5 րոպե*", "✅ Մտնելու համար՝ հիմա (սիգնալը ընթացիկ պահի համար է)",
+    `❌ Անվավեր, եթե գինը ևս 1 ATR հեռանա՝ ${trend === "UP" ? "վերև" : "ներքև"} (${lvl.toFixed(5)})`,
+    "", "⚠️ Փորձնական (վիրտուալ թեստով ստուգվող) ռազմավարություն, ապացուցված առավելություն չունի։");
+  return L.join("\n");
+}
+
 async function fadeSignal(env, now) {
   const fresh = (await Promise.all(PAIRS.map(p => computeInfo(p, now, true).catch(() => null)))).filter(i => i && i.bar >= now - 180);
   if (!fresh.length) return { text: "Թարմ տվյալներ չստացվեցին (շուկան կարող է փակ լինել)։ Փորձիր նորից։" };
   const full = fresh.filter(i => i.full);
   if (!full.length) return { text: `↩️ Սկանավորվեց ${fresh.length} զույգ հենց հիմա։ Հակառակ սիգնալ չկա. չկա զույգ, որտեղ M15, M5, M1 երեքն էլ համաձայն են։` };
   full.sort((a, b) => b.feat.dist - a.feat.dist);
-  const i = full[0], trend = i.dir, fade = trend === "UP" ? "DOWN" : "UP";
-  const atr = i.feat.dist > 0 ? Math.abs(i.st.M5[1] - i.st.M5[2]) / i.feat.dist : 0;
-  const lvl = trend === "UP" ? i.price + atr : i.price - atr;
-  const ts = new Date(now * 1000).toISOString().slice(11, 19);
-  const L = [`↩️ *Հակառակ սիգնալ* · ${pairName(i.pair)} · ${ts} UTC · գին ${i.price.toFixed(5)}`, `_(սկանավորվեց ${fresh.length} զույգ հենց հիմա, ${full.length}-ում երեք ժամկետն էլ համաձայն են)_`, ""];
-  for (const k of ["M15", "M5", "M1"]) L.push(`${k}: ${ico[i.st[k][0]]} ${i.st[k][0]} (EMA20 ${i.st[k][2].toFixed(5)})`);
-  L.push(`RSI M5 ${i.r5.toFixed(0)} · RSI M1 ${i.r1.toFixed(0)}`, `Հեռավորություն EMA20-ից՝ ${i.feat.dist} ATR (ամենամեծը ${full.length} զույգից)`, "",
-    `➡️ *${fade}* ${ico[fade]} (տրենդին հակառակ՝ վերադարձի վրա)`, "⏱ Expiry՝ *5 րոպե*", "✅ Մտնելու համար՝ հիմա (սիգնալը ընթացիկ պահի համար է)",
-    `❌ Անվավեր, եթե գինը ևս 1 ATR հեռանա՝ ${trend === "UP" ? "վերև" : "ներքև"} (${lvl.toFixed(5)})`,
-    "", "⚠️ Սա փորձնական (վիրտուալ թեստով ստուգվող) ռազմավարություն է, ապացուցված առավելություն չունի։");
-  return { pair: i.pair, text: L.join("\n") };
+  return { pair: full[0].pair, text: renderFade(full[0], now, `սկանավորվեց ${fresh.length} զույգ հենց հիմա, ${full.length}-ում երեք ժամկետն էլ համաձայն են, ընտրվեց EMA-ից ամենահեռուն`) };
 }
 
 async function historyText(env, now) {
@@ -164,9 +176,20 @@ async function handleUpdate(env, u) {
   if (cb) {
     await tg(env, "answerCallbackQuery", { callback_query_id: cb.id });
     try {
-      if (cb.data === "FADE") { const r = await fadeSignal(env, now); await send(env, chat, r.text, { inline_keyboard: [[{ text: "↩️ Նորից գտնել", callback_data: "FADE" }]] }); }
-      else if (cb.data === "BEST") { const r = await bestSignal(env, now); await send(env, chat, r.text, bestKb(r.pair)); }
-      else if (PAIRS.includes(cb.data)) { const info = await computeInfo(cb.data, now); await send(env, chat, render(info, now), oneKb(cb.data)); }
+      let mode = await getMode(env);
+      if (cb.data === "MODE") {
+        mode = mode === "F" ? "T" : "F";
+        await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('mode', ?)").bind(mode).run();
+        await tg(env, "editMessageText", { chat_id: chat, message_id: cb.message.message_id, text: modeText(mode), parse_mode: "Markdown", reply_markup: pairKb(mode) });
+      } else if (cb.data === "FADE") { const r = await fadeSignal(env, now); await send(env, chat, r.text, { inline_keyboard: [[{ text: "↩️ Նորից գտնել", callback_data: "FADE" }]] }); }
+      else if (cb.data === "BEST") {
+        if (mode === "F") { const r = await fadeSignal(env, now); await send(env, chat, r.text, { inline_keyboard: [[{ text: "↩️ Նորից գտնել", callback_data: "BEST" }]] }); }
+        else { const r = await bestSignal(env, now); await send(env, chat, r.text, bestKb(r.pair)); }
+      } else if (PAIRS.includes(cb.data)) {
+        const info = await computeInfo(cb.data, now, true);
+        if (mode === "F") await send(env, chat, renderFade(info, now), { inline_keyboard: [[{ text: `↩️ ${pairName(cb.data)}`, callback_data: cb.data }]] });
+        else await send(env, chat, render(info, now), oneKb(cb.data));
+      }
     } catch (e) { await send(env, chat, "Սխալ տվյալներ ստանալիս՝ " + e.message); }
     return;
   }
@@ -180,7 +203,7 @@ async function handleUpdate(env, u) {
   if (text.startsWith("↩️")) { const r = await fadeSignal(env, now); return void await send(env, chat, r.text, { inline_keyboard: [[{ text: "↩️ Նորից գտնել", callback_data: "FADE" }]] }); }
   if (text.startsWith("🔍")) { const r = await bestSignal(env, now); return void await send(env, chat, r.text, bestKb(r.pair)); }
   if (text.startsWith("/start")) await send(env, chat, "Բարև 👋 Ներքևի «▶️ Start» կոճակով ցանկացած պահի կարող ես բացել զույգերի ցանկը։", START_KB);
-  await send(env, chat, "Ընտրիր զույգը 👇", pairKb());
+  { const m = await getMode(env); await send(env, chat, modeText(m), pairKb(m)); }
 }
 
 // ---------- cron jobs ----------

@@ -139,7 +139,7 @@ const pairKb = (mode = "T") => ({ inline_keyboard: [
   [{ text: "🔍 Գտնել լավագույն սիգնալը", callback_data: "BEST" }],
   ...Array.from({ length: Math.ceil(PAIRS.length / 3) }, (_, i) => PAIRS.slice(i * 3, i * 3 + 3).map(p => ({ text: pairName(p), callback_data: p })))] });
 const oneKb = p => ({ inline_keyboard: [[{ text: `🔄 ${pairName(p)}`, callback_data: p }], [{ text: "📲 Բացել Pocket Option", url: "https://m.pocketoption.com/ru/cabinet/" }]] });
-const bestKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] : []), [{ text: "🔍 Նորից գտնել", callback_data: "BEST" }]] });
+const bestKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] : []), [{ text: "🔍 Նորից գտնել", callback_data: "BEST" }], [{ text: "📲 Բացել Pocket Option", url: "https://m.pocketoption.com/ru/cabinet/" }]] });
 
 // ---------- "clear signal" rules (strict) ----------
 // Trend: M15, M5, M1 all agree AND M5 RSI not extreme (35-65) AND price not stretched (<= 2 ATR from M5 EMA20)

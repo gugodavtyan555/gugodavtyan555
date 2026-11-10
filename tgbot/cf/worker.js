@@ -3,7 +3,7 @@
 
 const PAIRS = "EURUSD GBPUSD USDJPY AUDUSD USDCAD USDCHF NZDUSD EURGBP EURJPY EURCHF EURAUD EURCAD EURNZD GBPJPY GBPAUD GBPCAD GBPCHF GBPNZD AUDJPY AUDCAD AUDCHF AUDNZD CADJPY CADCHF CHFJPY NZDJPY NZDCAD NZDCHF".split(" ");
 const GROUPS = 2;                 // free plan: only 2 cron triggers available -> 2 groups of 14 pairs
-const CRONS = ["* * * * *", "*/1 * * * *"];   // both scan 14 pairs EVERY minute; cron 1 also ranks + settles on 5-min boundaries
+const CRONS = ["*/1 * * * *"];   // one trigger: scans all 28 pairs every minute; ranks + settles on 5-min boundaries
 const PAYOUT = 0.80, TOP_N = 1, TZ_OFFSET = 4 * 3600;
 const START_KB = { keyboard: [[{ text: "▶️ Start" }, { text: "🔍 Լավագույն սիգնալ" }], [{ text: "📜 Պատմություն" }, { text: "⚙️ Ավտո ON/OFF" }], [{ text: "↩️ Հակառակ սիգնալ" }]], resize_keyboard: true, is_persistent: true };
 
@@ -170,8 +170,8 @@ function renderFadeClear(i, now) {
 
 // Buttons read the scan cache written by the cron every minute (HTTP handlers have a 10 ms CPU limit on the free plan).
 async function readScan(env, now) {
-  const { results } = await env.DB.prepare("SELECT pair, asof, info FROM scan WHERE asof >= ?").bind(now - 180).all();
-  return results.map(r => ({ ...JSON.parse(r.info), asof: r.asof })).filter(i => i.bar >= now - 300);
+  const { results } = await env.DB.prepare("SELECT pair, asof, info FROM scan WHERE asof >= ?").bind(now - 420).all();
+  return results.map(r => ({ ...JSON.parse(r.info), asof: r.asof })).filter(i => i.bar >= now - 480);
 }
 const ageNote = (rows, now) => { const age = rows.length ? now - Math.min(...rows.map(r => r.asof)) : 0; return `_(տվյալները ${mmss(age)} առաջվա են)_`; };
 const scanFresh = readScan;
@@ -347,12 +347,11 @@ export default {
     return new Response("FX analyzer bot");
   },
   async scheduled(event, env, ctx) {
-    const idx = CRONS.indexOf(event.cron);
-    if (idx < 0) return;
     const boundary = Math.floor(event.scheduledTime / 300000) * 300, onBoundary = Math.floor(event.scheduledTime / 60000) % 5 === 0;
     ctx.waitUntil((async () => {
-      await scanGroup(env, idx, true);
-      if (idx === GROUPS - 1 && onBoundary) await rankAndSettle(env, boundary, true);
+      // 28 pairs = 28 subrequests + 2 TradingView calls, inside the 50-subrequest limit
+      await Promise.all([scanGroup(env, 0, true), scanGroup(env, 1, true)]);
+      if (onBoundary) await rankAndSettle(env, boundary, false);
     })());
   }
 };

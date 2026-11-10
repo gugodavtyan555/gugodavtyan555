@@ -103,11 +103,10 @@ async function tg(env, method, body) {
 }
 const send = (env, chat, text, markup) => tg(env, "sendMessage", { chat_id: chat, text, parse_mode: "Markdown", ...(markup ? { reply_markup: markup } : {}) });
 const getMode = async env => ((await env.DB.prepare("SELECT v FROM kv WHERE k='mode'").first())?.v) === "F" ? "F" : "T";
-const modeText = m => m === "F" ? "↩️ *Հակառակ ռեժիմ*. ընտրիր զույգը՝ կստանաս նրա հակառակ սիգնալը 👇" : "Ընտրիր զույգը 👇";
+const modeText = () => "Ընտրիր զույգը 👇 (կստանաս երկու սիգնալ՝ տրենդով և հակառակը)";
 const pairKb = (mode = "T") => ({ inline_keyboard: [
-  [{ text: mode === "F" ? "🔍 Լավագույն հակառակ սիգնալը" : "🔍 Գտնել լավագույն սիգնալը", callback_data: "BEST" }],
-  [{ text: mode === "F" ? "↩️ Հակառակ ռեժիմ ✅ (սեղմիր՝ վերադառնալ տրենդին)" : "↩️ Անցնել հակառակ ռեժիմի", callback_data: "MODE" }],
-  ...Array.from({ length: Math.ceil(PAIRS.length / 3) }, (_, i) => PAIRS.slice(i * 3, i * 3 + 3).map(p => ({ text: (mode === "F" ? "↩️ " : "") + pairName(p), callback_data: p })))] });
+  [{ text: "🔍 Գտնել լավագույն սիգնալը", callback_data: "BEST" }],
+  ...Array.from({ length: Math.ceil(PAIRS.length / 3) }, (_, i) => PAIRS.slice(i * 3, i * 3 + 3).map(p => ({ text: pairName(p), callback_data: p })))] });
 const oneKb = p => ({ inline_keyboard: [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] });
 const bestKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] : []), [{ text: "🔍 Նորից գտնել", callback_data: "BEST" }]] });
 
@@ -195,8 +194,7 @@ async function handleUpdate(env, u) {
         const r = await bestSignal(env, now, mode === "F"); await send(env, chat, r.text, bestKb(r.pair));
       } else if (PAIRS.includes(cb.data)) {
         const info = await computeInfo(cb.data, now, true);
-        if (mode === "F") await send(env, chat, renderFade(info, now), { inline_keyboard: [[{ text: `↩️ ${pairName(cb.data)}`, callback_data: cb.data }]] });
-        else await send(env, chat, render(info, now), oneKb(cb.data));
+        await send(env, chat, [render(info, now), renderFade(info, now)].join("\n\n━━━━━━━━━━\n\n"), oneKb(cb.data));
       }
     } catch (e) { await send(env, chat, "Սխալ տվյալներ ստանալիս՝ " + e.message); }
     return;
@@ -211,7 +209,7 @@ async function handleUpdate(env, u) {
   if (text.startsWith("↩️")) { const r = await fadeSignal(env, now); return void await send(env, chat, r.text, { inline_keyboard: [[{ text: "↩️ Նորից գտնել", callback_data: "FADE" }]] }); }
   if (text.startsWith("🔍")) { const r = await bestSignal(env, now); return void await send(env, chat, r.text, bestKb(r.pair)); }
   if (text.startsWith("/start")) await send(env, chat, "Բարև 👋 Ներքևի «▶️ Start» կոճակով ցանկացած պահի կարող ես բացել զույգերի ցանկը։", START_KB);
-  { const m = await getMode(env); await send(env, chat, modeText(m), pairKb(m)); }
+  await send(env, chat, modeText(), pairKb());
 }
 
 // ---------- cron jobs ----------

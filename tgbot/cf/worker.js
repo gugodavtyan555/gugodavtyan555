@@ -161,7 +161,7 @@ function whyNotTrend(i) {
 
 // TradingView rating helpers: value in [-1, 1]
 const tvDir = v => v >= 0.1 ? "UP" : v <= -0.1 ? "DOWN" : "FLAT";
-const tvIcon = v => v >= 0.5 ? "🟢🟢" : v >= 0.1 ? "🟢" : v > -0.1 ? "⚪️" : v > -0.5 ? "🔴" : "🔴🔴";
+const tvIcon = v => v >= 0.5 ? "🟢🟢" : v >= 0.1 ? "🟢" : v > -0.1 ? "🟡" : v > -0.5 ? "🔴" : "🔴🔴";
 const tvAgree = (tv, dir) => tv ? ["m1", "m5", "m15"].filter(k => tvDir(tv[k]) === dir).length : 0;
 function tvLine(tv, dir) {
   if (!tv) return null;

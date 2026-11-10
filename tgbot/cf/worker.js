@@ -75,6 +75,15 @@ async function computeInfo(pair, now, lite = false) {
   return { feat, pair, st, r5, r1, score: sc + (1 - Math.abs(r5 - 50) / 50) * 0.5, dir: d15, price: st.M1[1], bar, full, agree };
 }
 
+// ---------- TradingView technical rating (public scanner endpoint, read-only) ----------
+async function fetchTV(pairs) {
+  const r = await fetch("https://scanner.tradingview.com/forex/scan", { method: "POST", headers: { "content-type": "application/json", "User-Agent": "Mozilla/5.0" },
+    body: JSON.stringify({ symbols: { tickers: pairs.map(p => "FX_IDC:" + p) }, columns: ["Recommend.All|1", "Recommend.All|5", "Recommend.All|15"] }) });
+  const j = await r.json(), out = {};
+  for (const row of j.data || []) out[row.s.split(":")[1]] = { m1: row.d[0], m5: row.d[1], m15: row.d[2] };
+  return out;
+}
+
 // ---------- rendering ----------
 const mmss = s => { s = Math.floor(s); const m = Math.floor(s / 60), r = s % 60; return m ? `${m} ր ${String(r).padStart(2, "0")} վ` : `${r} վ`; };
 const pairName = p => `${p.slice(0, 3)}/${p.slice(3)}`;
@@ -125,27 +134,41 @@ function whyNotTrend(i) {
   if (i.r5 <= 35 || i.r5 >= 65) return `RSI-ն ծայրահեղ է (${i.r5.toFixed(0)})՝ ռեվերսի ռիսկ`;
   return `գինը շատ է հեռացել EMA-ից (${i.feat.dist} ATR)`;
 }
+// TradingView rating helpers: value in [-1, 1]
+const tvDir = v => v >= 0.1 ? "UP" : v <= -0.1 ? "DOWN" : "FLAT";
+const tvIcon = v => v >= 0.5 ? "🟢🟢" : v >= 0.1 ? "🟢" : v > -0.1 ? "⚪️" : v > -0.5 ? "🔴" : "🔴🔴";
+const tvAgree = (tv, dir) => tv ? ["m1", "m5", "m15"].filter(k => tvDir(tv[k]) === dir).length : 0;
+function tvLine(tv, dir) {
+  if (!tv) return null;
+  const n = tvAgree(tv, dir);
+  const v = n === 3 ? "✅ համաձայն (3/3)" : n === 2 ? "✅ մեծ մասամբ համաձայն (2/3)" : n === 1 ? "⚠️ թույլ համաձայնություն (1/3)" : "⚠️ հակառակ է (0/3)";
+  return `📡 TradingView՝ 1ր ${tvIcon(tv.m1)} · 5ր ${tvIcon(tv.m5)} · 15ր ${tvIcon(tv.m15)} — ${v}`;
+}
 function renderClear(i, now) {
   const hh = new Date(now * 1000).toISOString().slice(11, 19), p = pairName(i.pair);
   if (!isClearTrend(i)) return `⚪️ *WAIT* · ${p}\nՏրենդային հստակ սիգնալ չկա. ${whyNotTrend(i)}։`;
-  const d = i.dir, lvl = i.st.M5[2];
+  const d = i.dir;
   return [`${dot(d)} *${d} · 5 րոպե* — ${p} 🔥`,
     `M15 ${dot(i.st.M15[0])} M5 ${dot(i.st.M5[0])} M1 ${dot(i.st.M1[0])} համաձայն · RSI ${i.r5.toFixed(0)} · EMA-ից ${i.feat.dist} ATR`,
+    tvLine(i.tv, d),
     `Գին ${i.price.toFixed(5)} · ${hh} UTC`,
-    entryLine(now)].join("\n");
+    entryLine(now)].filter(Boolean).join("\n");
 }
 function renderFadeClear(i, now) {
   const hh = new Date(now * 1000).toISOString().slice(11, 19), p = pairName(i.pair);
   if (!isClearFade(i)) return `↩️ ⚪️ *WAIT* · ${p}\nՀակառակ հստակ սիգնալ չկա. ` + (!i.full ? "երեք ժամկետը համաձայն չեն" : `գինը բավականաչափ հեռու չէ EMA-ից (${i.feat.dist} ATR, պետք է ≥ 2.5)`) + "։";
   const trend = i.dir, fade = trend === "UP" ? "DOWN" : "UP";
-  const atr = Math.abs(i.st.M5[1] - i.st.M5[2]) / i.feat.dist, lvl = trend === "UP" ? i.price + atr : i.price - atr;
   return [`↩️ ${dot(fade)} *${fade} · 5 րոպե* — ${p} (հակառակ)`,
     `Գինը EMA-ից ${i.feat.dist} ATR ${trend === "UP" ? "վերև" : "ներքև"} է (ձգված շարժում) · RSI ${i.r5.toFixed(0)}`,
+    tvLine(i.tv, fade),
     `Գին ${i.price.toFixed(5)} · ${hh} UTC`,
-    entryLine(now)].join("\n");
+    entryLine(now)].filter(Boolean).join("\n");
 }
 
-const scanFresh = async now => (await Promise.all(PAIRS.map(p => computeInfo(p, now, true).catch(() => null)))).filter(i => i && i.bar >= now - 180);
+const scanFresh = async now => {
+  const [res, tv] = await Promise.all([Promise.all(PAIRS.map(p => computeInfo(p, now, true).catch(() => null))), fetchTV(PAIRS).catch(() => ({}))]);
+  return res.filter(i => i && i.bar >= now - 180).map(i => ({ ...i, tv: tv[i.pair] }));
+};
 
 function bestFrom(fresh, now) {
   const clear = fresh.filter(isClearTrend).sort((a, b) => b.score - a.score);
@@ -154,7 +177,7 @@ function bestFrom(fresh, now) {
   return { pair: clear[0].pair, text: `${head}\n\n${renderClear(clear[0], now)}` };
 }
 function fadeFrom(fresh, now) {
-  const clear = fresh.filter(isClearFade).sort((a, b) => b.feat.dist - a.feat.dist);
+  const clear = fresh.filter(isClearFade).sort((a, b) => tvAgree(b.tv, b.dir === "UP" ? "DOWN" : "UP") - tvAgree(a.tv, a.dir === "UP" ? "DOWN" : "UP") || b.feat.dist - a.feat.dist);
   if (!clear.length) return { text: "↩️ ⚪️ *Հստակ հակառակ սիգնալ չկա հիմա* (չկա զույգ, որի գինը ≥ 2.5 ATR հեռու է EMA-ից և երեք ժամկետն էլ համաձայն են)։" };
   return { pair: clear[0].pair, text: renderFadeClear(clear[0], now) };
 }
@@ -163,8 +186,8 @@ function fadeFrom(fresh, now) {
 async function bestSignal(env, now) {
   const fresh = await scanFresh(now);
   if (!fresh.length) return { pair: null, text: "Թարմ տվյալներ չստացվեցին (շուկան կարող է փակ լինել)։ Փորձիր նորից։" };
-  const tr = fresh.filter(isClearTrend).sort((a, b) => b.score - a.score);
-  const fd = fresh.filter(isClearFade).sort((a, b) => b.feat.dist - a.feat.dist);
+  const tr = fresh.filter(isClearTrend).sort((a, b) => tvAgree(b.tv, b.dir) - tvAgree(a.tv, a.dir) || b.score - a.score);
+  const fd = fresh.filter(isClearFade).sort((a, b) => tvAgree(b.tv, b.dir === "UP" ? "DOWN" : "UP") - tvAgree(a.tv, a.dir === "UP" ? "DOWN" : "UP") || b.feat.dist - a.feat.dist);
   const order = [...tr, ...fd.filter(f => !tr.some(t => t.pair === f.pair))];   // trend-clear first, then fade-only
   const head0 = `🔍 Սկանավորվեց ${fresh.length} զույգ հենց հիմա · հստակ սիգնալներ՝ տրենդային ${tr.length}, հակառակ ${fd.length}`;
   if (!order.length) return { pair: null, text: `${head0}\n\n⚪️ *Հստակ սիգնալ չկա հիմա։* Սպասիր կամ սեղմիր նորից մի քանի րոպեից։` };
@@ -233,7 +256,7 @@ async function handleUpdate(env, u) {
       else if (cb.data === "BEST") {
         const r = await bestSignal(env, now, mode === "F"); await send(env, chat, r.text, bestKb(r.pair));
       } else if (PAIRS.includes(cb.data)) {
-        const info = await computeInfo(cb.data, now, true);
+        const [info, tvm] = await Promise.all([computeInfo(cb.data, now, true), fetchTV([cb.data]).catch(() => ({}))]); info.tv = tvm[cb.data];
         await send(env, chat, [renderClear(info, now), renderFadeClear(info, now)].join("\n\n━━━━━━━━━━\n\n"), oneKb(cb.data));
       }
     } catch (e) { await send(env, chat, "Սխալ տվյալներ ստանալիս՝ " + e.message); }
@@ -284,6 +307,8 @@ async function rankAndSettle(env, boundary, wait) {
   if (auto) {
     const { results } = await env.DB.prepare("SELECT info, asof FROM scan WHERE asof = ?").bind(boundary).all();
     const all = results.map(r => JSON.parse(r.info)).filter(i => i.bar >= boundary - 180);
+    const tvm = await fetchTV(PAIRS).catch(() => ({}));
+    for (const i of all) { const v = tvm[i.pair]; if (v) i.feat.tv = [v.m1, v.m5, v.m15].map(x => +x.toFixed(2)); }
     const ins = (i, dir, strat) => env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat, strat) VALUES (?,?,?,?,?,?,?,?)")
       .bind(i.pair, dir, boundary, boundary + 300, i.price, Math.round(i.score * 100) / 100, JSON.stringify(i.feat), strat);
     // T = trend (best aligned pair, RSI-neutral). F = fade (aligned pair farthest from EMA, trade AGAINST the trend)
@@ -308,6 +333,7 @@ export default {
     if (url.pathname === "/run/" + env.WEBHOOK_SECRET) {
       const kind = url.searchParams.get("k"), boundary = Math.floor(Date.now() / 300000) * 300;
       const t0 = Date.now();
+      if (kind === "tv") return new Response(JSON.stringify(await fetchTV(PAIRS), null, 1));
       if (kind === "best") { const r = await bestSignal(env, Math.floor(Date.now() / 1000)); return new Response(r.text + "\n\nms=" + (Date.now() - t0)); }
       const r = kind === "rank" ? await rankAndSettle(env, boundary, false) : await scanGroup(env, Number(kind), boundary, false);
       return new Response(JSON.stringify({ kind, r, ms: Date.now() - t0 }));

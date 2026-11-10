@@ -123,8 +123,8 @@ const bestKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`
 // Trend: M15, M5, M1 all agree AND M5 RSI not extreme (35-65) AND price not stretched (<= 2 ATR from M5 EMA20)
 // Fade:  M15, M5, M1 all agree AND price stretched (>= 2.5 ATR from M5 EMA20) -> trade against the move
 const fadeDir = i => i.dir === "UP" ? "DOWN" : "UP";
-const isClearTrend = i => i.full && i.r5 > 35 && i.r5 < 65 && i.feat.dist <= 2 && tvAgree(i.tv, i.dir) === 3;   // + TradingView agrees on 1/5/15 min
-const isClearFade = i => i.full && i.feat.dist >= 2.5 && tvAgree(i.tv, fadeDir(i)) === 3;
+const isClearTrend = i => i.full && i.r5 > 35 && i.r5 < 65 && i.feat.dist <= 2;   // TradingView agreement only ranks / labels strength
+const isClearFade = i => i.full && i.feat.dist >= 2.5 && tvAgree(i.tv, fadeDir(i)) >= 1;   // not fully opposed by TradingView
 const dot = d => ico[d];
 
 // Signal is for entering RIGHT NOW (expiry 5 minutes from entry).
@@ -134,8 +134,7 @@ function whyNotTrend(i) {
   if (!i.agree) return "M15-ը և M5-ը հակասում են";
   if (!i.full) return "M1-ը հակառակ կողմում է (պուլբեք)";
   if (i.r5 <= 35 || i.r5 >= 65) return `RSI-ն ծայրահեղ է (${i.r5.toFixed(0)})՝ ռեվերսի ռիսկ`;
-  if (i.feat.dist > 2) return `գինը շատ է հեռացել EMA-ից (${i.feat.dist} ATR)`;
-  return tvWhy(i, i.dir);
+  return `գինը շատ է հեռացել EMA-ից (${i.feat.dist} ATR)`;
 }
 
 // TradingView rating helpers: value in [-1, 1]
@@ -152,7 +151,7 @@ function renderClear(i, now) {
   const hh = new Date(now * 1000).toISOString().slice(11, 19), p = pairName(i.pair);
   if (!isClearTrend(i)) return `⚪️ *WAIT* · ${p}\nՏրենդային հստակ սիգնալ չկա. ${whyNotTrend(i)}։`;
   const d = i.dir;
-  return [`${dot(d)} *${d} · 5 րոպե* — ${p} 🔥`,
+  return [`${dot(d)} *${d} · 5 րոպե* — ${p} ${tvAgree(i.tv, d) === 3 ? "🔥🔥 ամենաուժեղ" : tvAgree(i.tv, d) === 2 ? "🔥" : "🟡"}`,
     `M15 ${dot(i.st.M15[0])} M5 ${dot(i.st.M5[0])} M1 ${dot(i.st.M1[0])} համաձայն · RSI ${i.r5.toFixed(0)} · EMA-ից ${i.feat.dist} ATR`,
     tvLine(i.tv, d),
     `Գին ${i.price.toFixed(5)} · ${hh} UTC`,

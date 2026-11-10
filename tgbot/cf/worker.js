@@ -110,18 +110,51 @@ const pairKb = (mode = "T") => ({ inline_keyboard: [
 const oneKb = p => ({ inline_keyboard: [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] });
 const bestKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] : []), [{ text: "🔍 Նորից գտնել", callback_data: "BEST" }]] });
 
+// ---------- "clear signal" rules (strict) ----------
+// Trend: M15, M5, M1 all agree AND M5 RSI not extreme (35-65) AND price not stretched (<= 2 ATR from M5 EMA20)
+// Fade:  M15, M5, M1 all agree AND price stretched (>= 2.5 ATR from M5 EMA20) -> trade against the move
+const isClearTrend = i => i.full && i.r5 > 35 && i.r5 < 65 && i.feat.dist <= 2;
+const isClearFade = i => i.full && i.feat.dist >= 2.5;
+const dot = d => ico[d];
+
+function whyNotTrend(i) {
+  if (!i.agree) return "M15-ը և M5-ը հակասում են";
+  if (!i.full) return "M1-ը հակառակ կողմում է (պուլբեք)";
+  if (i.r5 <= 35 || i.r5 >= 65) return `RSI-ն ծայրահեղ է (${i.r5.toFixed(0)})՝ ռեվերսի ռիսկ`;
+  return `գինը շատ է հեռացել EMA-ից (${i.feat.dist} ATR)`;
+}
+function renderClear(i, now) {
+  const hh = new Date(now * 1000).toISOString().slice(11, 19), p = pairName(i.pair);
+  if (!isClearTrend(i)) return `⚪️ *WAIT* · ${p}\nՏրենդային հստակ սիգնալ չկա. ${whyNotTrend(i)}։`;
+  const d = i.dir, lvl = i.st.M5[2];
+  return [`${dot(d)} *${d} · 5 րոպե* — ${p} 🔥`,
+    `M15 ${dot(i.st.M15[0])} M5 ${dot(i.st.M5[0])} M1 ${dot(i.st.M1[0])} համաձայն · RSI ${i.r5.toFixed(0)} · EMA-ից ${i.feat.dist} ATR`,
+    `Գին ${i.price.toFixed(5)} · ${hh} UTC · ✅ մտիր հիմա`,
+    `❌ Անվավեր, եթե M5 փակվի ${lvl.toFixed(5)}-ից ${d === "UP" ? "ներքև" : "վերև"}`].join("\n");
+}
+function renderFadeClear(i, now) {
+  const hh = new Date(now * 1000).toISOString().slice(11, 19), p = pairName(i.pair);
+  if (!isClearFade(i)) return `↩️ ⚪️ *WAIT* · ${p}\nՀակառակ հստակ սիգնալ չկա. ` + (!i.full ? "երեք ժամկետը համաձայն չեն" : `գինը բավականաչափ հեռու չէ EMA-ից (${i.feat.dist} ATR, պետք է ≥ 2.5)`) + "։";
+  const trend = i.dir, fade = trend === "UP" ? "DOWN" : "UP";
+  const atr = Math.abs(i.st.M5[1] - i.st.M5[2]) / i.feat.dist, lvl = trend === "UP" ? i.price + atr : i.price - atr;
+  return [`↩️ ${dot(fade)} *${fade} · 5 րոպե* — ${p} (հակառակ)`,
+    `Գինը EMA-ից ${i.feat.dist} ATR ${trend === "UP" ? "վերև" : "ներքև"} է (ձգված շարժում) · RSI ${i.r5.toFixed(0)}`,
+    `Գին ${i.price.toFixed(5)} · ${hh} UTC · ✅ մտիր հիմա`,
+    `❌ Անվավեր, եթե գինը ևս 1 ATR հեռանա (${lvl.toFixed(5)})`].join("\n");
+}
+
 const scanFresh = async now => (await Promise.all(PAIRS.map(p => computeInfo(p, now, true).catch(() => null)))).filter(i => i && i.bar >= now - 180);
 
 function bestFrom(fresh, now) {
-  const f = [...fresh].sort((a, b) => b.score - a.score), b0 = f[0], n5 = f.filter(r => r.full).length;
-  let head = `🔍 Սկանավորվեց ${fresh.length} զույգ հենց հիմա · 🔥 սիգնալներ՝ ${n5}\n`;
-  if (!b0.full) head += "Ուժեղ սիգնալ չկա, ամենալավը թույլ է։\n";
-  return { pair: b0.pair, text: head + "\n" + render(b0, now) };
+  const clear = fresh.filter(isClearTrend).sort((a, b) => b.score - a.score);
+  const head = `🔍 Սկանավորվեց ${fresh.length} զույգ հենց հիմա · հստակ տրենդային սիգնալներ՝ ${clear.length}`;
+  if (!clear.length) return { pair: null, text: `${head}\n\n⚪️ *Հստակ տրենդային սիգնալ չկա հիմա։* Սպասիր կամ սեղմիր նորից մի քանի րոպեից։` };
+  return { pair: clear[0].pair, text: `${head}\n\n${renderClear(clear[0], now)}` };
 }
 function fadeFrom(fresh, now) {
-  const full = fresh.filter(i => i.full).sort((a, b) => b.feat.dist - a.feat.dist);
-  if (!full.length) return { text: "↩️ *Հակառակ սիգնալ*\nՉկա. չկա զույգ, որտեղ M15, M5, M1 երեքն էլ համաձայն են։" };
-  return { pair: full[0].pair, text: renderFade(full[0], now, `${full.length} զույգի մեջ երեք ժամկետն էլ համաձայն են, ընտրվեց EMA-ից ամենահեռուն`) };
+  const clear = fresh.filter(isClearFade).sort((a, b) => b.feat.dist - a.feat.dist);
+  if (!clear.length) return { text: "↩️ ⚪️ *Հստակ հակառակ սիգնալ չկա հիմա* (չկա զույգ, որի գինը ≥ 2.5 ATR հեռու է EMA-ից և երեք ժամկետն էլ համաձայն են)։" };
+  return { pair: clear[0].pair, text: renderFadeClear(clear[0], now) };
 }
 
 // "Best signal" = trend signal + opposite (fade) signal from one fresh scan of all pairs
@@ -194,7 +227,7 @@ async function handleUpdate(env, u) {
         const r = await bestSignal(env, now, mode === "F"); await send(env, chat, r.text, bestKb(r.pair));
       } else if (PAIRS.includes(cb.data)) {
         const info = await computeInfo(cb.data, now, true);
-        await send(env, chat, [render(info, now), renderFade(info, now)].join("\n\n━━━━━━━━━━\n\n"), oneKb(cb.data));
+        await send(env, chat, [renderClear(info, now), renderFadeClear(info, now)].join("\n\n━━━━━━━━━━\n\n"), oneKb(cb.data));
       }
     } catch (e) { await send(env, chat, "Սխալ տվյալներ ստանալիս՝ " + e.message); }
     return;
@@ -247,10 +280,9 @@ async function rankAndSettle(env, boundary, wait) {
     const ins = (i, dir, strat) => env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat, strat) VALUES (?,?,?,?,?,?,?,?)")
       .bind(i.pair, dir, boundary, boundary + 300, i.price, Math.round(i.score * 100) / 100, JSON.stringify(i.feat), strat);
     // T = trend (best aligned pair, RSI-neutral). F = fade (aligned pair farthest from EMA, trade AGAINST the trend)
-    const full = all.filter(i => i.full);
-    const t = [...full].sort((a, b) => b.score - a.score).slice(0, TOP_N);
+    const t = all.filter(isClearTrend).sort((a, b) => b.score - a.score).slice(0, TOP_N);
     for (const i of t) { await ins(i, i.dir, "T").run(); out.opened.push("T:" + i.pair); }
-    const f = [...full].sort((a, b) => b.feat.dist - a.feat.dist)[0];
+    const f = all.filter(isClearFade).sort((a, b) => b.feat.dist - a.feat.dist)[0];
     if (f) { await ins(f, f.dir === "UP" ? "DOWN" : "UP", "F").run(); out.opened.push("F:" + f.pair); }
   }
   return out;

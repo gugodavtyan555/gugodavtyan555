@@ -1,0 +1,49 @@
+name: po-autotrader
+
+# Free "server" for the local auto-trader. Start it by hand from the Actions tab (works from a phone).
+# Secrets (Settings -> Secrets and variables -> Actions): PO_SSID, SIGNAL_KEY. Never put them in files.
+on:
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: "How many hours to run (max 5)"
+        default: "4"
+      dry_run:
+        description: "yes = only print what it would do (no orders)"
+        default: "yes"
+      live:
+        description: "yes = allow a REAL-money account (default no = demo only)"
+        default: "no"
+
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install library
+        run: pip install binaryoptionstoolsv2
+      - name: Run auto-trader
+        env:
+          PO_SSID: ${{ secrets.PO_SSID }}
+          SIGNAL_KEY: ${{ secrets.SIGNAL_KEY }}
+          SIGNAL_URL: https://fx-analyzer-bot.gugodavtyan555.workers.dev/api/signal
+          HOURS: ${{ inputs.hours }}
+          DRY: ${{ inputs.dry_run }}
+          LIVE: ${{ inputs.live }}
+        run: |
+          ARGS=""
+          [ "$DRY" = "yes" ] && ARGS="--dry-run"
+          [ "$LIVE" = "yes" ] && ARGS="$ARGS --live"
+          H=$(python3 -c "import os;print(max(1,min(5,int(float(os.environ['HOURS'])))))")
+          timeout $((H*3600)) python -u autotrader/po_autotrader.py $ARGS || true
+      - name: Save trade log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trades_log
+          path: autotrader/trades_log.csv
+          if-no-files-found: ignore

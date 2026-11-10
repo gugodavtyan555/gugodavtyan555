@@ -3,7 +3,7 @@
 
 const PAIRS = "EURUSD GBPUSD USDJPY AUDUSD USDCAD USDCHF NZDUSD EURGBP EURJPY EURCHF EURAUD EURCAD EURNZD GBPJPY GBPAUD GBPCAD GBPCHF GBPNZD AUDJPY AUDCAD AUDCHF AUDNZD CADJPY CADCHF CHFJPY NZDJPY NZDCAD NZDCHF".split(" ");
 const GROUPS = 2;                 // free plan: only 2 cron triggers available -> 2 groups of 14 pairs
-const CRONS = ["*/5 * * * *", "0-59/5 * * * *"];   // cron 1 also ranks + settles after scanning
+const CRONS = ["* * * * *", "*/1 * * * *"];   // both scan 14 pairs EVERY minute; cron 1 also ranks + settles on 5-min boundaries
 const PAYOUT = 0.80, TOP_N = 1, TZ_OFFSET = 4 * 3600;
 const START_KB = { keyboard: [[{ text: "▶️ Start" }, { text: "🔍 Լավագույն սիգնալ" }], [{ text: "📜 Պատմություն" }, { text: "⚙️ Ավտո ON/OFF" }], [{ text: "↩️ Հակառակ սիգնալ" }]], resize_keyboard: true, is_persistent: true };
 
@@ -168,10 +168,13 @@ function renderFadeClear(i, now) {
     entryLine(now)].filter(Boolean).join("\n");
 }
 
-const scanFresh = async now => {
-  const [res, tv] = await Promise.all([Promise.all(PAIRS.map(p => computeInfo(p, now, true).catch(() => null))), fetchTV(PAIRS).catch(() => ({}))]);
-  return res.filter(i => i && i.bar >= now - 180).map(i => ({ ...i, tv: tv[i.pair] }));
-};
+// Buttons read the scan cache written by the cron every minute (HTTP handlers have a 10 ms CPU limit on the free plan).
+async function readScan(env, now) {
+  const { results } = await env.DB.prepare("SELECT pair, asof, info FROM scan WHERE asof >= ?").bind(now - 180).all();
+  return results.map(r => ({ ...JSON.parse(r.info), asof: r.asof })).filter(i => i.bar >= now - 300);
+}
+const ageNote = (rows, now) => { const age = rows.length ? now - Math.min(...rows.map(r => r.asof)) : 0; return `_(տվյալները ${mmss(age)} առաջվա են)_`; };
+const scanFresh = readScan;
 
 function bestFrom(fresh, now) {
   const clear = fresh.filter(isClearTrend).sort((a, b) => b.score - a.score);
@@ -187,12 +190,12 @@ function fadeFrom(fresh, now) {
 
 // "Best signal" = ONE pair, two signals (trend + opposite). Every press is a fresh scan; no memory between presses.
 async function bestSignal(env, now) {
-  const fresh = await scanFresh(now);
-  if (!fresh.length) return { pair: null, text: "Թարմ տվյալներ չստացվեցին (շուկան կարող է փակ լինել)։ Փորձիր նորից։" };
+  const fresh = await readScan(env, now);
+  if (!fresh.length) return { pair: null, text: "Թարմ տվյալներ չկան (շուկան կարող է փակ լինել կամ սկանավորումը նոր է սկսվում)։ Փորձիր 1 րոպե հետո։" };
   const tr = fresh.filter(isClearTrend).sort((a, b) => tvAgree(b.tv, b.dir) - tvAgree(a.tv, a.dir) || b.score - a.score);
   const fd = fresh.filter(isClearFade).sort((a, b) => tvAgree(b.tv, b.dir === "UP" ? "DOWN" : "UP") - tvAgree(a.tv, a.dir === "UP" ? "DOWN" : "UP") || b.feat.dist - a.feat.dist);
   const order = [...tr, ...fd.filter(f => !tr.some(t => t.pair === f.pair))];   // trend-clear first, then fade-only
-  const head0 = `🔍 Սկանավորվեց ${fresh.length} զույգ հենց հիմա · հստակ սիգնալներ՝ տրենդային ${tr.length}, հակառակ ${fd.length}`;
+  const head0 = `🔍 Սկանավորվեց ${fresh.length} զույգ · հստակ սիգնալներ՝ տրենդային ${tr.length}, հակառակ ${fd.length}\n${ageNote(fresh, now)}`;
   if (!order.length) return { pair: null, text: `${head0}\n\n⚪️ *Հստակ սիգնալ չկա հիմա։* Սպասիր կամ սեղմիր նորից մի քանի րոպեից։` };
   const pick = order[0];   // every press = brand-new scan, best signal of THIS moment (no memory)
   const head = `${head0}`;
@@ -217,9 +220,9 @@ function renderFade(i, now, note) {
 }
 
 async function fadeSignal(env, now) {
-  const fresh = await scanFresh(now);
-  if (!fresh.length) return { text: "Թարմ տվյալներ չստացվեցին (շուկան կարող է փակ լինել)։ Փորձիր նորից։" };
-  return fadeFrom(fresh, now);
+  const fresh = await readScan(env, now);
+  if (!fresh.length) return { text: "Թարմ տվյալներ չկան (շուկան կարող է փակ լինել կամ սկանավորումը նոր է սկսվում)։ Փորձիր 1 րոպե հետո։" };
+  const r = fadeFrom(fresh, now); r.text += "\n" + ageNote(fresh, now); return r;
 }
 
 async function historyText(env, now) {
@@ -259,8 +262,9 @@ async function handleUpdate(env, u) {
       else if (cb.data === "BEST") {
         const r = await bestSignal(env, now, mode === "F"); await send(env, chat, r.text, bestKb(r.pair));
       } else if (PAIRS.includes(cb.data)) {
-        const [info, tvm] = await Promise.all([computeInfo(cb.data, now, true), fetchTV([cb.data]).catch(() => ({}))]); info.tv = tvm[cb.data];
-        await send(env, chat, [renderClear(info, now), renderFadeClear(info, now)].join("\n\n━━━━━━━━━━\n\n"), oneKb(cb.data));
+        const rows = await readScan(env, now); let info = rows.find(r => r.pair === cb.data), age = info ? now - info.asof : 0;
+        if (!info) { const [i0, tvm] = await Promise.all([computeInfo(cb.data, now, true), fetchTV([cb.data]).catch(() => ({}))]); info = i0; info.tv = tvm[cb.data]; }
+        await send(env, chat, [renderClear(info, now), renderFadeClear(info, now)].join("\n\n━━━━━━━━━━\n\n") + (age >= 15 ? `\n_(տվյալները ${mmss(age)} առաջվա են)_` : ""), oneKb(cb.data));
       }
     } catch (e) { await send(env, chat, "Սխալ տվյալներ ստանալիս՝ " + e.message); }
     return;
@@ -281,18 +285,19 @@ async function handleUpdate(env, u) {
 // ---------- cron jobs ----------
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-async function scanGroup(env, g, boundary, wait) {
+async function scanGroup(env, g, wait) {
   if (wait) await sleep(3000);
   const now = Math.floor(Date.now() / 1000);
   const mine = PAIRS.filter((_, i) => i % GROUPS === g);
-  const res = await Promise.all(mine.map(p => computeInfo(p, now).catch(() => null)));
-  const stmts = res.filter(Boolean).map(i => env.DB.prepare("INSERT OR REPLACE INTO scan VALUES (?,?,?)").bind(i.pair, boundary, JSON.stringify(i)));
+  const [res, tv] = await Promise.all([Promise.all(mine.map(p => computeInfo(p, now, true).catch(() => null))), fetchTV(mine).catch(() => ({}))]);
+  const rows = res.filter(Boolean).map(i => { const v = tv[i.pair]; i.tv = v; if (v) i.feat.tv = [v.m1, v.m5, v.m15].map(x => +x.toFixed(2)); return i; });
+  const stmts = rows.map(i => env.DB.prepare("INSERT OR REPLACE INTO scan VALUES (?,?,?)").bind(i.pair, now, JSON.stringify(i)));
   if (stmts.length) await env.DB.batch(stmts);
-  return res.filter(Boolean).length;
+  return rows.length;
 }
 
 async function rankAndSettle(env, boundary, wait) {
-  if (wait) await sleep(8000);  // give the other scan group time to finish
+  if (wait) await sleep(4000);  // give the other scan group time to finish
   const out = { settled: 0, opened: [] };
   // settle
   const { results: open } = await env.DB.prepare("SELECT * FROM trades WHERE result IS NULL AND exit_at <= ?").bind(boundary).all();
@@ -308,10 +313,8 @@ async function rankAndSettle(env, boundary, wait) {
   // open new virtual trades
   const auto = (await env.DB.prepare("SELECT v FROM kv WHERE k='auto'").first())?.v === "1";
   if (auto) {
-    const { results } = await env.DB.prepare("SELECT info, asof FROM scan WHERE asof = ?").bind(boundary).all();
+    const { results } = await env.DB.prepare("SELECT info, asof FROM scan WHERE asof >= ? AND asof < ?").bind(boundary, boundary + 150).all();
     const all = results.map(r => JSON.parse(r.info)).filter(i => i.bar >= boundary - 180);
-    const tvm = await fetchTV(PAIRS).catch(() => ({}));
-    for (const i of all) { const v = tvm[i.pair]; i.tv = v; if (v) i.feat.tv = [v.m1, v.m5, v.m15].map(x => +x.toFixed(2)); }
     const ins = (i, dir, strat) => env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat, strat) VALUES (?,?,?,?,?,?,?,?)")
       .bind(i.pair, dir, boundary, boundary + 300, i.price, Math.round(i.score * 100) / 100, JSON.stringify(i.feat), strat);
     // T = trend (best aligned pair, RSI-neutral). F = fade (aligned pair farthest from EMA, trade AGAINST the trend)
@@ -338,17 +341,18 @@ export default {
       const t0 = Date.now();
       if (kind === "tv") return new Response(JSON.stringify(await fetchTV(PAIRS), null, 1));
       if (kind === "best") { const r = await bestSignal(env, Math.floor(Date.now() / 1000)); return new Response(r.text + "\n\nms=" + (Date.now() - t0)); }
-      const r = kind === "rank" ? await rankAndSettle(env, boundary, false) : await scanGroup(env, Number(kind), boundary, false);
+      const r = kind === "rank" ? await rankAndSettle(env, boundary, false) : await scanGroup(env, Number(kind), false);
       return new Response(JSON.stringify({ kind, r, ms: Date.now() - t0 }));
     }
     return new Response("FX analyzer bot");
   },
   async scheduled(event, env, ctx) {
-    const idx = CRONS.indexOf(event.cron); const boundary = Math.floor(event.scheduledTime / 300000) * 300;
+    const idx = CRONS.indexOf(event.cron);
     if (idx < 0) return;
+    const boundary = Math.floor(event.scheduledTime / 300000) * 300, onBoundary = Math.floor(event.scheduledTime / 60000) % 5 === 0;
     ctx.waitUntil((async () => {
-      await scanGroup(env, idx, boundary, true);
-      if (idx === GROUPS - 1) await rankAndSettle(env, boundary, true);
+      await scanGroup(env, idx, true);
+      if (idx === GROUPS - 1 && onBoundary) await rankAndSettle(env, boundary, true);
     })());
   }
 };

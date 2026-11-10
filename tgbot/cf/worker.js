@@ -138,7 +138,7 @@ const modeText = () => "Ընտրիր զույգը 👇 (կստանաս երկո�
 const pairKb = (mode = "T") => ({ inline_keyboard: [
   [{ text: "🔍 Գտնել լավագույն սիգնալը", callback_data: "BEST" }],
   ...Array.from({ length: Math.ceil(PAIRS.length / 3) }, (_, i) => PAIRS.slice(i * 3, i * 3 + 3).map(p => ({ text: pairName(p), callback_data: p })))] });
-const oneKb = p => ({ inline_keyboard: [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] });
+const oneKb = p => ({ inline_keyboard: [[{ text: `🔄 ${pairName(p)}`, callback_data: p }], [{ text: "📲 Բացել Pocket Option", url: "https://m.pocketoption.com/ru/cabinet/" }]] });
 const bestKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] : []), [{ text: "🔍 Նորից գտնել", callback_data: "BEST" }]] });
 
 // ---------- "clear signal" rules (strict) ----------

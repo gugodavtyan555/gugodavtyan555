@@ -170,9 +170,9 @@ async function bestSignal(env, now) {
   const order = [...tr, ...fd.filter(f => !tr.some(t => t.pair === f.pair))];   // trend-clear first, then fade-only
   const head0 = `🔍 Սկանավորվեց ${fresh.length} զույգ հենց հիմա · հստակ սիգնալներ՝ տրենդային ${tr.length}, հակառակ ${fd.length}`;
   if (!order.length) return { pair: null, text: `${head0}\n\n⚪️ *Հստակ սիգնալ չկա հիմա։* Սպասիր կամ սեղմիր նորից մի քանի րոպեից։` };
-  // rotation memory (reset after 15 min without presses)
+  // rotation memory: never expires; resets only after every clear signal has been shown
   let shown = [];
-  try { const r = await env.DB.prepare("SELECT v FROM kv WHERE k='shown'").first(); if (r) { const o = JSON.parse(r.v); if (now - o.t < 900) shown = o.p; } } catch (e) {}
+  try { const r = await env.DB.prepare("SELECT v FROM kv WHERE k='shown'").first(); if (r) { const o = JSON.parse(r.v); shown = o.p; } } catch (e) {}
   let idx = order.findIndex(i => !shown.includes(i.pair)), wrapped = false;
   if (idx < 0) { shown = []; idx = 0; wrapped = true; }
   const pick = order[idx]; shown.push(pick.pair);

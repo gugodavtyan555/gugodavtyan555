@@ -50,10 +50,15 @@ function mergeLive(base, step, m1) {
 }
 
 // "Live snapshot" analysis: M15 / M5 / M1 vs EMA20 using the latest price incl. the unfinished candle.
-async function computeInfo(pair, now) {
-  const [m1, m5raw] = await Promise.all([fetchYahoo(pair, "1m", "1d"), fetchYahoo(pair, "5m", "5d")]);
-  const m5 = mergeLive(m5raw, 300, m1);
-  const tfs = { M15: resample(m5, 15), M5: m5, M1: m1 };
+async function computeInfo(pair, now, lite = false) {
+  let m1, m5, m15;
+  if (lite) {   // 1 subrequest per pair: derive M5/M15 from 3 days of 1-minute data
+    m1 = await fetchYahoo(pair, "1m", "3d"); m5 = resample(m1, 5); m15 = resample(m1, 15);
+  } else {
+    const [a, m5raw] = await Promise.all([fetchYahoo(pair, "1m", "1d"), fetchYahoo(pair, "5m", "5d")]);
+    m1 = a; m5 = mergeLive(m5raw, 300, m1); m15 = resample(m5, 15);
+  }
+  const tfs = { M15: m15, M5: m5, M1: m1 };
   const st = {};
   for (const k of ["M15", "M5", "M1"]) {
     const s = tfs[k]; if (s.c.length < 21) throw new Error("not enough data " + k);
@@ -102,17 +107,12 @@ const oneKb = p => ({ inline_keyboard: [[{ text: `🔄 ${pairName(p)}`, callback
 const bestKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] : []), [{ text: "🔍 Նորից գտնել", callback_data: "BEST" }]] });
 
 async function bestSignal(env, now) {
-  // Fresh re-check at press time. Free plan allows 50 subrequests/invocation (2 per pair),
-  // so we re-check the pairs that were aligned (M15=M5) in the last scan, strongest first (max 21).
-  const { results } = await env.DB.prepare("SELECT pair, asof, info FROM scan WHERE asof >= ?").bind(now - 900).all();
-  const cached = results.map(r => ({ asof: r.asof, ...JSON.parse(r.info) }));
-  if (!cached.length) return { pair: null, text: "Վերջին սկանավորման տվյալներ դեռ չկան (շուկան փակ է կամ ցիկլը նոր է սկսվում)։ Փորձիր 1–2 րոպե հետո։" };
-  const cand = cached.filter(r => r.agree).sort((a, b) => b.score - a.score).slice(0, 21);
-  const fresh = (await Promise.all(cand.map(r => computeInfo(r.pair, now).catch(() => null)))).filter(i => i && i.bar >= now - 180);
+  // Fresh scan of ALL pairs at press time (1 subrequest per pair -> 28, within the 50 limit).
+  const fresh = (await Promise.all(PAIRS.map(p => computeInfo(p, now, true).catch(() => null)))).filter(i => i && i.bar >= now - 180);
   if (!fresh.length) return { pair: null, text: "Թարմ տվյալներ չստացվեցին (շուկան կարող է փակ լինել)։ Փորձիր նորից։" };
   fresh.sort((a, b) => b.score - a.score);
   const b0 = fresh[0], n5 = fresh.filter(r => r.full).length;
-  let head = `🔍 Ստուգվեց ${fresh.length} զույգ հենց հիմա · 🔥 սիգնալներ՝ ${n5}\n`;
+  let head = `🔍 Սկանավորվեց ${fresh.length} զույգ հենց հիմա · 🔥 սիգնալներ՝ ${n5}\n`;
   if (!b0.full) head += "Ուժեղ սիգնալ չկա, ամենալավը թույլ է։\n";
   return { pair: b0.pair, text: head + "\n" + render(b0, now) };
 }
@@ -212,6 +212,7 @@ export default {
     if (url.pathname === "/run/" + env.WEBHOOK_SECRET) {
       const kind = url.searchParams.get("k"), boundary = Math.floor(Date.now() / 300000) * 300;
       const t0 = Date.now();
+      if (kind === "best") { const r = await bestSignal(env, Math.floor(Date.now() / 1000)); return new Response(r.text + "\n\nms=" + (Date.now() - t0)); }
       const r = kind === "rank" ? await rankAndSettle(env, boundary, false) : await scanGroup(env, Number(kind), boundary, false);
       return new Response(JSON.stringify({ kind, r, ms: Date.now() - t0 }));
     }

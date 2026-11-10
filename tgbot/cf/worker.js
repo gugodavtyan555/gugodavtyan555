@@ -84,6 +84,28 @@ async function fetchTV(pairs) {
   return out;
 }
 
+// ---------- LIVE scan from TradingView (one light request: price, EMA20, RSI, ATR on 1/5/15 min) ----------
+const DIST_SCALE = 2.66;   // TradingView ATR(14) ~ 2.66x the close-to-close ATR the distance thresholds were calibrated on
+const marketOpen = now => { const d = new Date(now * 1000), wd = d.getUTCDay(), h = d.getUTCHours(); return !((wd === 5 && h >= 22) || wd === 6 || (wd === 0 && h < 22)); };
+async function scanTV(pairs, now) {
+  const r = await fetch("https://scanner.tradingview.com/forex/scan", { method: "POST", headers: { "content-type": "application/json", "User-Agent": "Mozilla/5.0" },
+    body: JSON.stringify({ symbols: { tickers: pairs.map(p => "FX_IDC:" + p) }, columns: ["close|1", "EMA20|1", "RSI|1", "close|5", "EMA20|5", "RSI|5", "ATR|5", "close|15", "EMA20|15", "Recommend.All|1", "Recommend.All|5", "Recommend.All|15"] }) });
+  const j = await r.json(), out = [];
+  for (const row of j.data || []) {
+    const pair = row.s.split(":")[1], [c1, e1, rs1, c5, e5, rs5, atr5, c15, e15, t1, t5, t15] = row.d;
+    if ([c1, e1, rs1, c5, e5, rs5, atr5, c15, e15].some(x => x == null) || !(atr5 > 0)) continue;
+    const dir = (c, e) => c > e ? "UP" : "DOWN";
+    const st = { M15: [dir(c15, e15), c15, e15], M5: [dir(c5, e5), c5, e5], M1: [dir(c1, e1), c1, e1] };
+    const d15 = st.M15[0], agree = d15 === st.M5[0], full = agree && st.M1[0] === d15;
+    const sc = !agree ? 0 : full ? 10 : 3;
+    const tvv = [t1, t5, t15].map(x => x == null ? 0 : x);
+    out.push({ pair, st, r5: rs5, r1: rs1, score: sc + (1 - Math.abs(rs5 - 50) / 50) * 0.5, dir: d15, price: c1, bar: now, full, agree,
+      feat: { hour: new Date(now * 1000).getUTCHours(), rsi5: +rs5.toFixed(1), rsi1: +rs1.toFixed(1), dist: +(Math.abs(c5 - e5) / atr5 * DIST_SCALE).toFixed(2), vol: +((atr5 / DIST_SCALE) / c5 * 1e4).toFixed(2), tv: tvv.map(x => +x.toFixed(2)) },
+      tv: { m1: tvv[0], m5: tvv[1], m15: tvv[2] } });
+  }
+  return out;
+}
+
 // ---------- rendering ----------
 const mmss = s => { s = Math.floor(s); const m = Math.floor(s / 60), r = s % 60; return m ? `${m} ր ${String(r).padStart(2, "0")} վ` : `${r} վ`; };
 const pairName = p => `${p.slice(0, 3)}/${p.slice(3)}`;
@@ -190,15 +212,15 @@ function fadeFrom(fresh, now) {
 
 // "Best signal" = ONE pair, two signals (trend + opposite). Every press is a fresh scan; no memory between presses.
 async function bestSignal(env, now) {
-  const fresh = await readScan(env, now);
-  if (!fresh.length) return { pair: null, text: "Թարմ տվյալներ չկան (շուկան կարող է փակ լինել կամ սկանավորումը նոր է սկսվում)։ Փորձիր 1 րոպե հետո։" };
+  if (!marketOpen(now)) return { pair: null, text: "Շուկան հիմա փակ է (բացվում է կիրակի երեկոյան)։" };
+  const fresh = await scanTV(PAIRS, now);
+  if (!fresh.length) return { pair: null, text: "Տվյալներ չստացվեցին։ Փորձիր նորից։" };
   const tr = fresh.filter(isClearTrend).sort((a, b) => tvAgree(b.tv, b.dir) - tvAgree(a.tv, a.dir) || b.score - a.score);
-  const fd = fresh.filter(isClearFade).sort((a, b) => tvAgree(b.tv, b.dir === "UP" ? "DOWN" : "UP") - tvAgree(a.tv, a.dir === "UP" ? "DOWN" : "UP") || b.feat.dist - a.feat.dist);
-  const order = [...tr, ...fd.filter(f => !tr.some(t => t.pair === f.pair))];   // trend-clear first, then fade-only
-  const head0 = `🔍 Սկանավորվեց ${fresh.length} զույգ · հստակ սիգնալներ՝ տրենդային ${tr.length}, հակառակ ${fd.length}\n${ageNote(fresh, now)}`;
-  if (!order.length) return { pair: null, text: `${head0}\n\n⚪️ *Հստակ սիգնալ չկա հիմա։* Սպասիր կամ սեղմիր նորից մի քանի րոպեից։` };
-  const pick = order[0];   // every press = brand-new scan, best signal of THIS moment (no memory)
-  const head = `${head0}`;
+  const fd = fresh.filter(isClearFade).sort((a, b) => tvAgree(b.tv, fadeDir(b)) - tvAgree(a.tv, fadeDir(a)) || b.feat.dist - a.feat.dist);
+  const order = [...tr, ...fd.filter(f => !tr.some(t => t.pair === f.pair))];
+  const head = `🔍 Սկանավորվեց ${fresh.length} զույգ հենց հիմա · հստակ սիգնալներ՝ տրենդային ${tr.length}, հակառակ ${fd.length}`;
+  if (!order.length) return { pair: null, text: `${head}\n\n⚪️ *Հստակ սիգնալ չկա հիմա։* Սպասիր կամ սեղմիր նորից մի քանի րոպեից։` };
+  const pick = order[0];
   return { pair: pick.pair, text: `${head}\n\n${renderClear(pick, now)}\n\n━━━━━━━━━━\n\n${renderFadeClear(pick, now)}` };
 }
 
@@ -220,9 +242,10 @@ function renderFade(i, now, note) {
 }
 
 async function fadeSignal(env, now) {
-  const fresh = await readScan(env, now);
-  if (!fresh.length) return { text: "Թարմ տվյալներ չկան (շուկան կարող է փակ լինել կամ սկանավորումը նոր է սկսվում)։ Փորձիր 1 րոպե հետո։" };
-  const r = fadeFrom(fresh, now); r.text += "\n" + ageNote(fresh, now); return r;
+  if (!marketOpen(now)) return { text: "Շուկան հիմա փակ է (բացվում է կիրակի երեկոյան)։" };
+  const fresh = await scanTV(PAIRS, now);
+  if (!fresh.length) return { text: "Տվյալներ չստացվեցին։ Փորձիր նորից։" };
+  return fadeFrom(fresh, now);
 }
 
 async function historyText(env, now) {
@@ -262,9 +285,10 @@ async function handleUpdate(env, u) {
       else if (cb.data === "BEST") {
         const r = await bestSignal(env, now, mode === "F"); await send(env, chat, r.text, bestKb(r.pair));
       } else if (PAIRS.includes(cb.data)) {
-        const rows = await readScan(env, now); let info = rows.find(r => r.pair === cb.data), age = info ? now - info.asof : 0;
-        if (!info) { const [i0, tvm] = await Promise.all([computeInfo(cb.data, now, true), fetchTV([cb.data]).catch(() => ({}))]); info = i0; info.tv = tvm[cb.data]; }
-        await send(env, chat, [renderClear(info, now), renderFadeClear(info, now)].join("\n\n━━━━━━━━━━\n\n") + (age >= 15 ? `\n_(տվյալները ${mmss(age)} առաջվա են)_` : ""), oneKb(cb.data));
+        if (!marketOpen(now)) { await send(env, chat, "Շուկան հիմա փակ է (բացվում է կիրակի երեկոյան)։", oneKb(cb.data)); return; }
+        const [info] = await scanTV([cb.data], now);
+        if (!info) { await send(env, chat, "Տվյալներ չստացվեցին։ Փորձիր նորից։", oneKb(cb.data)); return; }
+        await send(env, chat, [renderClear(info, now), renderFadeClear(info, now)].join("\n\n━━━━━━━━━━\n\n"), oneKb(cb.data));
       }
     } catch (e) { await send(env, chat, "Սխալ տվյալներ ստանալիս՝ " + e.message); }
     return;
@@ -282,48 +306,43 @@ async function handleUpdate(env, u) {
   await send(env, chat, modeText(), pairKb());
 }
 
-// ---------- cron jobs ----------
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-async function scanGroup(env, g, wait) {
-  if (wait) await sleep(3000);
-  const now = Math.floor(Date.now() / 1000);
-  const mine = PAIRS.filter((_, i) => i % GROUPS === g);
-  const [res, tv] = await Promise.all([Promise.all(mine.map(p => computeInfo(p, now, true).catch(() => null))), fetchTV(mine).catch(() => ({}))]);
-  const rows = res.filter(Boolean).map(i => { const v = tv[i.pair]; i.tv = v; if (v) i.feat.tv = [v.m1, v.m5, v.m15].map(x => +x.toFixed(2)); return i; });
-  const stmts = rows.map(i => env.DB.prepare("INSERT OR REPLACE INTO scan VALUES (?,?,?)").bind(i.pair, now, JSON.stringify(i)));
+// ---------- cron jobs (every minute) ----------
+async function cronScan(env, now) {
+  const infos = await scanTV(PAIRS, now);
+  const stmts = infos.map(i => env.DB.prepare("INSERT OR REPLACE INTO scan VALUES (?,?,?)").bind(i.pair, now, JSON.stringify(i)));
   if (stmts.length) await env.DB.batch(stmts);
-  return rows.length;
+  return infos;
 }
 
-async function rankAndSettle(env, boundary, wait) {
-  if (wait) await sleep(4000);  // give the other scan group time to finish
-  const out = { settled: 0, opened: [] };
-  // settle
-  const { results: open } = await env.DB.prepare("SELECT * FROM trades WHERE result IS NULL AND exit_at <= ?").bind(boundary).all();
-  const cache = {};
+// On a 5-minute boundary: settle open virtual trades with the SAME price source (TradingView), then open new ones.
+async function rankAndSettle(env, boundary, infos) {
+  const out = { settled: 0, opened: [] }, px = {};
+  for (const i of infos) px[i.pair] = i.price;
+  const { results: open } = await env.DB.prepare("SELECT * FROM trades WHERE result IS NULL AND exit_at <= ?").bind(boundary + 90).all();
   for (const t of open) {
-    let px = null;
-    try { cache[t.pair] = cache[t.pair] || await fetchYahoo(t.pair, "1m", "1d"); const s = cache[t.pair]; if (s.t.length && s.t[s.t.length - 1] >= t.exit_at) px = s.c[s.c.length - 1]; } catch (e) {}
-    const tries = t.tries + 1;
-    if (px == null) { await env.DB.prepare("UPDATE trades SET tries=?, result=? WHERE id=?").bind(tries, tries >= 4 ? "error" : null, t.id).run(); continue; }
-    const moved = px - t.entry; const res = moved === 0 ? "draw" : ((moved > 0) === (t.dir === "UP") ? "win" : "loss");
-    await env.DB.prepare("UPDATE trades SET exit=?, result=?, tries=? WHERE id=?").bind(px, res, tries, t.id).run(); out.settled++;
+    const p = px[t.pair];
+    if (t.exit_at >= boundary - 90 && p != null) {
+      const moved = p - t.entry, res = moved === 0 ? "draw" : ((moved > 0) === (t.dir === "UP") ? "win" : "loss");
+      await env.DB.prepare("UPDATE trades SET exit=?, result=? WHERE id=?").bind(p, res, t.id).run(); out.settled++;
+    } else if (t.exit_at < boundary - 90) await env.DB.prepare("UPDATE trades SET result='error' WHERE id=?").bind(t.id).run();
   }
-  // open new virtual trades
   const auto = (await env.DB.prepare("SELECT v FROM kv WHERE k='auto'").first())?.v === "1";
   if (auto) {
-    const { results } = await env.DB.prepare("SELECT info, asof FROM scan WHERE asof >= ? AND asof < ?").bind(boundary, boundary + 150).all();
-    const all = results.map(r => JSON.parse(r.info)).filter(i => i.bar >= boundary - 180);
     const ins = (i, dir, strat) => env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat, strat) VALUES (?,?,?,?,?,?,?,?)")
       .bind(i.pair, dir, boundary, boundary + 300, i.price, Math.round(i.score * 100) / 100, JSON.stringify(i.feat), strat);
-    // T = trend (best aligned pair, RSI-neutral). F = fade (aligned pair farthest from EMA, trade AGAINST the trend)
-    const t = all.filter(isClearTrend).sort((a, b) => b.score - a.score).slice(0, TOP_N);
+    const t = infos.filter(isClearTrend).sort((a, b) => b.score - a.score).slice(0, TOP_N);
     for (const i of t) { await ins(i, i.dir, "T").run(); out.opened.push("T:" + i.pair); }
-    const f = all.filter(isClearFade).sort((a, b) => b.feat.dist - a.feat.dist)[0];
+    const f = infos.filter(isClearFade).sort((a, b) => b.feat.dist - a.feat.dist)[0];
     if (f) { await ins(f, f.dir === "UP" ? "DOWN" : "UP", "F").run(); out.opened.push("F:" + f.pair); }
   }
   return out;
+}
+
+async function cronTick(env, scheduledSec) {
+  if (!marketOpen(scheduledSec)) return { closed: true };
+  const infos = await cronScan(env, scheduledSec);
+  const onBoundary = Math.floor(scheduledSec / 60) % 5 === 0;
+  return { scanned: infos.length, ...(onBoundary ? await rankAndSettle(env, Math.floor(scheduledSec / 300) * 300, infos) : {}) };
 }
 
 export default {
@@ -335,23 +354,16 @@ export default {
       try { await handleUpdate(env, u); } catch (e) { console.log("update error", e.message); }
       return new Response("ok");
     }
-    // manual test run of cron jobs (protected)
+    // manual test routes (protected)
     if (url.pathname === "/run/" + env.WEBHOOK_SECRET) {
-      const kind = url.searchParams.get("k"), boundary = Math.floor(Date.now() / 300000) * 300;
-      const t0 = Date.now();
-      if (kind === "tv") return new Response(JSON.stringify(await fetchTV(PAIRS), null, 1));
-      if (kind === "best") { const r = await bestSignal(env, Math.floor(Date.now() / 1000)); return new Response(r.text + "\n\nms=" + (Date.now() - t0)); }
-      const r = kind === "rank" ? await rankAndSettle(env, boundary, false) : await scanGroup(env, Number(kind), false);
-      return new Response(JSON.stringify({ kind, r, ms: Date.now() - t0 }));
+      const kind = url.searchParams.get("k"), now = Math.floor(Date.now() / 1000), t0 = Date.now();
+      if (kind === "best") { const r = await bestSignal(env, now); return new Response(r.text + "\n\nms=" + (Date.now() - t0)); }
+      if (kind === "tick") return new Response(JSON.stringify({ r: await cronTick(env, Math.floor(now / 60) * 60), ms: Date.now() - t0 }));
+      if (kind === "boundary") return new Response(JSON.stringify({ r: await cronTick(env, Math.floor(now / 300) * 300), ms: Date.now() - t0 }));
     }
     return new Response("FX analyzer bot");
   },
   async scheduled(event, env, ctx) {
-    const boundary = Math.floor(event.scheduledTime / 300000) * 300, onBoundary = Math.floor(event.scheduledTime / 60000) % 5 === 0;
-    ctx.waitUntil((async () => {
-      // 28 pairs = 28 subrequests + 2 TradingView calls, inside the 50-subrequest limit
-      await Promise.all([scanGroup(env, 0, true), scanGroup(env, 1, true)]);
-      if (onBoundary) await rankAndSettle(env, boundary, false);
-    })());
+    ctx.waitUntil(cronTick(env, Math.floor(event.scheduledTime / 1000)));
   }
 };

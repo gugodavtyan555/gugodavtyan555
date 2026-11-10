@@ -111,15 +111,27 @@ const pairKb = (mode = "T") => ({ inline_keyboard: [
 const oneKb = p => ({ inline_keyboard: [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] });
 const bestKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] : []), [{ text: "🔍 Նորից գտնել", callback_data: "BEST" }]] });
 
-async function bestSignal(env, now) {
-  // Fresh scan of ALL pairs at press time (1 subrequest per pair -> 28, within the 50 limit).
-  const fresh = (await Promise.all(PAIRS.map(p => computeInfo(p, now, true).catch(() => null)))).filter(i => i && i.bar >= now - 180);
-  if (!fresh.length) return { pair: null, text: "Թարմ տվյալներ չստացվեցին (շուկան կարող է փակ լինել)։ Փորձիր նորից։" };
-  fresh.sort((a, b) => b.score - a.score);
-  const b0 = fresh[0], n5 = fresh.filter(r => r.full).length;
+const scanFresh = async now => (await Promise.all(PAIRS.map(p => computeInfo(p, now, true).catch(() => null)))).filter(i => i && i.bar >= now - 180);
+
+function bestFrom(fresh, now) {
+  const f = [...fresh].sort((a, b) => b.score - a.score), b0 = f[0], n5 = f.filter(r => r.full).length;
   let head = `🔍 Սկանավորվեց ${fresh.length} զույգ հենց հիմա · 🔥 սիգնալներ՝ ${n5}\n`;
   if (!b0.full) head += "Ուժեղ սիգնալ չկա, ամենալավը թույլ է։\n";
   return { pair: b0.pair, text: head + "\n" + render(b0, now) };
+}
+function fadeFrom(fresh, now) {
+  const full = fresh.filter(i => i.full).sort((a, b) => b.feat.dist - a.feat.dist);
+  if (!full.length) return { text: "↩️ *Հակառակ սիգնալ*\nՉկա. չկա զույգ, որտեղ M15, M5, M1 երեքն էլ համաձայն են։" };
+  return { pair: full[0].pair, text: renderFade(full[0], now, `${full.length} զույգի մեջ երեք ժամկետն էլ համաձայն են, ընտրվեց EMA-ից ամենահեռուն`) };
+}
+
+// "Best signal" = trend signal + opposite (fade) signal from one fresh scan of all pairs
+async function bestSignal(env, now, fadeFirst = false) {
+  const fresh = await scanFresh(now);
+  if (!fresh.length) return { pair: null, text: "Թարմ տվյալներ չստացվեցին (շուկան կարող է փակ լինել)։ Փորձիր նորից։" };
+  const t = bestFrom(fresh, now), f = fadeFrom(fresh, now);
+  const parts = fadeFirst ? [f.text, t.text] : [t.text, f.text];
+  return { pair: t.pair, text: parts.join("\n\n━━━━━━━━━━\n\n") };
 }
 
 function renderFade(i, now, note) {
@@ -140,12 +152,9 @@ function renderFade(i, now, note) {
 }
 
 async function fadeSignal(env, now) {
-  const fresh = (await Promise.all(PAIRS.map(p => computeInfo(p, now, true).catch(() => null)))).filter(i => i && i.bar >= now - 180);
+  const fresh = await scanFresh(now);
   if (!fresh.length) return { text: "Թարմ տվյալներ չստացվեցին (շուկան կարող է փակ լինել)։ Փորձիր նորից։" };
-  const full = fresh.filter(i => i.full);
-  if (!full.length) return { text: `↩️ Սկանավորվեց ${fresh.length} զույգ հենց հիմա։ Հակառակ սիգնալ չկա. չկա զույգ, որտեղ M15, M5, M1 երեքն էլ համաձայն են։` };
-  full.sort((a, b) => b.feat.dist - a.feat.dist);
-  return { pair: full[0].pair, text: renderFade(full[0], now, `սկանավորվեց ${fresh.length} զույգ հենց հիմա, ${full.length}-ում երեք ժամկետն էլ համաձայն են, ընտրվեց EMA-ից ամենահեռուն`) };
+  return fadeFrom(fresh, now);
 }
 
 async function historyText(env, now) {
@@ -183,8 +192,7 @@ async function handleUpdate(env, u) {
         await tg(env, "editMessageText", { chat_id: chat, message_id: cb.message.message_id, text: modeText(mode), parse_mode: "Markdown", reply_markup: pairKb(mode) });
       } else if (cb.data === "FADE") { const r = await fadeSignal(env, now); await send(env, chat, r.text, { inline_keyboard: [[{ text: "↩️ Նորից գտնել", callback_data: "FADE" }]] }); }
       else if (cb.data === "BEST") {
-        if (mode === "F") { const r = await fadeSignal(env, now); await send(env, chat, r.text, { inline_keyboard: [[{ text: "↩️ Նորից գտնել", callback_data: "BEST" }]] }); }
-        else { const r = await bestSignal(env, now); await send(env, chat, r.text, bestKb(r.pair)); }
+        const r = await bestSignal(env, now, mode === "F"); await send(env, chat, r.text, bestKb(r.pair));
       } else if (PAIRS.includes(cb.data)) {
         const info = await computeInfo(cb.data, now, true);
         if (mode === "F") await send(env, chat, renderFade(info, now), { inline_keyboard: [[{ text: `↩️ ${pairName(cb.data)}`, callback_data: cb.data }]] });

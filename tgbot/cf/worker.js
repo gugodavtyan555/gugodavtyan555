@@ -220,8 +220,15 @@ async function bestSignal(env, now) {
   const order = [...tr, ...fd.filter(f => !tr.some(t => t.pair === f.pair))];
   const head = `🔍 Սկանավորվեց ${fresh.length} զույգ հենց հիմա · հստակ սիգնալներ՝ տրենդային ${tr.length}, հակառակ ${fd.length}`;
   if (!order.length) return { pair: null, text: `${head}\n\n⚪️ *Հստակ սիգնալ չկա հիմա։* Սպասիր կամ սեղմիր նորից մի քանի րոպեից։` };
-  const pick = order[0];
-  return { pair: pick.pair, text: `${head}\n\n${renderClear(pick, now)}\n\n━━━━━━━━━━\n\n${renderFadeClear(pick, now)}` };
+  // Fresh scan every press, but show the best pair you have NOT seen yet; when all clear signals were shown, start over.
+  let shown = []; try { const r = await env.DB.prepare("SELECT v FROM kv WHERE k='shown'").first(); if (r) shown = JSON.parse(r.v); } catch (e) {}
+  let pick = order.find(i => !shown.includes(i.pair)), wrapped = false;
+  if (!pick) { shown = []; pick = order[0]; wrapped = true; }
+  shown.push(pick.pair);
+  await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('shown', ?)").bind(JSON.stringify(shown)).run();
+  const pos = order.filter(i => shown.includes(i.pair)).length;
+  const head2 = `${head}\nՍիգնալ ${pos}/${order.length}${wrapped ? " (բոլորը ցուցադրվեցին, սկսում եմ նորից)" : ""} · սեղմիր նորից՝ հաջորդ լավագույնի համար`;
+  return { pair: pick.pair, text: `${head2}\n\n${renderClear(pick, now)}\n\n━━━━━━━━━━\n\n${renderFadeClear(pick, now)}` };
 }
 
 function renderFade(i, now, note) {

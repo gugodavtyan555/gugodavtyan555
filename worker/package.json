@@ -1,8 +1,0 @@
-{
-  "name": "barber-bot",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "qrcode-generator": "2.0.4"
-  }
-}

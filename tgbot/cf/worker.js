@@ -177,7 +177,7 @@ async function bestSignal(env, now) {
   if (idx < 0) { shown = []; idx = 0; wrapped = true; }
   const pick = order[idx]; shown.push(pick.pair);
   await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('shown', ?)").bind(JSON.stringify({ t: now, p: shown })).run();
-  const head = `${head0}\nՍիգնալ ${shown.length}/${order.length}${wrapped ? " (բոլորը ցուցադրվեցին, սկսում եմ նորից)" : ""} · սեղմիր նորից՝ հաջորդ սիգնալի համար`;
+  const head = `${head0}\nՍիգնալ ${order.filter(i => shown.includes(i.pair)).length}/${order.length}${wrapped ? " (բոլորը ցուցադրվեցին, սկսում եմ նորից)" : ""} · սեղմիր նորից՝ հաջորդ սիգնալի համար`;
   return { pair: pick.pair, text: `${head}\n\n${renderClear(pick, now)}\n\n━━━━━━━━━━\n\n${renderFadeClear(pick, now)}` };
 }
 

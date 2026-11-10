@@ -5,7 +5,7 @@ const PAIRS = "EURUSD GBPUSD USDJPY AUDUSD USDCAD USDCHF NZDUSD EURGBP EURJPY EU
 const GROUPS = 2;                 // free plan: only 2 cron triggers available -> 2 groups of 14 pairs
 const CRONS = ["*/1 * * * *"];   // one trigger: scans all 28 pairs every minute; ranks + settles on 5-min boundaries
 const PAYOUT = 0.80, TOP_N = 1, TZ_OFFSET = 4 * 3600;
-const START_KB = { keyboard: [[{ text: "▶️ Start" }, { text: "🔍 Լավագույն սիգնալ" }], [{ text: "📜 Պատմություն" }, { text: "⚙️ Ավտո ON/OFF" }], [{ text: "↩️ Հակառակ սիգնալ" }]], resize_keyboard: true, is_persistent: true };
+const START_KB = { keyboard: [[{ text: "▶️ Start" }, { text: "🔍 Լավագույն սիգնալ" }], [{ text: "📜 Պատմություն" }, { text: "⚙️ Ավտո ON/OFF" }], [{ text: "↩️ Հակառակ սիգնալ" }, { text: "🔁 RSI սիգնալ" }]], resize_keyboard: true, is_persistent: true };
 
 // ---------- indicators ----------
 const ema = (v, n) => { const a = 2 / (n + 1); const o = new Array(v.length); o[0] = v[0]; for (let i = 1; i < v.length; i++) o[i] = a * v[i] + (1 - a) * o[i - 1]; return o; };
@@ -250,6 +250,22 @@ async function fadeSignal(env, now) {
   return fadeFrom(fresh, now);
 }
 
+// RSI-extreme reversion signal (60-minute expiry): M5 RSI14 < 30 -> UP, > 70 -> DOWN. Fresh scan on every press.
+const rsiKb = p => ({ inline_keyboard: [...(p ? [[{ text: `🔄 ${pairName(p)}`, callback_data: p }]] : []), [{ text: "🔁 Նորից գտնել", callback_data: "RSI" }], [{ text: "📲 Բացել Pocket Option", url: "https://m.pocketoption.com/ru/cabinet/" }]] });
+async function rsiSignal(env, now) {
+  if (!marketOpen(now)) return { pair: null, text: "Շուկան հիմա փակ է (բացվում է կիրակի երեկոյան)։" };
+  const fresh = await scanTV(PAIRS, now);
+  if (!fresh.length) return { pair: null, text: "Տվյալներ չստացվեցին։ Փորձիր նորից։" };
+  const c = fresh.filter(i => i.r5 < 30 || i.r5 > 70).sort((a, b) => Math.abs(b.r5 - 50) - Math.abs(a.r5 - 50));
+  const head = `🔁 Սկանավորվեց ${fresh.length} զույգ հենց հիմա · RSI գերծայրահեղ՝ ${c.length}`;
+  if (!c.length) return { pair: null, text: `${head}\n\n⚪️ *RSI սիգնալ չկա հիմա* (պետք է M5 RSI < 30 կամ > 70)։ Սեղմիր նորից մի քանի րոպեից։` };
+  const i = c[0], d = i.r5 < 30 ? "UP" : "DOWN", hh = new Date(now * 1000).toISOString().slice(11, 19);
+  const text = [head, "", `🔁 ${ico[d]} *${d} · 60 րոպե* — ${pairName(i.pair)} (RSI գերծայրահեղ → վերադարձ)`,
+    `M5 RSI ${i.r5.toFixed(0)} (${i.r5 < 30 ? "գերվաճառված" : "գերգնված"}) · M1 RSI ${i.r1.toFixed(0)} · EMA-ից ${i.feat.dist} ATR`,
+    `Գին ${i.price.toFixed(5)} · ${hh} UTC`, "✅ Մտիր հիմա · expiry՝ 60 րոպե"].join("\n");
+  return { pair: i.pair, text };
+}
+
 async function historyText(env, now) {
   const loc = t => new Date((t + TZ_OFFSET) * 1000);
   const dayStr = t => loc(t).toISOString().slice(0, 10);
@@ -285,6 +301,7 @@ async function handleUpdate(env, u) {
         await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('mode', ?)").bind(mode).run();
         await tg(env, "editMessageText", { chat_id: chat, message_id: cb.message.message_id, text: modeText(mode), parse_mode: "Markdown", reply_markup: pairKb(mode) });
       } else if (cb.data === "FADE") { const r = await fadeSignal(env, now); await send(env, chat, r.text, { inline_keyboard: [[{ text: "↩️ Նորից գտնել", callback_data: "FADE" }]] }); }
+      else if (cb.data === "RSI") { const r = await rsiSignal(env, now); await send(env, chat, r.text, rsiKb(r.pair)); }
       else if (cb.data === "BEST") {
         const r = await bestSignal(env, now, mode === "F"); await send(env, chat, r.text, bestKb(r.pair));
       } else if (PAIRS.includes(cb.data)) {
@@ -303,6 +320,7 @@ async function handleUpdate(env, u) {
     await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('auto', ?)").bind(cur ? "0" : "1").run();
     return void await send(env, chat, `Ավտո վիրտուալ առևտուր՝ ${cur ? "🔴 անջատված" : "🟢 միացված"}`, START_KB);
   }
+  if (text.startsWith("🔁")) { const r = await rsiSignal(env, now); return void await send(env, chat, r.text, rsiKb(r.pair)); }
   if (text.startsWith("↩️")) { const r = await fadeSignal(env, now); return void await send(env, chat, r.text, { inline_keyboard: [[{ text: "↩️ Նորից գտնել", callback_data: "FADE" }]] }); }
   if (text.startsWith("🔍")) { const r = await bestSignal(env, now); return void await send(env, chat, r.text, bestKb(r.pair)); }
   if (text.startsWith("/alerts")) {

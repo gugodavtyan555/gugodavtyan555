@@ -161,7 +161,7 @@ function fadeFrom(fresh, now) {
   return { pair: clear[0].pair, text: renderFadeClear(clear[0], now) };
 }
 
-// "Best signal" = ONE pair, two signals (trend + opposite). Each press shows the NEXT-best pair (rotates through clear signals).
+// "Best signal" = ONE pair, two signals (trend + opposite). Every press is a fresh scan; no memory between presses.
 async function bestSignal(env, now) {
   const fresh = await scanFresh(now);
   if (!fresh.length) return { pair: null, text: "Թարմ տվյալներ չստացվեցին (շուկան կարող է փակ լինել)։ Փորձիր նորից։" };
@@ -170,14 +170,8 @@ async function bestSignal(env, now) {
   const order = [...tr, ...fd.filter(f => !tr.some(t => t.pair === f.pair))];   // trend-clear first, then fade-only
   const head0 = `🔍 Սկանավորվեց ${fresh.length} զույգ հենց հիմա · հստակ սիգնալներ՝ տրենդային ${tr.length}, հակառակ ${fd.length}`;
   if (!order.length) return { pair: null, text: `${head0}\n\n⚪️ *Հստակ սիգնալ չկա հիմա։* Սպասիր կամ սեղմիր նորից մի քանի րոպեից։` };
-  // rotation memory: never expires; resets only after every clear signal has been shown
-  let shown = [];
-  try { const r = await env.DB.prepare("SELECT v FROM kv WHERE k='shown'").first(); if (r) { const o = JSON.parse(r.v); shown = o.p; } } catch (e) {}
-  let idx = order.findIndex(i => !shown.includes(i.pair)), wrapped = false;
-  if (idx < 0) { shown = []; idx = 0; wrapped = true; }
-  const pick = order[idx]; shown.push(pick.pair);
-  await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('shown', ?)").bind(JSON.stringify({ t: now, p: shown })).run();
-  const head = `${head0}\nՍիգնալ ${order.filter(i => shown.includes(i.pair)).length}/${order.length}${wrapped ? " (բոլորը ցուցադրվեցին, սկսում եմ նորից)" : ""} · սեղմիր նորից՝ հաջորդ սիգնալի համար`;
+  const pick = order[0];   // every press = brand-new scan, best signal of THIS moment (no memory)
+  const head = `${head0}`;
   return { pair: pick.pair, text: `${head}\n\n${renderClear(pick, now)}\n\n━━━━━━━━━━\n\n${renderFadeClear(pick, now)}` };
 }
 

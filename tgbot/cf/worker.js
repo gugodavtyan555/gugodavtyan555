@@ -125,12 +125,15 @@ async function historyText(env, now) {
   const auto = (await env.DB.prepare("SELECT v FROM kv WHERE k='auto'").first())?.v === "1";
   const td = results.filter(t => dayStr(t.open_at) === today);
   const stats = trs => { const w = trs.filter(t => t.result === "win").length, l = trs.filter(t => t.result === "loss").length, d = trs.filter(t => t.result === "draw").length; const n = w + l;
-    return `✅ ${w} · ❌ ${l} · ➖ ${d} · Win rate ${n ? (100 * w / n).toFixed(1) + "%" : "—"} · P&L ${(w * PAYOUT - l >= 0 ? "+" : "") + (w * PAYOUT - l).toFixed(2)} (1 միավոր/գործարք, վճար ${Math.round(PAYOUT * 100)}%)`; };
-  const L = [`📜 *Պատմություն · ${today}*  (վիրտուալ գործարքներ)`, `Ավտո՝ ${auto ? "🟢 միացված" : "🔴 անջատված"}`, ""];
+    return `✅ ${w} · ❌ ${l} · ➖ ${d} · Win rate ${n ? (100 * w / n).toFixed(1) + "%" : "—"} · P&L ${(w * PAYOUT - l >= 0 ? "+" : "") + (w * PAYOUT - l).toFixed(2)}`; };
+  const T = x => x.filter(t => (t.strat || "T") === "T"), F = x => x.filter(t => t.strat === "F");
+  const L = [`📜 *Պատմություն · ${today}*  (վիրտուալ գործարքներ)`, `Ավտո՝ ${auto ? "🟢 միացված" : "🔴 անջատված"}`, "↩️ = հակառակ ուղղությամբ թեստ", ""];
   if (!td.length) L.push("Այսօր դեռ գործարք չկա։");
   const icon = { win: "✅", loss: "❌", draw: "➖", error: "⚠️" };
-  for (const t of td.slice(-45)) L.push(`${icon[t.result] || "⏳"} ${loc(t.open_at).toISOString().slice(11, 16)} ${pairName(t.pair)} ${t.dir} ${t.entry.toFixed(5)}→${t.exit != null ? t.exit.toFixed(5) : "…"}`);
-  L.push("", `*Այսօր.* ${stats(td)}`, `*Ընդհանուր (${results.length}).* ${stats(results)}`, `Break-even ~${(100 / (1 + PAYOUT)).toFixed(1)}%։ Շահույթի համար win rate-ը պետք է դրանից բարձր լինի՝ բավարար թվով գործարքների վրա։`);
+  for (const t of td.slice(-40)) L.push(`${icon[t.result] || "⏳"}${t.strat === "F" ? "↩️" : ""} ${loc(t.open_at).toISOString().slice(11, 16)} ${pairName(t.pair)} ${t.dir} ${t.entry.toFixed(5)}→${t.exit != null ? t.exit.toFixed(5) : "…"}`);
+  L.push("", "*Տրենդով (հիմնական)*", `Այսօր. ${stats(T(td))}`, `Ընդհանուր (${T(results).length}). ${stats(T(results))}`,
+    "", "*↩️ Հակառակ (թեստ)*", `Այսօր. ${stats(F(td))}`, `Ընդհանուր (${F(results).length}). ${stats(F(results))}`,
+    "", `1 միավոր/գործարք, վճար ${Math.round(PAYOUT * 100)}%։ Break-even ~${(100 / (1 + PAYOUT)).toFixed(1)}%։ Շահույթի համար win rate-ը պետք է դրանից բարձր լինի՝ բավարար թվով գործարքների վրա։`);
   return L.join("\n");
 }
 
@@ -190,11 +193,15 @@ async function rankAndSettle(env, boundary, wait) {
   const auto = (await env.DB.prepare("SELECT v FROM kv WHERE k='auto'").first())?.v === "1";
   if (auto) {
     const { results } = await env.DB.prepare("SELECT info, asof FROM scan WHERE asof = ?").bind(boundary).all();
-    const rows = results.map(r => JSON.parse(r.info)).filter(i => i.bar >= boundary - 180).sort((a, b) => b.score - a.score).slice(0, TOP_N);
-    for (const i of rows) if (i.score >= 10) {
-      await env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat) VALUES (?,?,?,?,?,?,?)").bind(i.pair, i.dir, boundary, boundary + 300, i.price, Math.round(i.score * 100) / 100, JSON.stringify(i.feat)).run();
-      out.opened.push(i.pair);
-    }
+    const all = results.map(r => JSON.parse(r.info)).filter(i => i.bar >= boundary - 180);
+    const ins = (i, dir, strat) => env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat, strat) VALUES (?,?,?,?,?,?,?,?)")
+      .bind(i.pair, dir, boundary, boundary + 300, i.price, Math.round(i.score * 100) / 100, JSON.stringify(i.feat), strat);
+    // T = trend (best aligned pair, RSI-neutral). F = fade (aligned pair farthest from EMA, trade AGAINST the trend)
+    const full = all.filter(i => i.full);
+    const t = [...full].sort((a, b) => b.score - a.score).slice(0, TOP_N);
+    for (const i of t) { await ins(i, i.dir, "T").run(); out.opened.push("T:" + i.pair); }
+    const f = [...full].sort((a, b) => b.feat.dist - a.feat.dist)[0];
+    if (f) { await ins(f, f.dir === "UP" ? "DOWN" : "UP", "F").run(); out.opened.push("F:" + f.pair); }
   }
   return out;
 }

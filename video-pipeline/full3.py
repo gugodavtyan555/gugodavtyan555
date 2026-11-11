@@ -147,6 +147,9 @@ for y in range(H):
     grad.putpixel((0, y), int(255 * min(1, 0.72 * b ** 1.5 + 0.42 * tp ** 1.5)))
 SHADE = Image.new('RGBA', (W, H), (8, 5, 18, 0)); SHADE.putalpha(grad.resize((W, H)))
 
+_lg = Image.open(os.path.join(ROOT, 'logo.png')).convert('RGBA'); LOGO = _lg.resize((int(_lg.width * 118 / _lg.height), 118), Image.LANCZOS)
+LOGO_SH = Image.new('RGBA', (LOGO.width + 28, LOGO.height + 28), (0, 0, 0, 0)); LOGO_SH.paste((0, 0, 0, 150), (14, 14), LOGO.split()[3]); LOGO_SH = LOGO_SH.filter(ImageFilter.GaussianBlur(7))
+
 def rr(d, box, r, fill): d.rounded_rectangle(box, radius=r, fill=fill)
 def al(c, a): return c + (int(255 * min(1, max(0, a))),)
 def chip(d, x, y, text, a):
@@ -205,7 +208,7 @@ def overlay(tt):
     ov = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(ov)
     for g in groups:
         if g['card'] and g['t'] <= tt < g['end']: draw_card(ov, d, g, tt)
-    stext(d, (W - 70, 86), 'GTA VI', F_BLACK(44), WHITE, 0.92, anchor='rm', sw=4)
+    ov.alpha_composite(LOGO_SH, (W - 60 - LOGO.width - 14, 34 - 10)); ov.alpha_composite(LOGO, (W - 60 - LOGO.width, 34))
     for s in segs:
         p = s['plan']; a0, a1 = s['t0'] - 0.1, s['re'] - (GAP if s['last_in_ch'] else 0)
         if not (s['rs'] <= tt <= s['re'] + 0.3): continue
@@ -257,7 +260,6 @@ def overlay(tt):
             a = ease((tt - c0) / 0.35) * (1 - ease((tt - (c1 - GAP - 0.05)) / 0.25)); tx = f'{ch:02d}/{NCH:02d}   {CHAP[ch]}'
             f = F_BLACK(30); tw = d.textlength(tx, font=f); x = 70 - int(40 * (1 - a))
             rr(d, (x, 60, x + tw + 40, 112), 10, al(YELLOW, a)); d.text((x + 20, 86), tx, font=f, fill=al(NAVY, a), anchor='lm')
-    d.rectangle((0, 0, W, 8), fill=al(NAVY, 0.6)); d.rectangle((0, 0, int(W * tt / TOTAL), 8), fill=al(PINK, 1))
     # chapter bumpers
     for s in segs:
         if s['bump'] and s['rs'] <= tt < s['t0'] + 0.25:

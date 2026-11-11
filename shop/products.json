@@ -542,6 +542,50 @@
       "keywords": "christmas party games bundle, holiday party games, christmas murder mystery, new years eve games, christmas printables",
       "checkout": "https://pennyplanshop.gumroad.com/l/holiday-mega-bundle",
       "gumroad_id": "NRBRBhanxG7YpvUVL3zOzA=="
+    },
+    {
+      "id": "valentines-day-party-games",
+      "category": "puzzles",
+      "name": "Valentine's Day Party Games Bundle",
+      "short": "9 printable Valentine's Day games for kids, classrooms and families: scavenger hunt, trivia, 30 bingo cards, kindness cards and more.",
+      "price": 7,
+      "format": "Printable PDF (Letter + A4)",
+      "features": [
+        "Love note scavenger hunt with 12 rhyming clues and a hiding chart",
+        "Valentine's trivia: 40 questions with answers",
+        "Bingo: 30 different cards plus a caller's sheet",
+        "Who Am I?, Charades and Would You Rather: 40 cards each",
+        "Word scramble, 40 Kindness & Compliment cards and a Left-Right class-party story",
+        "67 pages, US Letter and A4, answer keys included. Great for classroom parties"
+      ],
+      "keywords": "valentines day games, valentines party games, classroom valentines party, valentines activities for kids",
+      "files": [
+        "Valentines-Day-Party-Games.zip"
+      ],
+      "checkout": "https://pennyplanshop.gumroad.com/l/valentines-games",
+      "gumroad_id": "7gnMNjoKWO8zhmE5XyiVfA=="
+    },
+    {
+      "id": "big-game-football-party-games",
+      "category": "puzzles",
+      "name": "Big Game Football Party Games Bundle",
+      "short": "9 printable football party games for game day: 100-square pool, prediction sheet, trivia, 30 bingo cards, charades and more.",
+      "price": 7,
+      "format": "Printable PDF (Letter + A4)",
+      "features": [
+        "Football Squares: 100-square grid with quarter-by-quarter winners",
+        "Prediction sheet: 18 questions to answer before kickoff, with a tie-breaker",
+        "Football trivia: 40 questions with answers",
+        "Game day bingo: 30 different cards for plays, ads and party moments",
+        "Who Am I?, Charades and Would You Rather: 40 cards each, plus word scramble and a Left-Right game",
+        "Game day party checklist. 64 pages, US Letter and A4"
+      ],
+      "keywords": "football party games, big game party, football squares, game day bingo, football party printables",
+      "files": [
+        "Big-Game-Football-Party-Games.zip"
+      ],
+      "checkout": "https://pennyplanshop.gumroad.com/l/football-party-games",
+      "gumroad_id": "Yknd3Vtt8tYIugBBSKiuGg=="
     }
   ],
   "promo": {

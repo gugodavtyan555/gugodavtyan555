@@ -49,6 +49,8 @@ const BOARDS = {
   '2027-planner': '2027 Planner',
   'money-bundle': 'Budget Templates',
   'holiday-party-mega-bundle': 'Christmas Party Ideas',
+  'valentines-day-party-games': 'Valentine Party Ideas',
+  'big-game-football-party-games': 'Game Day Party',
 };
 
 // [product or article id, headline, small line above, description, keywords]
@@ -230,6 +232,23 @@ const PINS12 = [
   ['free-christmas-games', 'Finish the Carol: Free Christmas Game', 'Free printable', 'Fill in the missing word from 16 traditional carols. A fun table game for all ages.', 'christmas carol game, christmas music games, free christmas games, family christmas games'],
 ];
 
+// Batch 13 (Nov 11, 2026): Valentine's Day and Big Game football party games. Queued at the end so they
+// start in mid-December, about 8 weeks before February.
+const PINS13 = [
+  ['valentines-day-party-games', "Valentine's Day Party Games for Kids", '9 printable games', 'Scavenger hunt, trivia, 30 bingo cards, charades and kindness cards. Print at home or for the class party.', "valentines day games for kids, valentines party ideas, valentines printables, kids party games"],
+  ['big-game-football-party-games', 'Football Party Games for Game Day', 'Squares · bingo · trivia', 'A 100-square pool, prediction sheet, 30 bingo cards and more for your game day party. Print and play.', 'football party games, game day party ideas, football squares, football party printables'],
+  ['valentines-day-party-games', 'Classroom Valentine Party Games', 'Teachers love these', 'Bingo for the whole class, a word scramble, trivia and kindness cards that kids give to classmates.', "classroom valentines party, valentines day activities for kids, school valentine party, valentines worksheets"],
+  ['big-game-football-party-games', 'Printable Football Squares Grid', '100 squares · 4 winners', 'Write the teams, sell the squares, draw the numbers: a winner every quarter. Includes a prediction sheet.', 'football squares, football pool grid, game day party games, football party ideas'],
+  ['valentines-day-party-games', "Valentine's Day Bingo: 30 Printable Cards", 'Plus caller sheet', 'Every card is different, so there is one winner at a time. Easy for kids, families and classrooms.', "valentines bingo, valentines day games, valentine party games, printable bingo"],
+  ['big-game-football-party-games', 'Game Day Bingo: Plays, Ads and Snacks', '30 different cards', 'Mark off touchdowns, funny ads, fumbles and halftime moments. Fun for fans and non-fans alike.', 'football bingo, game day bingo, commercial bingo, football party games'],
+  ['valentines-day-party-games', "Valentine's Day Scavenger Hunt with Rhyming Clues", 'Love note hunt', '12 sweet rhyming clues that lead to a prize. A fun Valentine morning surprise for kids.', "valentines scavenger hunt, valentines day ideas for kids, valentine morning, treasure hunt clues"],
+  ['big-game-football-party-games', 'Big Game Prediction Sheet', 'Before kickoff', 'Coin toss, first score, halftime leader and more: 18 predictions and a tie-breaker. Most points wins.', 'football predictions, game day party ideas, football party games, prop bets printable'],
+  ['valentines-day-party-games', "Kindness Cards for Valentine's Day", '40 compliment prompts', 'Finish a kind sentence for someone in the room. Perfect for classrooms and families.', "kindness activities, valentines day for kids, compliment cards, social emotional learning"],
+  ['big-game-football-party-games', 'Football Trivia Questions with Answers', '40 questions', 'Rules, scoring and big game facts: play in teams at halftime. Answer key included.', 'football trivia, football quiz, game day games, football party ideas'],
+  ['valentines-day-party-games', "Valentine's Day Trivia for Kids and Adults", '40 questions + answers', 'Cupid, chocolates, love around the world and fairy tales: a fun quiz for family or class.', "valentines day trivia, valentines quiz, valentines day facts, valentine games"],
+  ['big-game-football-party-games', 'How to Host a Game Day Party', 'Checklist + games', 'A week-by-week party checklist plus squares, predictions, bingo and charades for halftime.', 'game day party, football party ideas, big game party, party checklist'],
+];
+
 const THEMES = [
   { bg: '#EEF4F0', ink: '#1F2A37', accent: '#2F7D5B', band: '#2F7D5B', bandInk: '#FFFFFF' },
   { bg: '#FBF3E8', ink: '#2B2118', accent: '#B5622E', band: '#2B2118', bandInk: '#FBF3E8' },
@@ -262,7 +281,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1500 }, deviceScaleFactor: 1 });
   const rows = [];
-  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8, ...PINS9, ...PINS10, ...PINS11, ...PINS12];
+  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8, ...PINS9, ...PINS10, ...PINS11, ...PINS12, ...PINS13];
   for (let i = 0; i < ALL.length; i++) {
     const [ref, headline, , description, keywords] = ALL[i];
     const file = `pin-${String(i + 1).padStart(2, '0')}-${ref.replace('blog:', '')}.jpg`;
@@ -329,7 +348,8 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   // Batch 11 + seasonal push (Nov 11): 11 pins were already sent. Add the free downloads, then move
   // Thanksgiving and Christmas/New Year pins to the front of the unsent queue while people search for them.
   const START11 = 11;
-  order.push(...rows.slice(rows.length - PINS11.length - PINS12.length));
+  const at11 = rows.length - PINS11.length - PINS12.length - PINS13.length;
+  order.push(...rows.slice(at11, at11 + PINS11.length + PINS12.length));
   const unsent = order.splice(START11);
   const kind = (r) => /thanksgiving/i.test(r.link + r.title) ? 'T'
     : /christmas|mistletoe|new-years|holiday|xmas/i.test(r.link + r.title) ? 'X' : 'O';
@@ -344,6 +364,8 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
       if (src.length) order.push(src.shift());
     }
   }
+  // Batch 13: Valentine's / game day pins go to the end of the queue.
+  order.push(...rows.slice(rows.length - PINS13.length));
   fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
     title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
     alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,

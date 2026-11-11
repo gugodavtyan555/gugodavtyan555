@@ -51,6 +51,10 @@ const items = {
     [['fw-03.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['fw-02.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['fw-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
   'holiday-party-mega-bundle': page('Holiday Party Mega Bundle', 'Christmas games, a murder mystery, New Year\'s Eve games and a gift budget. Save $15.', ['4 products', 'Christmas', 'Murder mystery', 'New Year'],
     [['nc-01.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['mc-01.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['xc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
+  'valentines-day-party-games': page("Valentine's Day Party Games", '9 printable games for kids, classrooms and families.', ['Scavenger hunt', 'Bingo', 'Trivia', '67 pages'],
+    [['vh-04.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['vb-12.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['vc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
+  'big-game-football-party-games': page('Big Game Football Party Games', '9 printable games for game day: squares, predictions, bingo and more.', ['Squares pool', 'Predictions', 'Bingo', '64 pages'],
+    [['gs-04.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['gb-15.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['gc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
 };
 
 (async () => {

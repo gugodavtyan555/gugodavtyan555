@@ -14,7 +14,7 @@ await page.evaluate(d => { window.DATA = d; }, DATA);
 await page.evaluate(() => window.ready);
 await page.evaluate(() => {
   X.save(); X.fillStyle = '#000'; X.fillRect(0, 0, W, H); FN.shotRoom(X, 2.0, 3.6, 2.0, []); X.restore(); finish(X);
-  bigText(X, 'ОН ЗВОНИТ МАМЕ', W / 2, 250, 104, '#ffd60a', 1, -0.03, 22);
+  bigText(X, 'ОН ЗВОНИТ МАМЕ', W / 2, 250, 90, '#ffd60a', 1, -0.03, 22);
   bigText(X, 'А ОНА НЕ ОТВЕЧАЕТ', W / 2, 400, 80, '#ffffff', 1, 0, 16);
   bigText(X, 'ЧАСТЬ 1', W / 2, 1600, 110, '#ffd60a', 1, 0.02, 20);
 });

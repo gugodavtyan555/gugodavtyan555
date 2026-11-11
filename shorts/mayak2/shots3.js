@@ -66,7 +66,7 @@ function shotFog(c,t,d,T,m){const hy=980,z=m[2]!=null?ease((t-m[2])/1.2):0,k=eas
  c.save();c.lineCap='round';for(let i=0;i<20;i++){const q=i/20,y=hy+6+Math.pow(q,1.6)*640,amp=1+q*7,wl=80+q*220;c.beginPath();for(let x=-60;x<=W+60;x+=24){const yy=y+Math.sin(x/wl+T*0.9+i*1.7)*amp;x<-50?c.moveTo(x,yy):c.lineTo(x,yy)}c.strokeStyle=`rgba(200,215,240,${0.05+q*0.08})`;c.lineWidth=1.5+q*4;c.stroke()}c.restore();
  fog(c,T,hy-260,7,0.20,11);
  const bx=400,by=hy+250+Math.sin(T*1.5)*6;c.save();c.globalAlpha=lerp(0.1,1,k);
- const sm=stick(c,{...SON,rim:'rgba(255,205,140,0.8)',rimDir:1,x:bx-8,y:by-34,s:1.25,face:1,t:T,shadow:false,pose:{lean:0.03,armL:[2.25,2.7],armR:[0.1,0.3],bob:Math.sin(T*1.5+1)*2}});lantern(c,{x:sm.hf.x,y:sm.hf.y-10},1.3,T,1.2);
+ const sm=stick(c,{...STR,rim:'rgba(255,205,140,0.8)',rimDir:1,x:bx-8,y:by-34,s:1.25,face:1,t:T,shadow:false,pose:{lean:0.03,armL:[2.25,2.7],armR:[0.1,0.3],bob:Math.sin(T*1.5+1)*2}});lantern(c,{x:sm.hf.x,y:sm.hf.y-10},1.3,T,1.2);
  rowboat(c,bx,by,Math.sin(T*1.5)*0.03,1.5,null,'#6b4a34');c.restore();
  fog(c,T+40,hy+40,6,0.26*(1-k*0.7),23);
  // лодка Матвея на переднем плане

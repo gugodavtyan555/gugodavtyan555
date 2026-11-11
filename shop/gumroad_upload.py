@@ -38,6 +38,9 @@ ZIPS = {
     "boho-wall-art": "Boho-Wall-Art-Set.zip",
     "armenian-alphabet-kids": "Armenian-Alphabet-for-Kids.zip",
     "wedding-planner-bundle": "Wedding-Planner-and-Shower-Games.zip",
+    "free-wedding-checklist": "Free-Wedding-Checklist.zip",
+    "free-christmas-games": "Free-Christmas-Party-Games.zip",
+    "free-puzzle-sampler": "Free-Puzzle-Sampler.zip",
 }
 PERMALINKS = {
     "budget-planner": "budget-planner",
@@ -61,6 +64,9 @@ PERMALINKS = {
     "boho-wall-art": "boho-wall-art",
     "armenian-alphabet-kids": "armenian-alphabet",
     "wedding-planner-bundle": "wedding-planner",
+    "free-wedding-checklist": "free-wedding-checklist",
+    "free-christmas-games": "free-christmas-games",
+    "free-puzzle-sampler": "free-puzzles",
 }
 
 

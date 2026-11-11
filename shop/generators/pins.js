@@ -34,6 +34,9 @@ const BOARDS = {
   'boho-wall-art': 'Wall Art Prints',
   'armenian-alphabet-kids': 'Armenian for Kids',
   'wedding-planner-bundle': 'Wedding Planning',
+  'free-puzzle-sampler': 'Puzzle Books',
+  'free-christmas-games': 'Christmas Party Ideas',
+  'free-wedding-checklist': 'Wedding Planning',
   'holiday-budget-planner': 'Budget Templates',
   'free-budget-template': 'Budget Templates',
   'budget-planner': 'Budget Templates',
@@ -175,6 +178,16 @@ const PINS10 = [
   ['wedding-planner-bundle', 'Bridal Shower Advice Cards for the Bride', 'Keepsake idea', '40 sweet and funny prompts for guests to finish: a keepsake the bride can read on her first anniversary.', 'bridal shower advice cards, advice for the bride, bridal shower keepsake, shower activities'],
 ];
 
+// Batch 11 (Nov 11, 2026): free lead-magnet downloads.
+const PINS11 = [
+  ['free-christmas-games', 'Free Printable Christmas Games for the Whole Family', 'Free download · with answers', 'Free Christmas trivia (40 questions), word scramble and finish the carol. Print at home and play tonight.', 'free christmas games printable, christmas trivia, family christmas activities, christmas party games'],
+  ['free-puzzle-sampler', 'Free Printable Puzzles: Word Search, Sudoku & Mazes', 'Free download', 'Try large-print word searches, easy sudoku and mazes for kids for free. Answers included.', 'free printable puzzles, free word search printable, free sudoku printable, mazes for kids'],
+  ['free-wedding-checklist', 'Free Printable Wedding Checklist: 12-Month Timeline', 'Free download', 'Every wedding planning task from 12 months out to the big day, with tick-boxes. Print it or use it on a tablet.', 'free wedding checklist printable, wedding planning checklist, wedding timeline, engaged now what'],
+  ['free-christmas-games', 'Christmas Trivia Questions and Answers (Free Printable)', '40 questions · answer key', 'Easy and fun Christmas trivia for kids and adults, plus a word scramble and carol game. Free to download.', 'christmas trivia questions, christmas trivia for kids, christmas games for adults, christmas printables'],
+  ['free-puzzle-sampler', 'Free Sudoku and Word Search Printables for Adults', 'Large print · free', 'Big, easy-to-read puzzles to print at home. A free sampler from our puzzle books.', 'large print word search, sudoku for beginners, puzzles for seniors, free printables'],
+  ['free-wedding-checklist', 'Wedding Planning Checklist: What to Do and When', 'Free printable', 'Engaged? Start here: 33 tasks by month, from booking the venue to the rehearsal dinner.', 'wedding planning checklist, wedding to do list, wedding planning tips, wedding checklist printable'],
+];
+
 const THEMES = [
   { bg: '#EEF4F0', ink: '#1F2A37', accent: '#2F7D5B', band: '#2F7D5B', bandInk: '#FFFFFF' },
   { bg: '#FBF3E8', ink: '#2B2118', accent: '#B5622E', band: '#2B2118', bandInk: '#FBF3E8' },
@@ -207,7 +220,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1500 }, deviceScaleFactor: 1 });
   const rows = [];
-  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8, ...PINS9, ...PINS10];
+  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8, ...PINS9, ...PINS10, ...PINS11];
   for (let i = 0; i < ALL.length; i++) {
     const [ref, headline, , description, keywords] = ALL[i];
     const file = `pin-${String(i + 1).padStart(2, '0')}-${ref.replace('blog:', '')}.jpg`;
@@ -268,9 +281,26 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   while (fresh9.length || rest9.length) { if (fresh9.length) order.push(fresh9.shift()); for (let k = 0; k < 2 && rest9.length; k++) order.push(rest9.shift()); }
   // Batch 10 (wedding): one every 5 pins from queue position 14.
   const START10 = 14;
-  const fresh10 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length + PINS7.length + PINS8.length + PINS9.length);
+  const fresh10 = rows.slice(PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length + PINS7.length + PINS8.length + PINS9.length, PINS.length + PINS2.length + PINS3.length + PINS4.length + PINS5.length + PINS6.length + PINS7.length + PINS8.length + PINS9.length + PINS10.length);
   const rest10 = order.splice(START10);
   while (fresh10.length || rest10.length) { if (fresh10.length) order.push(fresh10.shift()); for (let k = 0; k < 4 && rest10.length; k++) order.push(rest10.shift()); }
+  // Batch 11 + seasonal push (Nov 11): 11 pins were already sent. Add the free downloads, then move
+  // Thanksgiving and Christmas/New Year pins to the front of the unsent queue while people search for them.
+  const START11 = 11;
+  order.push(...rows.slice(rows.length - PINS11.length));
+  const unsent = order.splice(START11);
+  const kind = (r) => /thanksgiving/i.test(r.link + r.title) ? 'T'
+    : /christmas|mistletoe|new-years|holiday|xmas/i.test(r.link + r.title) ? 'X' : 'O';
+  const q = { T: unsent.filter((r) => kind(r) === 'T'), X: unsent.filter((r) => kind(r) === 'X'), O: unsent.filter((r) => kind(r) === 'O') };
+  for (const k of 'TXO') q[k].sort((a, b) => (/\/p\/free-/.test(b.link) ? 1 : 0) - (/\/p\/free-/.test(a.link) ? 1 : 0));
+  // Thanksgiving first (every 2nd pin) until it runs out, Christmas/NYE in 2 of every 3 pins after that.
+  const pattern = () => (q.T.length ? ['T', 'X', 'T', 'O'] : ['X', 'X', 'O']);
+  while (q.T.length || q.X.length || q.O.length) {
+    for (const k of pattern()) {
+      const src = q[k].length ? q[k] : (q.X.length ? q.X : (q.O.length ? q.O : q.T));
+      if (src.length) order.push(src.shift());
+    }
+  }
   fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
     title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
     alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,

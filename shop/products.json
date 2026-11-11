@@ -459,6 +459,66 @@
       "keywords": "wedding planner spreadsheet, wedding budget template, wedding guest list, bridal shower games, wedding checklist",
       "checkout": "https://pennyplanshop.gumroad.com/l/wedding-planner",
       "gumroad_id": "mDvxjQroVdtL0htKe71Rnw=="
+    },
+    {
+      "id": "free-puzzle-sampler",
+      "category": "puzzles",
+      "name": "Free Printable Puzzle Sampler: Word Search, Sudoku & Mazes",
+      "short": "Try our puzzle books for free: 2 large-print word searches, 4 easy sudoku and 3 mazes for kids, all with answers.",
+      "format": "PDF (US Letter + A4)",
+      "features": [
+        "2 large-print word search puzzles with answers",
+        "4 easy sudoku puzzles with answers",
+        "3 mazes for kids with solutions",
+        "Print at home on US Letter or A4"
+      ],
+      "keywords": "free printable puzzles, free word search printable, free sudoku printable, free mazes for kids",
+      "price": 0,
+      "files": [
+        "Free-Puzzle-Sampler.zip"
+      ],
+      "checkout": "https://pennyplanshop.gumroad.com/l/free-puzzles",
+      "gumroad_id": "ANPVcnJhBbwjQi2i49Nkkw=="
+    },
+    {
+      "id": "free-christmas-games",
+      "category": "puzzles",
+      "name": "Free Christmas Party Games: Trivia, Word Scramble & Finish the Carol",
+      "short": "3 free printable Christmas games for family and friends: 40-question trivia, word scramble and finish the carol, with answers.",
+      "format": "PDF (US Letter + A4)",
+      "features": [
+        "Christmas Trivia: 40 questions with answer key",
+        "Christmas Word Scramble: 25 words with answers",
+        "Finish the Carol: 16 carols with answers",
+        "Print at home on US Letter or A4"
+      ],
+      "keywords": "free christmas games printable, christmas trivia, christmas party games, family christmas activities",
+      "price": 0,
+      "files": [
+        "Free-Christmas-Party-Games.zip"
+      ],
+      "checkout": "https://pennyplanshop.gumroad.com/l/free-christmas-games",
+      "gumroad_id": "vqmqL8KK8ePLiwDuSSMpog=="
+    },
+    {
+      "id": "free-wedding-checklist",
+      "category": "more",
+      "name": "Free Printable Wedding Checklist (12-Month Timeline)",
+      "short": "A free printable wedding planning checklist: 33 tasks grouped by month, from 12 months out to the big day.",
+      "format": "PDF (US Letter + A4)",
+      "features": [
+        "33 wedding planning tasks grouped by month",
+        "Tick-boxes and a notes line for every task",
+        "From 12 months out to the wedding day",
+        "Print at home on US Letter or A4"
+      ],
+      "keywords": "free wedding checklist printable, wedding planning checklist, wedding timeline, wedding to do list",
+      "price": 0,
+      "files": [
+        "Free-Wedding-Checklist.zip"
+      ],
+      "checkout": "https://pennyplanshop.gumroad.com/l/free-wedding-checklist",
+      "gumroad_id": "rpXP4QTAkksh_Qqxn6WaxA=="
     }
   ],
   "promo": {

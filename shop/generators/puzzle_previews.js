@@ -43,12 +43,20 @@ const items = {
     [['hl-04.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['hp-03.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['hc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
   'wedding-planner-bundle': page('Wedding Planner + Shower Games', 'Budget, guests, vendors and checklist in one spreadsheet, plus 9 shower games.', ['Excel + Sheets', 'Guest list', 'Checklist', 'Shower games'],
     [['bh-03.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['wd-02.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['bc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
+  'free-puzzle-sampler': page('Free Puzzle Sampler', 'Word search, sudoku and mazes to try at home. Free download.', ['FREE', 'Word search', 'Sudoku', 'Mazes'],
+    [['mz-04.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['su-04.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['fp-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
+  'free-christmas-games': page('Free Christmas Party Games', 'Trivia, word scramble and finish the carol. Free download.', ['FREE', 'Trivia', 'Word scramble', 'Answers'],
+    [['fc-06.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['fc-03.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['fc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
+  'free-wedding-checklist': page('Free Wedding Checklist', '33 tasks from 12 months out to the big day. Free download.', ['FREE', '12 months', 'Printable', 'Letter + A4'],
+    [['fw-03.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['fw-02.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['fw-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
 };
 
 (async () => {
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 1600, height: 1200 } });
+  const only = (process.argv[4] || '').split(',').filter(Boolean);
   for (const [id, html] of Object.entries(items)) {
+    if (only.length && !only.includes(id)) continue;
     await p.setContent(html, { waitUntil: 'load' });
     await p.screenshot({ path: path.join(outDir, `${id}.png`) });
     console.log('wrote', id);

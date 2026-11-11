@@ -20,7 +20,7 @@ const se = i => words[sent[i][sent[i].length - 1]][2] + OFFSET;
 const DUR = Math.ceil((se(sent.length - 1) + 4.6) * 2) / 2;
 
 // субтитры
-const HL = ['отвечал', 'вспышки', 'вниз', 'сорок', 'горле', 'лодка.', 'воды', 'гребёт', 'свет.', 'фонарём', 'Лёша', 'папа', 'море.', 'корабль', 'ничего', 'имя', 'стране', 'моряком', 'сон.', 'Темнота', 'горит', 'видео', 'шарф', 'всё.', 'опоздать', 'плачет', 'сына', 'двое', 'загорается', 'смеётся', 'заблудился'];
+const HL = ['отвечал', 'вспышки', 'вниз', 'сорок', 'горле', 'дня.', 'лодка.', 'воды', 'окна', 'смеётся', 'гребёт', 'свет.', 'вспоминает', 'вёсла', 'водой', 'обернулся', 'было.', 'борт', 'гаснет', 'один.', 'темноте', 'ночь.', 'снова', 'рядом', 'фонарём', 'шепчет', 'кепку', 'шарф', 'головой', 'руки.', 'зря', 'конверт'];
 const clean = s => s.replace(/[.,…?!«»]/g, '');
 const chunks = [];
 sent.forEach((idx, si) => {
@@ -37,10 +37,10 @@ sent.forEach((idx, si) => {
   flush();
 });
 // сцены: [fn, первое предложение, флаги]
-const PLAN = [['shotE', 0], ['shotStairsDown', 2], ['shotShore', 5], ['shotRow', 8], ['shotFog', 11], ['shotAsk', 14], ['shotSon', 16],
-  ['shotStorm', 19, { fb: true }], ['shotShip', 20, { fb: true }], ['shotForget', 22, { fb: true }], ['shotGrow', 26, { fb: true }], ['shotDream', 30, { fb: true }],
-  ['shotPhone', 33], ['shotRemember', 36], ['shotTravel', 37], ['shotSorry', 39], ['shotGive', 44], ['shotStairsTwo', 46], ['shotIgnite', 47], ['shotQuiet', 48], ['shotFinal', 49]];
-const NOCAP = [15, 18, 40, 41, 42, 43];
+const PLAN = [['shotE', 0], ['shotStairsDown', 2], ['shotShore', 6], ['shotWake', 9], ['shotCall', 11], ['shotRowB', 14],
+  ['shotTeach', 19, { fb: true }], ['shotShout', 21, { fb: true }], ['shotNets', 23, { fb: true }], ['shotWave', 26], ['shotBlack', 28], ['shotStorm', 30, { fb: true }], ['shotFlare', 31],
+  ['shotFog', 33], ['shotAsk', 36], ['shotLook', 38], ['shotShake', 41], ['shotDrop', 44], ['shotEnvelope', 48], ['shotLast', 49]];
+const NOCAP = [11, 12, 22, 24, 37, 42, 43, 49];
 chunks.forEach(c => { if (NOCAP.includes(c.si)) c.nocap = true; });
 const shots = PLAN.map(([fn, s0, fl], i) => {
   const s1 = i + 1 < PLAN.length ? PLAN[i + 1][1] : sent.length;
@@ -48,12 +48,12 @@ const shots = PLAN.map(([fn, s0, fl], i) => {
   return { fn, s, marks: Array.from({ length: s1 - s0 }, (_, k) => ss(s0 + k) - s), ...(fl || {}) };
 });
 const T = n => shots.find(s => s.fn === n).s;
-const lightning = [T('shotStorm') + 0.35, T('shotStorm') + 1.9, T('shotStorm') + 3.2];
+const lightning = [T('shotStorm') + 0.3, T('shotStorm') + 1.2];
 const fl = [{ t: ss(1) + 0.75, len: 0.34 }, { t: ss(1) + 1.27, len: 0.34 }, { t: ss(1) + 1.79, len: 0.34 }];
 const last = sent.length - 1;
 const DATA = { chunks, shots, dur: DUR, lightning, fl, outro: se(last) + 0.6,
-  sections: [[0, 'tension'], [T('shotStairsDown'), 'run'], [T('shotShore'), 'calm'], [T('shotRow'), 'build'], [T('shotFog'), 'tension'], [T('shotStorm'), 'storm'], [T('shotShip'), 'calm'], [T('shotGrow'), 'main'], [T('shotDream'), 'calm'], [T('shotPhone'), 'main'], [T('shotRemember'), 'build'], [T('shotSorry'), 'soft'], [T('shotGive'), 'fin'], [T('shotStairsTwo'), 'finbuild'], [T('shotFinal'), 'fin']],
-  hits: [ss(18), T('shotRemember') + 0.95, T('shotIgnite') + 0.55] };
+  sections: [[0, 'tension'], [T('shotStairsDown'), 'run'], [T('shotShore'), 'calm'], [T('shotWake'), 'main'], [T('shotRowB'), 'build'], [T('shotTeach'), 'warm'], [ss(25), 'calm'], [T('shotWave'), 'storm'], [T('shotBlack'), 'dark'], [T('shotStorm'), 'storm'], [T('shotFlare'), 'tension'], [T('shotLook'), 'soft'], [T('shotDrop'), 'calm'], [T('shotEnvelope'), 'tension'], [T('shotLast'), 'fin']],
+  hits: [T('shotWave') + 0.45, T('shotFlare') + 0.1, ss(42), T('shotLast') + 0.14] };
 // совместимость с базовым page.html
 DATA.cuts = shots.map(s => s.s).concat([DUR]);
 

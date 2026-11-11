@@ -38,6 +38,7 @@ ZIPS = {
     "boho-wall-art": "Boho-Wall-Art-Set.zip",
     "armenian-alphabet-kids": "Armenian-Alphabet-for-Kids.zip",
     "wedding-planner-bundle": "Wedding-Planner-and-Shower-Games.zip",
+    "holiday-party-mega-bundle": "Holiday-Party-Mega-Bundle.zip",
     "free-wedding-checklist": "Free-Wedding-Checklist.zip",
     "free-christmas-games": "Free-Christmas-Party-Games.zip",
     "free-puzzle-sampler": "Free-Puzzle-Sampler.zip",
@@ -64,6 +65,7 @@ PERMALINKS = {
     "boho-wall-art": "boho-wall-art",
     "armenian-alphabet-kids": "armenian-alphabet",
     "wedding-planner-bundle": "wedding-planner",
+    "holiday-party-mega-bundle": "holiday-mega-bundle",
     "free-wedding-checklist": "free-wedding-checklist",
     "free-christmas-games": "free-christmas-games",
     "free-puzzle-sampler": "free-puzzles",
@@ -110,8 +112,8 @@ def upload_file(path):
 def description_html(p):
     items = "".join(f"<li>{f}</li>" for f in p["features"])
     return (f"<p>{p['short']}</p><p><strong>What you get:</strong></p><ul>{items}</ul>"
-            f"<p>Format: {p['format']}. Instant digital download, nothing is shipped. "
-            "Sample data is included so you can see how it works.</p>"
+            f"<p>Format: {p['format']}. Instant digital download, nothing is shipped."
+            + (" Sample data is included so you can see how it works." if "Excel" in p["format"] else "") + "</p>"
             "<p>Personal use license. Please do not resell or share the files.</p>")
 
 
@@ -139,6 +141,7 @@ def main():
         })["product"]
         pid = created["id"]
         curl("POST", f"{API}/products/{pid}/covers", {"url": f"{site}/img/{p['id']}.png"})
+        curl("POST", f"{API}/products/{pid}/thumbnail", {"url": f"{site}/img/sq/{p['id']}.jpg"})
         pub = curl("PUT", f"{API}/products/{pid}/enable")["product"]
         p["checkout"] = pub.get("short_url") or created.get("short_url")
         p["gumroad_id"] = pid

@@ -519,6 +519,29 @@
       ],
       "checkout": "https://pennyplanshop.gumroad.com/l/free-wedding-checklist",
       "gumroad_id": "rpXP4QTAkksh_Qqxn6WaxA=="
+    },
+    {
+      "id": "holiday-party-mega-bundle",
+      "category": "puzzles",
+      "name": "Holiday Party Mega Bundle: Christmas Games, Murder Mystery, New Year's Eve + Budget",
+      "short": "Everything for the holidays in one download: 9 Christmas games, a Christmas murder mystery party, 9 New Year's Eve games and a gift budget planner. Save $15.",
+      "price": 19,
+      "compare_at": 34,
+      "format": "Printable PDF (Letter + A4) + Excel / Google Sheets",
+      "files": [
+        "Holiday-Party-Mega-Bundle.zip"
+      ],
+      "features": [
+        "Christmas Party Games: scavenger hunt, trivia, 30 bingo cards, charades and 5 more games (64 pages)",
+        "Murder at Mistletoe Manor: Christmas murder mystery for 6–8 players with 20 evidence cards and host script",
+        "New Year's Eve Party Games: trivia, 30 bingo cards, countdown hunt, Year in Review cards and more",
+        "Holiday Gift & Christmas Budget Planner spreadsheet (Excel + Google Sheets)",
+        "US Letter and A4, print as many copies as you need for your own parties",
+        "Save $15 compared with buying the four separately"
+      ],
+      "keywords": "christmas party games bundle, holiday party games, christmas murder mystery, new years eve games, christmas printables",
+      "checkout": "https://pennyplanshop.gumroad.com/l/holiday-mega-bundle",
+      "gumroad_id": "NRBRBhanxG7YpvUVL3zOzA=="
     }
   ],
   "promo": {

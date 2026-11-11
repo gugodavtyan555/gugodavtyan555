@@ -18,6 +18,9 @@ const BLOG_PRODUCT = {
   'track-small-business-income-expenses': 'small-business-tracker', 'how-much-to-save-each-month-for-a-goal': 'savings-goals-tracker',
   'how-to-pay-off-credit-card-debt-fast': 'debt-payoff-planner', 'sinking-funds-explained': 'savings-goals-tracker',
   'how-to-make-a-budget-in-google-sheets': 'budget-planner', 'how-to-set-financial-goals-for-2027': '2027-planner',
+  'christmas-party-games-for-adults': 'holiday-party-mega-bundle', 'christmas-trivia-questions-and-answers': 'free-christmas-games',
+  'thanksgiving-games-for-family': 'thanksgiving-party-games', 'new-years-eve-party-ideas-at-home': 'new-years-eve-party-games',
+  'how-to-host-a-murder-mystery-party': 'murder-mystery-mistletoe-manor',
 };
 
 const BOARDS = {
@@ -45,6 +48,7 @@ const BOARDS = {
   'savings-goals-tracker': 'Saving Money Tips',
   '2027-planner': '2027 Planner',
   'money-bundle': 'Budget Templates',
+  'holiday-party-mega-bundle': 'Christmas Party Ideas',
 };
 
 // [product or article id, headline, small line above, description, keywords]
@@ -188,6 +192,44 @@ const PINS11 = [
   ['free-wedding-checklist', 'Wedding Planning Checklist: What to Do and When', 'Free printable', 'Engaged? Start here: 33 tasks by month, from booking the venue to the rehearsal dinner.', 'wedding planning checklist, wedding to do list, wedding planning tips, wedding checklist printable'],
 ];
 
+// Batch 12 (Nov 11, 2026): holiday mega bundle, seasonal guides and more Christmas / New Year pins.
+const PINS12 = [
+  ['holiday-party-mega-bundle', 'Holiday Party Mega Bundle: 4 in 1', 'Save $15', 'Christmas party games, a Christmas murder mystery, New Year\'s Eve games and a gift budget planner in one download.', 'christmas party games, holiday party ideas, christmas printables, new years eve games'],
+  ['holiday-party-mega-bundle', 'Every Game You Need for Christmas and New Year', 'One download · $19', '18 printable party games, a murder mystery dinner party and a holiday budget spreadsheet. Print at home.', 'christmas games for family, new years eve party ideas, christmas party planning, holiday games'],
+  ['holiday-party-mega-bundle', 'Host the Best Holiday Party on Your Street', 'Christmas · Murder mystery · NYE', 'Games for kids and adults from Christmas Eve to midnight on New Year\'s Eve. Letter and A4.', 'holiday party games, christmas party ideas for adults, family christmas activities, party printables'],
+  ['holiday-party-mega-bundle', 'Christmas Party Planning Kit: Games + Budget', 'Plan it, play it', 'Plan gifts and costs in a spreadsheet, then print the games: trivia, bingo, charades, scavenger hunt and more.', 'christmas party planning, christmas budget, christmas games printable, holiday hosting'],
+  ['blog:christmas-party-games-for-adults', '15 Christmas Party Games for Adults', 'Ideas that really work', 'Icebreakers, table games, gift swaps and a murder mystery night, with the best picks for office, family and friends.', 'christmas party games for adults, office christmas party games, christmas games for groups, party ideas'],
+  ['blog:christmas-party-games-for-adults', 'Office Christmas Party Games Everyone Joins', 'Easy to run', 'Trivia in teams, bingo, Would You Rather and more: games that work with a drink in one hand.', 'office christmas party games, work christmas party ideas, christmas team games, holiday party games'],
+  ['blog:christmas-trivia-questions-and-answers', '20 Christmas Trivia Questions with Answers', 'Kids and adults', 'Easy and fun Christmas trivia for family night or the office party, plus a free printable with 40 questions.', 'christmas trivia questions and answers, christmas quiz, christmas trivia for kids, family games'],
+  ['blog:christmas-trivia-questions-and-answers', 'Christmas Quiz Night at Home: Questions + Tips', 'Free printable', 'How to run a fun Christmas trivia round, with 20 questions to start and a free 40-question printable.', 'christmas quiz, christmas trivia night, family quiz night, christmas activities'],
+  ['blog:thanksgiving-games-for-family', '10 Thanksgiving Games for the Whole Family', 'Before and after dinner', 'Scavenger hunt, bingo, gratitude cards, trivia and a pie-passing game that kids and grandparents love.', 'thanksgiving games for family, thanksgiving activities for kids, thanksgiving party ideas, family games'],
+  ['blog:thanksgiving-games-for-family', 'What to Do on Thanksgiving While the Turkey Cooks', 'Easy family games', 'Simple games that keep kids busy and get relatives talking. Print them the day before.', 'thanksgiving activities, thanksgiving games for kids, thanksgiving day ideas, family traditions'],
+  ['blog:new-years-eve-party-ideas-at-home', "New Year's Eve Party Ideas at Home", 'Plan + games', 'An hour-by-hour plan to midnight with games for families and friends, plus a Year in Review activity.', 'new years eve party ideas, new years eve at home, nye party games, new years eve with kids'],
+  ['blog:new-years-eve-party-ideas-at-home', "New Year's Eve with Kids: Countdown Plan", 'Fun at home', 'Celebrate early in another time zone, play a countdown scavenger hunt and make a wishes time capsule.', 'new years eve with kids, new years eve activities for kids, kids countdown, family new year'],
+  ['blog:how-to-host-a-murder-mystery-party', 'How to Host a Murder Mystery Party', 'Step-by-step guide', 'Guests, invitations, costumes, the three rounds and the big reveal: everything a first-time host needs.', 'how to host a murder mystery party, murder mystery dinner party, murder mystery party ideas, party games for adults'],
+  ['blog:how-to-host-a-murder-mystery-party', 'Murder Mystery Dinner Party: Hosting Tips', 'For first-time hosts', 'Plan 2–3 hours, serve dinner between rounds and give prizes for best detective and best liar.', 'murder mystery dinner, dinner party ideas, murder mystery game, adult party ideas'],
+  ['christmas-party-games', 'Christmas Games for Family Night', '9 games · 64 pages', 'Trivia, bingo, charades, scavenger hunt and a Left-Right gift game. Print at home and play tonight.', 'christmas games for family, family christmas activities, christmas printables, christmas eve games'],
+  ['christmas-party-games', 'Christmas Scavenger Hunt with Rhyming Clues', 'Kids love it', '12 rhyming clues and a hiding chart: hide them around the house and let the kids find the prize.', 'christmas scavenger hunt, christmas activities for kids, christmas morning ideas, treasure hunt'],
+  ['christmas-party-games', 'Christmas Charades and Who Am I? Cards', '80 printable cards', 'Easy party games for kids and adults. Cut out the cards and play in teams.', 'christmas charades, christmas party games, who am i game, christmas games for groups'],
+  ['christmas-party-games', 'Christmas Classroom Party Games', 'Teachers and parents', 'Word scramble, bingo and Finish the Carol: quiet and lively games for a class party.', 'christmas classroom party, christmas games for kids, christmas worksheets, school christmas party'],
+  ['murder-mystery-mistletoe-manor', 'Christmas Murder Mystery for 6–8 Players', 'Murder at Mistletoe Manor', '8 suspects, 20 evidence cards, invitations and a host script. Everything you need, ready to print.', 'christmas murder mystery, murder mystery party kit, christmas dinner party, party games for adults'],
+  ['murder-mystery-mistletoe-manor', 'A Christmas Dinner Party with a Twist', 'Who killed Sir Nicholas?', 'Turn Christmas dinner into a murder mystery. No acting needed: guests read from their booklets.', 'murder mystery dinner party, christmas party ideas for adults, dinner party games, christmas eve ideas'],
+  ['murder-mystery-mistletoe-manor', 'Printable Murder Mystery Game for Adults', 'Play at home', 'Three rounds of secrets, alibis and evidence, then everyone votes on the killer.', 'murder mystery game, printable party game, adult game night, christmas party games'],
+  ['murder-mystery-mistletoe-manor', 'Murder Mystery Party Costume and Food Ideas', 'Christmas manor theme', 'Each guest gets a character and costume idea. Serve dinner between rounds and dessert before the reveal.', 'murder mystery costumes, murder mystery party food, themed dinner party, christmas party theme'],
+  ['new-years-eve-party-games', "New Year's Eve Games for the Whole Family", '9 printable games', 'Trivia, bingo, a countdown scavenger hunt and Year in Review cards. Count down to 2027 together.', 'new years eve games, new years eve party games, family new years eve, nye printables'],
+  ['new-years-eve-party-games', 'Countdown to Midnight Scavenger Hunt', '12 clues · 12 hours', 'Hide a clue for every hour; the last one leads to the party poppers at midnight.', 'new years eve scavenger hunt, new years eve kids, countdown ideas, nye activities'],
+  ['new-years-eve-party-games', "New Year's Eve Trivia: Traditions Around the World", '40 questions', 'Grapes in Spain, the ball drop and Hogmanay: 40 questions with answers for teams.', 'new years eve trivia, new year traditions, nye quiz, new years eve party ideas'],
+  ['new-years-eve-party-games', 'Year in Review Cards for New Year\'s Eve', '40 prompts', 'Look back on 2026 and write wishes for 2027. Seal them in a jar to open next year.', 'year in review, new years eve activities, new year reflection, new years resolutions'],
+  ['holiday-budget-planner', 'Christmas Budget Spreadsheet: Gifts + Costs', 'Excel + Google Sheets', 'Plan every gift and holiday cost against one total budget and see what is left to spend.', 'christmas budget, christmas gift list, holiday budget spreadsheet, frugal christmas'],
+  ['holiday-budget-planner', "Don't Overspend This Christmas", 'Gift list + budget', 'Track bought and wrapped gifts, food, decorations and travel in one simple spreadsheet.', 'christmas on a budget, christmas money saving, holiday spending tracker, gift planner'],
+  ['escape-room-clockwork-lab', 'Printable Escape Room for Kids: Holiday Break Idea', 'Ages 7–12', 'Six puzzles, hint cards and a certificate. A great rainy-day or holiday-break activity at home.', 'escape room for kids, printable escape room, winter break activities, kids party games'],
+  ['escape-room-clockwork-lab', 'DIY Escape Room Birthday Party', 'Print and play', 'Set it up in 15 minutes: six puzzles that kids solve together in about 45 minutes.', 'escape room party, kids birthday party ideas, diy escape room, party games for kids'],
+  ['thanksgiving-party-games', 'Thanksgiving Games for Kids and Adults', '9 printable games', 'Trivia, 30 bingo cards, scavenger hunt, gratitude table talk and Pass the Pie.', 'thanksgiving games, thanksgiving party games, thanksgiving printables, family games'],
+  ['thanksgiving-party-games', 'Thanksgiving Table Talk Gratitude Cards', 'Start real conversations', 'Put a few cards at each place setting: questions that get the whole table talking.', 'thanksgiving gratitude, thanksgiving table ideas, thanksgiving conversation starters, thankful activities'],
+  ['free-christmas-games', 'Free Christmas Word Scramble Printable', 'With answers', '25 festive words to unscramble, plus Christmas trivia and Finish the Carol. Free download.', 'christmas word scramble, free christmas printables, christmas worksheets for kids, christmas games'],
+  ['free-christmas-games', 'Finish the Carol: Free Christmas Game', 'Free printable', 'Fill in the missing word from 16 traditional carols. A fun table game for all ages.', 'christmas carol game, christmas music games, free christmas games, family christmas games'],
+];
+
 const THEMES = [
   { bg: '#EEF4F0', ink: '#1F2A37', accent: '#2F7D5B', band: '#2F7D5B', bandInk: '#FFFFFF' },
   { bg: '#FBF3E8', ink: '#2B2118', accent: '#B5622E', band: '#2B2118', bandInk: '#FBF3E8' },
@@ -220,7 +262,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1500 }, deviceScaleFactor: 1 });
   const rows = [];
-  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8, ...PINS9, ...PINS10, ...PINS11];
+  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8, ...PINS9, ...PINS10, ...PINS11, ...PINS12];
   for (let i = 0; i < ALL.length; i++) {
     const [ref, headline, , description, keywords] = ALL[i];
     const file = `pin-${String(i + 1).padStart(2, '0')}-${ref.replace('blog:', '')}.jpg`;
@@ -287,12 +329,13 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   // Batch 11 + seasonal push (Nov 11): 11 pins were already sent. Add the free downloads, then move
   // Thanksgiving and Christmas/New Year pins to the front of the unsent queue while people search for them.
   const START11 = 11;
-  order.push(...rows.slice(rows.length - PINS11.length));
+  order.push(...rows.slice(rows.length - PINS11.length - PINS12.length));
   const unsent = order.splice(START11);
   const kind = (r) => /thanksgiving/i.test(r.link + r.title) ? 'T'
     : /christmas|mistletoe|new-years|holiday|xmas/i.test(r.link + r.title) ? 'X' : 'O';
   const q = { T: unsent.filter((r) => kind(r) === 'T'), X: unsent.filter((r) => kind(r) === 'X'), O: unsent.filter((r) => kind(r) === 'O') };
-  for (const k of 'TXO') q[k].sort((a, b) => (/\/p\/free-/.test(b.link) ? 1 : 0) - (/\/p\/free-/.test(a.link) ? 1 : 0));
+  const rank = (r) => (/\/p\/free-/.test(r.link) ? 2 : /mega-bundle/.test(r.link) ? 1 : 0);
+  for (const k of 'TXO') q[k].sort((a, b) => rank(b) - rank(a));
   // Thanksgiving first (every 2nd pin) until it runs out, Christmas/NYE in 2 of every 3 pins after that.
   const pattern = () => (q.T.length ? ['T', 'X', 'T', 'O'] : ['X', 'X', 'O']);
   while (q.T.length || q.X.length || q.O.length) {

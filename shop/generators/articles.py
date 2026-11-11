@@ -221,3 +221,8 @@ ARTICLES = [
 """,
     },
 ]
+
+
+from seasonal_articles import SEASONAL  # noqa: E402
+
+ARTICLES = SEASONAL + ARTICLES

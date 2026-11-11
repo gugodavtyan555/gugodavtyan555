@@ -49,6 +49,8 @@ const items = {
     [['fc-06.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['fc-03.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['fc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
   'free-wedding-checklist': page('Free Wedding Checklist', '33 tasks from 12 months out to the big day. Free download.', ['FREE', '12 months', 'Printable', 'Letter + A4'],
     [['fw-03.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['fw-02.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['fw-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
+  'holiday-party-mega-bundle': page('Holiday Party Mega Bundle', 'Christmas games, a murder mystery, New Year\'s Eve games and a gift budget. Save $15.', ['4 products', 'Christmas', 'Murder mystery', 'New Year'],
+    [['nc-01.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['mc-01.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['xc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
 };
 
 (async () => {

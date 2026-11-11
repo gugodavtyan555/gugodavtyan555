@@ -208,7 +208,7 @@ def product_page(p):
 <div class="buybox"><span class="tag">{E(p['format'])}</span><h1>{E(p['name'])}</h1>
 <p class="lead">{E(p['short'])}</p><div class="price" style="font-size:28px;margin-bottom:16px">{price_html(p)}</div>
 {buy_button(p, True)}
-<p class="note">Instant digital download. Nothing is shipped. Sample data is included so you can see how it works.</p>
+<p class="note">Instant digital download. Nothing is shipped.{" Sample data is included so you can see how it works." if "Excel" in p["format"] or "Sheets" in p["format"] else ""}</p>
 <ul>{''.join(f'<li>{E(f)}</li>' for f in p['features'])}</ul>
 {rel_html}
 </div></div>
@@ -219,8 +219,9 @@ def product_page(p):
 
 
 def article_page(a):
-    prods = [p for p in PRODUCTS if p["id"] in a["products"]]
-    cta = "".join(f'<div class="cta"><strong>{E(p["name"])}</strong>: {E(p["short"])}<br><br><a class="btn" href="/p/{p["id"]}.html">See the template · ${p["price"]}</a></div>' for p in prods[:1])
+    byid = {p["id"]: p for p in PRODUCTS}
+    prods = [byid[i] for i in a["products"] if i in byid]
+    cta = "".join(f'<div class="cta"><strong>{E(p["name"])}</strong>: {E(p["short"])}<br><br><a class="btn" href="/p/{p["id"]}.html">{"Get it free" if not p["price"] else "See it · $" + str(p["price"])}</a></div>' for p in prods[:2])
     ld = {"@context": "https://schema.org", "@type": "Article", "headline": a["title"], "description": a["description"],
           "datePublished": a["date"], "author": {"@type": "Organization", "name": BRAND}}
     body = f"""<article class="post"><div class="crumb"><a href="/blog/">Guides</a></div>
@@ -231,8 +232,8 @@ def article_page(a):
 
 def blog_index():
     items = "".join(f'<details open><summary><a href="/blog/{a["slug"]}.html">{E(a["title"])}</a></summary><p>{E(a["description"])}</p></details>' for a in ARTICLES)
-    return layout(f"Money guides · {BRAND}", "Practical guides to budgeting, paying off debt, saving and simple bookkeeping.",
-                  f'<article class="post"><h1>Money guides</h1>{items}</article>', "blog/")
+    return layout(f"Guides · {BRAND}", "Practical guides to budgeting, saving and debt, plus party game ideas for Thanksgiving, Christmas and New Year's Eve.",
+                  f'<article class="post"><h1>Guides</h1>{items}</article>', "blog/")
 
 
 def simple(title, path, inner):

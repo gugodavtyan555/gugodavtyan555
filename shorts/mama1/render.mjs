@@ -17,10 +17,10 @@ words.forEach((w, i) => { cur.push(i); if (/[.?!…]$/.test(w[0])) { sent.push(c
 if (cur.length) sent.push(cur);
 const ss = i => words[sent[i][0]][1] + OFFSET;          // старт предложения (видео-время)
 const se = i => words[sent[i][sent[i].length - 1]][2] + OFFSET;
-const DUR = Math.ceil((se(sent.length - 1) + 3.7) * 2) / 2;
+const DUR = Math.ceil((se(sent.length - 1) + 5.0) * 2) / 2;
 
 // субтитры
-const HL = ['маме', 'год.', 'автоответчике', 'взяли'];
+const HL = ['маме', 'год.', 'восемь', 'наизусть', 'цифру', 'Щелчок', 'голос', 'перезвонит', 'осенью', 'рядом', 'секунд.', 'считал', 'всё.', 'математике', 'зуб', 'шнурки', 'Сам', 'кашу', 'знает.', 'забыл', 'плачет', 'похоронах', 'сыне', 'друга', 'кухне', 'сообщение', 'ночь.', 'телефон.', 'номер.', 'руками', 'больно', 'отключают', 'человеку', 'маму', 'нет.', 'снова.', 'раз.', 'взяли'];
 const clean = s => s.replace(/[.,…?!«»]/g, '');
 const chunks = [];
 sent.forEach((idx, si) => {
@@ -37,7 +37,10 @@ sent.forEach((idx, si) => {
   flush();
 });
 // сцены: [fn, первое предложение, флаги]
-const PLAN = [['shotRoom', 0], ['shotLog', 1], ['shotListen', 2], ['shotAnswer', 3]];
+const PLAN = [['shotRoom', 0], ['shotLog', 1], ['shotEight', 2], ['shotDial', 3], ['shotRing', 5], ['shotVoice', 7], ['shotPhoto', 12], ['shotEleven', 14], ['shotTell', 17], ['shotDadDoor', 23], ['shotFuneral', 25],
+  ['shotTable', 28], ['shotDadNight', 31], ['shotBill', 35], ['shotDadCry', 37], ['shotBoth', 39], ['shotOff', 41], ['shotRoom2', 44], ['shotNoVoice', 45], ['shotRedial', 48], ['shotCry', 51], ['shotAnswer11', 53]];
+const NOCAP = [8, 9, 10, 11, 52];
+chunks.forEach(c => { if (NOCAP.includes(c.si)) c.nocap = true; });
 const shots = PLAN.map(([fn, s0, fl], i) => {
   const s1 = i + 1 < PLAN.length ? PLAN[i + 1][1] : sent.length;
   const s = i === 0 ? 0 : ss(s0) - 0.14;
@@ -47,9 +50,9 @@ const T = n => shots.find(s => s.fn === n).s;
 const lightning = [];
 const fl = [];
 const last = sent.length - 1;
-const DATA = { chunks, shots, dur: DUR, lightning, fl, outro: se(last) + 0.9,
-  sections: [[0, 'main'], [T('shotListen'), 'soft'], [T('shotAnswer'), 'tension']],
-  hits: [ss(4) + 0.45] };
+const DATA = { chunks, shots, dur: DUR, lightning, fl, outro: se(last) + 1.0,
+  sections: [[0, 'main'], [T('shotRing'), 'soft'], [T('shotPhoto'), 'calm'], [T('shotEleven'), 'soft'], [T('shotTell'), 'warm'], [T('shotDadDoor'), 'calm'], [T('shotFuneral'), 'dark'], [T('shotTable'), 'calm'], [T('shotDadNight'), 'soft'], [T('shotBill'), 'tension'], [T('shotDadCry'), 'calm'], [T('shotOff'), 'tension'], [T('shotRoom2'), 'main'], [T('shotNoVoice'), 'dark'], [T('shotRedial'), 'run'], [T('shotCry'), 'calm'], [T('shotAnswer11'), 'tension']],
+  hits: [ss(42) + 0.4, ss(54) + 0.45] };
 // совместимость с базовым page.html
 DATA.cuts = shots.map(s => s.s).concat([DUR]);
 

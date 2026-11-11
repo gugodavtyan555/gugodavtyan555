@@ -17,10 +17,10 @@ words.forEach((w, i) => { cur.push(i); if (/[.?!…]$/.test(w[0])) { sent.push(c
 if (cur.length) sent.push(cur);
 const ss = i => words[sent[i][0]][1] + OFFSET;          // старт предложения (видео-время)
 const se = i => words[sent[i][sent[i].length - 1]][2] + OFFSET;
-const DUR = Math.ceil((se(sent.length - 1) + 5.0) * 2) / 2;
+const DUR = Math.ceil((se(sent.length - 1) + 6.0) * 2) / 2;
 
 // субтитры
-const HL = ['снова.', 'дрожат', 'далеко', 'пути', 'ехать', 'маяк.', 'ночи.', 'погаснет', 'спросит', 'помощи', 'молчат', 'землю', 'ним.', 'ключ', 'Автобус', 'Поезд', 'Паром', 'спит', 'сына', 'погас', 'Темно', 'мальчик', 'деревня.', 'ступеней', 'вслух', 'загорается', 'руки.', 'знает', 'больницы', 'семь', 'дверь', 'пуста'];
+const HL = ['пуста', 'ноги', 'опоздал', 'Опять', 'пол.', 'кровать.', 'голос', 'видео', 'лестнице', 'горит.', 'заплакал', 'окну', 'жизни', 'кресле', 'виски', 'руки.', 'сорок.', 'лодке', 'слов', 'одно.', 'оборачивается', 'молчат', 'объятие', 'шарф', 'сына', 'домой', 'деревня.', 'ключ', 'двое', 'девять', 'сорок.', 'загорается', 'смеётся', 'кораблям', 'заблудился'];
 const clean = s => s.replace(/[.,…?!«»]/g, '');
 const chunks = [];
 sent.forEach((idx, si) => {
@@ -37,9 +37,9 @@ sent.forEach((idx, si) => {
   flush();
 });
 // сцены: [fn, первое предложение, флаги]
-const PLAN = [['shotLetter', 0], ['shotRead', 1], ['shotMap', 3], ['shotChoice', 7], ['shotVillageDay', 11], ['shotSilence', 15], ['shotStairs', 19], ['shotLamp', 20], ['shotKey', 21], ['shotTrip', 22], ['shotAwake', 25],
-  ['shotAsleep', 27, { fb: true }], ['shotOff', 28], ['shotNoLight', 29], ['shotBoy', 32], ['shotCrowd', 34], ['shotStairsMany', 37], ['shotIgnite', 39], ['shotLampCrowd', 40], ['shotCorridor', 41], ['shotDoor7', 43], ['shotEmptyBed', 44]];
-const NOCAP = [0, 13, 14];
+const PLAN = [['shotEmptyBed', 0], ['shotFall', 4], ['shotNurse', 8], ['shotPhone2', 13], ['shotWheel', 16], ['shotWalk', 18], ['shotWindow', 20], ['shotSorry2', 25], ['shotTurn', 29], ['shotHugScarf', 32],
+  ['shotReturn', 36], ['shotKeyGive', 38], ['shotStairsTwoB', 40], ['shotIgnite', 43], ['shotQuiet', 44], ['shotFinal', 45]];
+const NOCAP = [9, 10, 11, 12, 27, 28, 30, 31, 39];
 chunks.forEach(c => { if (NOCAP.includes(c.si)) c.nocap = true; });
 const shots = PLAN.map(([fn, s0, fl], i) => {
   const s1 = i + 1 < PLAN.length ? PLAN[i + 1][1] : sent.length;
@@ -47,12 +47,12 @@ const shots = PLAN.map(([fn, s0, fl], i) => {
   return { fn, s, marks: Array.from({ length: s1 - s0 }, (_, k) => ss(s0 + k) - s), ...(fl || {}) };
 });
 const T = n => shots.find(s => s.fn === n).s;
-const lightning = [T('shotAsleep') + 0.9, T('shotAsleep') + 2.2];
+const lightning = [];
 const fl = [];
 const last = sent.length - 1;
-const DATA = { chunks, shots, dur: DUR, lightning, fl, outro: se(last) + 1.2,
-  sections: [[0, 'soft'], [T('shotMap'), 'build'], [T('shotChoice'), 'tension'], [T('shotVillageDay'), 'main'], [T('shotSilence'), 'calm'], [T('shotStairs'), 'soft'], [T('shotTrip'), 'run'], [T('shotAwake'), 'calm'], [T('shotAsleep'), 'storm'], [T('shotOff'), 'dark'], [T('shotNoLight'), 'tension'], [T('shotBoy'), 'main'], [T('shotCrowd'), 'build'], [T('shotIgnite'), 'fin'], [T('shotCorridor'), 'run'], [T('shotDoor7'), 'tension'], [T('shotEmptyBed'), 'dark']],
-  hits: [T('shotOff') + 0.7, T('shotIgnite') + 0.55, T('shotEmptyBed') + 0.05, ss(45)] };
+const DATA = { chunks, shots, dur: DUR, lightning, fl, outro: se(last) + 0.9,
+  sections: [[0, 'dark'], [T('shotFall'), 'calm'], [T('shotNurse'), 'soft'], [T('shotPhone2'), 'build'], [T('shotWheel'), 'soft'], [T('shotWalk'), 'tension'], [T('shotWindow'), 'calm'], [T('shotSorry2'), 'soft'], [T('shotHugScarf'), 'warm'], [T('shotReturn'), 'main'], [T('shotStairsTwoB'), 'build'], [T('shotIgnite'), 'fin']],
+  hits: [0.6, T('shotIgnite') + 0.55] };
 // совместимость с базовым page.html
 DATA.cuts = shots.map(s => s.s).concat([DUR]);
 

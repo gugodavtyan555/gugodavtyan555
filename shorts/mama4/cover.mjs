@@ -1,4 +1,4 @@
-// node cover.mjs -> ../out/mama_part3_cover.png
+// node cover.mjs -> ../out/mama_part4_cover.png
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,10 +13,10 @@ await page.goto('file://' + path.join(dir, 'page.html'));
 await page.evaluate(d => { window.DATA = d; }, DATA);
 await page.evaluate(() => window.ready);
 await page.evaluate(() => {
-  X.save(); X.fillStyle = '#000'; X.fillRect(0, 0, W, H); FN.shotDadCalls(X, 1.0, 2, 3.5, []); X.restore(); finish(X);
-  bigText(X, 'ПАПА УЗНАЛ', W / 2, 250, 120, '#ffd60a', 1, -0.03, 22);
-  bigText(X, 'ЧТО ОН СДЕЛАЕТ?', W / 2, 400, 80, '#ffffff', 1, 0, 16);
-  bigText(X, 'ЧАСТЬ 3', W / 2, 1600, 110, '#ffd60a', 1, 0.02, 20);
+  X.save(); X.fillStyle = '#000'; X.fillRect(0, 0, W, H); FN.shotGlass(X, 1.0, 9, 3.5, [0.14]); X.restore(); finish(X);
+  bigText(X, 'ОНА НЕ ОТВЕТИЛА', W / 2, 250, 88, '#ffd60a', 1, -0.03, 22);
+  bigText(X, 'ГДЕ БАБУШКА ВЕРА?', W / 2, 400, 80, '#ffffff', 1, 0, 16);
+  bigText(X, 'ЧАСТЬ 4', W / 2, 1600, 110, '#ffd60a', 1, 0.02, 20);
 });
-await page.screenshot({ path: path.join(dir, '../out/mama_part3_cover.png'), type: 'png' });
+await page.screenshot({ path: path.join(dir, '../out/mama_part4_cover.png'), type: 'png' });
 await browser.close();

@@ -14,7 +14,7 @@ await page.goto('file://' + path.join(dir, 'page.html'));
 await page.evaluate(d => { window.DATA = d; }, DATA);
 await page.evaluate(() => window.ready);
 await page.evaluate(([fn, t, d, l1, l2, part]) => {
-  X.save(); X.fillStyle = '#000'; X.fillRect(0, 0, W, H); FN[fn](X, t, d, t, [0.14]); X.restore(); finish(X);
+  X.save(); X.fillStyle = '#000'; X.fillRect(0, 0, W, H); FN[fn](X, t, d, t, [0.14, 0.3]); X.restore(); finish(X);
   const fit = (s, size) => { X.font = `900 ${size}px M`; const w = X.measureText(s).width; return w > 980 ? Math.floor(size * 980 / w) : size; };
   bigText(X, l1, W / 2, 250, fit(l1, 120), '#ffd60a', 1, -0.03, 22);
   bigText(X, l2, W / 2, 400, fit(l2, 80), '#ffffff', 1, 0, 16);

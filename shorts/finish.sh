@@ -3,8 +3,8 @@
 set -e
 OUT=$1; shift
 python3 music2.py >/dev/null
-for i in 0 1 2 3; do a=$(python3 -c "print($i/4)"); b=$(python3 -c "print(($i+1)/4)"); node render.mjs seg $a $b seg$i > work/seg$i.log 2>&1 & done; wait
-grep -L "seg ok" work/seg*.log && exit 1 || true
+if [ -z "$SKIP_RENDER" ]; then for i in 0 1 2 3; do a=$(python3 -c "print($i/4)"); b=$(python3 -c "print(($i+1)/4)"); node render.mjs seg $a $b seg$i > work/seg$i.log 2>&1 & done; wait; fi
+[ "$(cat work/seg*.log | grep -c "seg ok")" = "4" ] || { echo "render failed"; exit 1; }
 node cover.mjs "$@" work/cover.png
 ffmpeg -y -loglevel error -loop 1 -framerate 30 -t 0.5 -i work/cover.png -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p -r 30 work/cov.mp4
 printf "file 'seg0.mp4'\nfile 'seg1.mp4'\nfile 'seg2.mp4'\nfile 'seg3.mp4'\n" > work/list.txt

@@ -4,14 +4,14 @@ import sys, json, os, base64, subprocess, urllib.request, hashlib
 ep = sys.argv[1]
 S = json.load(open(f"{ep}/script.json"))
 VO = {"en": ("JBFqnCBsd6RMkjVDRZzb", "eleven_multilingual_v2", None),
-      "fr": ("XB0fDUnXU5powFXDhCwa", "eleven_turbo_v2_5", "fr")}
+      "fr": ("nPczCjzI2devNBz1zQrb", "eleven_multilingual_v2", None)}
 def tts(text, lang):
     vid, model, lc = VO[lang]
     h = hashlib.md5(f"{vid}{model}{text}".encode()).hexdigest()[:10]
     mp3, js = f"{ep}/audio/{h}.mp3", f"{ep}/audio/{h}.json"
     if not os.path.exists(js):
         body = {"text": text, "model_id": model,
-                "voice_settings": {"stability": 0.45, "similarity_boost": 0.8, "style": 0.35, "use_speaker_boost": True}}
+                "voice_settings": {"stability": 0.35, "similarity_boost": 0.85, "style": 0.55, "use_speaker_boost": True}}
         if lc: body["language_code"] = lc
         r = urllib.request.Request(f"https://api.elevenlabs.io/v1/text-to-speech/{vid}/with-timestamps?output_format=mp3_44100_128",
             data=json.dumps(body).encode(), headers={"xi-api-key": "dummy", "Content-Type": "application/json"})

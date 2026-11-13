@@ -24,6 +24,6 @@ w = wave.open(f"{ep}/sfx.wav", "wb"); w.setnchannels(1); w.setsampwidth(2); w.se
 w.writeframes((np.clip(x, -1, 1) * 32767 * .6).astype("<i2").tobytes()); w.close()
 tot = T["total"]
 subprocess.check_call(["ffmpeg", "-y", "-v", "error", "-i", f"{ep}/voice.wav", "-stream_loop", "-1", "-i", music, "-i", f"{ep}/sfx.wav",
-  "-filter_complex", f"[0]volume=1.5[v];[1]volume=0.16,afade=t=in:d=0.4,afade=t=out:st={tot-1.5}:d=1.5[m];[2]volume=0.8[s];[v][m][s]amix=inputs=3:normalize=0:duration=first,alimiter=limit=0.95[o]",
+  "-filter_complex", f"[0]volume=1.7[v];[1]volume=0.055,afade=t=in:d=0.4,afade=t=out:st={tot-1.5}:d=1.5[m];[2]volume=0.8[s];[v][m][s]amix=inputs=3:normalize=0:duration=first,alimiter=limit=0.95[o]",
   "-map", "[o]", "-t", str(tot), f"{ep}/mix.wav"])
 print("mix ok")

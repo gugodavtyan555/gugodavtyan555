@@ -27,7 +27,7 @@ body{width:1080px;height:1920px;overflow:hidden;background:#0b1030;font-family:'
 #cap{top:1395px;padding:0 110px;font-weight:900;font-size:62px;line-height:1.15;text-shadow:0 6px 0 rgba(0,0,0,.55),0 0 30px rgba(0,0,0,.6)}
 #cap .on{color:#ffd43b}
 #hook{top:330px}
-#hook .h{font-weight:900;font-size:128px;line-height:1.02;letter-spacing:-2px}
+#hook .h{font-weight:900;font-size:104px;line-height:1.02;letter-spacing:-2px}
 #hook .h2{color:#ffd43b}
 #hook .e{font-size:300px;line-height:1.2;margin-top:40px}
 #hook .n{font-size:60px;font-weight:800;margin-top:10px}
@@ -36,17 +36,17 @@ body{width:1080px;height:1920px;overflow:hidden;background:#0b1030;font-family:'
 #outro .q{font-weight:900;font-size:100px;line-height:1.05}
 #outro .r{background:rgba(255,255,255,.12);border-radius:30px;margin:22px 0;padding:22px 30px;font-size:44px;white-space:nowrap;font-weight:800;text-align:left}
 #outro .r b{color:#ffd43b;margin-right:18px}
-#outro .c{display:inline-block;margin-top:30px;background:#ef4135;font-weight:900;font-size:64px;padding:26px 56px;border-radius:70px}
+#outro .c{display:inline-block;margin-top:30px;background:#ef4135;font-weight:900;font-size:50px;padding:26px 44px;border-radius:70px}
 </style>
 <div id="bg"></div>
 <div id="prog" class="abs"></div><div id="brand" class="abs">🇫🇷 FRENCH FIX 🇫🇷</div>
-<div id="hook" class="abs"><div class="h" id="h1"></div><div class="h h2" id="h2"></div><div class="e" id="he">😳</div><div class="n" id="hn"><b>5</b> innocent sentences 🥐</div></div>
+<div id="hook" class="abs"><div class="h" id="h1"></div><div class="h h2" id="h2"></div><div class="e" id="he">😳</div><div class="n" id="hn"><b>5</b> phrases innocentes 🥐</div></div>
 <div id="item" class="abs" style="top:0;height:1920px">
  <div id="badge" class="abs"><span></span></div>
- <div id="intent" class="abs"><div class="e"></div><div class="l">YOU WANT TO SAY</div><div class="t"></div></div>
+ <div id="intent" class="abs"><div class="e"></div><div class="l">TU VEUX DIRE</div><div class="t"></div></div>
  <div id="wrong" class="card"><div id="stamp">❌</div><div id="wt"></div></div>
- <div id="hear" class="abs"><div class="l">🇫🇷 FRENCH PEOPLE HEAR:</div><div class="t"></div><div class="e"></div></div>
- <div id="right" class="card"><div class="l">✅ SAY THIS</div><div id="rt"></div></div>
+ <div id="hear" class="abs"><div class="l">🇫🇷 LES FRANÇAIS ENTENDENT :</div><div class="t"></div><div class="e"></div></div>
+ <div id="right" class="card"><div class="l">✅ DIS PLUTÔT</div><div id="rt"></div></div>
 </div>
 <div id="outro" class="abs"></div>
 <div id="cap" class="abs"></div>
@@ -62,7 +62,7 @@ $('#prog').innerHTML='<div><i></i></div>'.repeat(N);
 $('#h1').textContent=SC.hook[0];$('#h2').innerHTML=SC.hook[1]+' 🇫🇷';
 $('#outro').innerHTML=`<div class="q">${SC.outro.q} 👇</div>`+items.map((it,i)=>`<div class="r"><b>${i+1}</b>${it.b.text} ❌</div>`).join('')+`<div class="c">➕ ${SC.outro.cta}</div>`;
 // caption chunks
-const chunks=[];TL.segments.filter(s=>s.lang=='en').forEach(s=>{let cur=[];s.words.forEach((w,i)=>{cur.push(w);if(cur.length>=3||/[.,?!:…]$/.test(w[0])||i==s.words.length-1){chunks.push({w:cur,s:cur[0][1],e:s.end+.2});cur=[]}})});
+const chunks=[];TL.segments.filter(s=>!/^\d[be]$/.test(s.id)).forEach(s=>{let cur=[];s.words.forEach((w,i)=>{cur.push(w);if(cur.length>=3||/[.,?!:…]$/.test(w[0])||i==s.words.length-1){chunks.push({w:cur,s:cur[0][1],e:s.end+.2});cur=[]}})});
 chunks.forEach((c,i)=>{if(chunks[i+1]&&chunks[i+1].s<c.e+.3)c.e=Math.min(c.e,chunks[i+1].s)});
 const words=(seg,t,id)=>seg.words.map(w=>`<span class="w" style="opacity:${t>=w[1]-.06?1:0};transform:scale(${t>=w[1]-.06?back((t-w[1]+.06)/.25):.5})">${w[0]}</span>`).join(' ');
 let curItem=-1;
@@ -71,7 +71,7 @@ window.render=t=>{
  const hookEnd=items[0].T0,outS=S.out.start-.15;
  // hook
  const hk=$('#hook');hk.style.display=t<hookEnd?'':'none';
- if(t<hookEnd){pop($('#h1'),t,-.3);pop($('#h2'),t,-.15);const he=$('#he');he.style.transform=`rotate(${8*Math.sin(t*9)}deg) scale(${1+.06*Math.sin(t*6)})`;he.textContent=t>S.hook.words[10][1]?'🥐':'😳';pop($('#hn'),t,.5);hk.style.opacity=c01((hookEnd-t)/.15)}
+ if(t<hookEnd){pop($('#h1'),t,-1);pop($('#h2'),t,-1);const he=$('#he');he.style.transform=`rotate(${8*Math.sin(t*9)}deg) scale(${1+.06*Math.sin(t*6)})`;he.textContent=t>S.hook.words[Math.min(10,S.hook.words.length-1)][1]?'🥐':'😳';pop($('#hn'),t,-1);hk.style.opacity=c01((hookEnd-t)/.15)}
  // progress
  document.querySelectorAll('#prog i').forEach((el,i)=>{el.style.width=100*c01((t-items[i].T0)/(items[i].T1-items[i].T0))+'%'});
  // items
@@ -94,7 +94,7 @@ window.render=t=>{
  }
  // outro
  const O=$('#outro');O.style.display=t>=outS?'':'none';
- if(t>=outS){pop(O.querySelector('.q'),t,outS);O.querySelectorAll('.r').forEach((el,i)=>pop(el,t,outS+.5+i*.22));const c=O.querySelector('.c');pop(c,t,S.out.words[11][1]-.1);if(t>S.out.words[11][1]+.3)c.style.transform=`scale(${1+.05*Math.sin(t*8)})`}
+ if(t>=outS){pop(O.querySelector('.q'),t,outS);O.querySelectorAll('.r').forEach((el,i)=>pop(el,t,outS+.5+i*.22));const c=O.querySelector('.c');pop(c,t,S.out.words[8][1]-.1);if(t>S.out.words[8][1]+.3)c.style.transform=`scale(${1+.05*Math.sin(t*8)})`}
  // captions
  const ch=chunks.find(c=>t>=c.s-.05&&t<c.e),C=$('#cap');
  C.style.top=(t>=outS?1500:t<hookEnd?1330:1395)+'px';

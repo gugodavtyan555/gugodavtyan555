@@ -1,29 +1,168 @@
-{"lead":0.25,"tail":1.2,"segments":[
-{"id":"hook","lang":"en","text":"Five French sentences that sound innocent... but will make a French person choke on their croissant.","pause":0.35},
-{"id":"1a","lang":"en","text":"Number one. You want jam with no preservatives, so you say:","pause":0.2},
-{"id":"1b","lang":"fr","text":"Sans préservatifs, s'il vous plaît.","pause":0.3},
-{"id":"1c","lang":"en","text":"Congratulations. You just asked for jam... without condoms.","pause":0.3},
-{"id":"1d","lang":"en","text":"Say this instead:","pause":0.15},
-{"id":"1e","lang":"fr","text":"Sans conservateurs.","pause":0.45},
-{"id":"2a","lang":"en","text":"Number two. You're full after dinner, so you say:","pause":0.2},
-{"id":"2b","lang":"fr","text":"Je suis pleine.","pause":0.3},
-{"id":"2c","lang":"en","text":"That means you're pregnant... like a cow.","pause":0.3},
-{"id":"2d","lang":"en","text":"Say:","pause":0.15},
-{"id":"2e","lang":"fr","text":"Je n'ai plus faim.","pause":0.45},
-{"id":"3a","lang":"en","text":"Number three. It's hot outside, so you say:","pause":0.2},
-{"id":"3b","lang":"fr","text":"Je suis chaud.","pause":0.3},
-{"id":"3c","lang":"en","text":"You just told everyone you're... in the mood.","pause":0.3},
-{"id":"3d","lang":"en","text":"Say:","pause":0.15},
-{"id":"3e","lang":"fr","text":"J'ai chaud.","pause":0.45},
-{"id":"4a","lang":"en","text":"Number four. You introduce your boss, and you say:","pause":0.2},
-{"id":"4b","lang":"fr","text":"Je vous introduis mon patron.","pause":0.3},
-{"id":"4c","lang":"en","text":"In French, introduire means to insert. Please... don't.","pause":0.3},
-{"id":"4d","lang":"en","text":"Say:","pause":0.15},
-{"id":"4e","lang":"fr","text":"Je vous présente mon patron.","pause":0.45},
-{"id":"5a","lang":"en","text":"Number five. You finished your work, so you say:","pause":0.2},
-{"id":"5b","lang":"fr","text":"Je suis fini.","pause":0.3},
-{"id":"5c","lang":"en","text":"That means your life is over. You're done for.","pause":0.3},
-{"id":"5d","lang":"en","text":"Say:","pause":0.15},
-{"id":"5e","lang":"fr","text":"J'ai fini.","pause":0.5},
-{"id":"out","lang":"en","text":"Which one have you already said? Tell me in the comments, and follow for part two.","pause":0}
-]}
+{
+ "lead": 0.8,
+ "tail": 1.2,
+ "segments": [
+  {
+   "id": "hook",
+   "lang": "fr",
+   "text": "Cinq phrases qui paraissent innocentes... mais qui vont faire s'étrangler n'importe quel Français.",
+   "pause": 0.35
+  },
+  {
+   "id": "1a",
+   "lang": "fr",
+   "text": "Numéro un. Tu veux de la confiture sans conservateurs, alors tu dis :",
+   "pause": 0.2
+  },
+  {
+   "id": "1b",
+   "lang": "fr",
+   "text": "Sans préservatifs, s'il vous plaît.",
+   "pause": 0.3
+  },
+  {
+   "id": "1c",
+   "lang": "fr",
+   "text": "Bravo. Tu viens de demander de la confiture... sans préservatif.",
+   "pause": 0.3
+  },
+  {
+   "id": "1d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "1e",
+   "lang": "fr",
+   "text": "Sans conservateurs.",
+   "pause": 0.45
+  },
+  {
+   "id": "2a",
+   "lang": "fr",
+   "text": "Numéro deux. Tu as trop mangé, alors tu dis :",
+   "pause": 0.2
+  },
+  {
+   "id": "2b",
+   "lang": "fr",
+   "text": "Je suis pleine.",
+   "pause": 0.3
+  },
+  {
+   "id": "2c",
+   "lang": "fr",
+   "text": "Ça veut dire que tu es enceinte... comme une vache.",
+   "pause": 0.3
+  },
+  {
+   "id": "2d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "2e",
+   "lang": "fr",
+   "text": "Je n'ai plus faim.",
+   "pause": 0.45
+  },
+  {
+   "id": "3a",
+   "lang": "fr",
+   "text": "Numéro trois. Il fait chaud dehors, alors tu dis :",
+   "pause": 0.2
+  },
+  {
+   "id": "3b",
+   "lang": "fr",
+   "text": "Je suis chaud.",
+   "pause": 0.3
+  },
+  {
+   "id": "3c",
+   "lang": "fr",
+   "text": "Tu viens d'annoncer à tout le monde que tu es... très excité.",
+   "pause": 0.3
+  },
+  {
+   "id": "3d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "3e",
+   "lang": "fr",
+   "text": "J'ai chaud.",
+   "pause": 0.45
+  },
+  {
+   "id": "4a",
+   "lang": "fr",
+   "text": "Numéro quatre. Tu présentes ton patron, alors tu dis :",
+   "pause": 0.2
+  },
+  {
+   "id": "4b",
+   "lang": "fr",
+   "text": "Je vous introduis mon patron.",
+   "pause": 0.3
+  },
+  {
+   "id": "4c",
+   "lang": "fr",
+   "text": "Introduire, ça veut dire insérer. S'il te plaît... non.",
+   "pause": 0.3
+  },
+  {
+   "id": "4d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "4e",
+   "lang": "fr",
+   "text": "Je vous présente mon patron.",
+   "pause": 0.45
+  },
+  {
+   "id": "5a",
+   "lang": "fr",
+   "text": "Numéro cinq. Tu as terminé ton travail, alors tu dis :",
+   "pause": 0.2
+  },
+  {
+   "id": "5b",
+   "lang": "fr",
+   "text": "Je suis fini.",
+   "pause": 0.3
+  },
+  {
+   "id": "5c",
+   "lang": "fr",
+   "text": "Ça veut dire que ta vie est terminée. Tu es fichu.",
+   "pause": 0.3
+  },
+  {
+   "id": "5d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "5e",
+   "lang": "fr",
+   "text": "J'ai fini.",
+   "pause": 0.5
+  },
+  {
+   "id": "out",
+   "lang": "fr",
+   "text": "Laquelle as-tu déjà dite ? Dis-le-moi en commentaire, et abonne-toi pour la partie deux.",
+   "pause": 0
+  }
+ ]
+}

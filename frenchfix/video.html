@@ -1,0 +1,104 @@
+<!doctype html><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}
+body{width:1080px;height:1920px;overflow:hidden;background:#0b1030;font-family:'Inter Display','Inter','Noto Color Emoji',sans-serif;color:#fff}
+#bg{position:absolute;inset:0}
+.abs{position:absolute;left:0;width:1080px;text-align:center}
+#prog{top:150px;display:flex;gap:12px;padding:0 70px;height:14px}
+#prog div{flex:1;background:rgba(255,255,255,.18);border-radius:8px;overflow:hidden}
+#prog i{display:block;height:100%;background:#fff;border-radius:8px}
+#brand{top:190px;font-weight:800;font-size:34px;letter-spacing:6px;opacity:.85}
+#badge{top:290px}
+#badge span{display:inline-block;background:#fff;color:#0b1030;font-weight:900;font-size:64px;padding:10px 44px;border-radius:60px;box-shadow:0 10px 0 #ef4135}
+#intent{top:410px;padding:0 90px}
+#intent .e{font-size:120px;line-height:1.1}
+#intent .l{font-size:34px;font-weight:700;letter-spacing:4px;opacity:.7;margin-top:8px}
+#intent .t{font-size:58px;font-weight:800;margin-top:6px}
+.card{position:absolute;left:80px;width:920px;border-radius:44px;padding:44px 40px;text-align:center;font-weight:900;font-size:84px;line-height:1.12}
+#wrong{top:740px;background:#fff;color:#0b1030;border:10px solid #fff;box-shadow:0 24px 60px rgba(0,0,0,.45)}
+#wrong.bad{border-color:#ef4135;color:#c81e1e}
+#stamp{position:absolute;right:-30px;top:-70px;font-size:130px}
+#hear{top:1070px;padding:0 80px}
+#hear .l{font-size:36px;font-weight:800;letter-spacing:3px;color:#ffd43b}
+#hear .t{font-size:66px;font-weight:900;margin-top:10px;line-height:1.12}
+#hear .e{font-size:100px;line-height:1.15}
+#right{top:1060px;background:#12b76a;color:#fff;box-shadow:0 24px 60px rgba(0,0,0,.45)}
+#right .l{font-size:36px;letter-spacing:5px;margin-bottom:12px;opacity:.95}
+.w{display:inline-block;margin:0 .02em}
+#cap{top:1395px;padding:0 110px;font-weight:900;font-size:62px;line-height:1.15;text-shadow:0 6px 0 rgba(0,0,0,.55),0 0 30px rgba(0,0,0,.6)}
+#cap .on{color:#ffd43b}
+#hook{top:330px}
+#hook .h{font-weight:900;font-size:128px;line-height:1.02;letter-spacing:-2px}
+#hook .h2{color:#ffd43b}
+#hook .e{font-size:300px;line-height:1.2;margin-top:40px}
+#hook .n{font-size:60px;font-weight:800;margin-top:10px}
+#hook .n b{background:#ef4135;padding:4px 26px;border-radius:24px}
+#outro{top:300px;padding:0 80px}
+#outro .q{font-weight:900;font-size:100px;line-height:1.05}
+#outro .r{background:rgba(255,255,255,.12);border-radius:30px;margin:22px 0;padding:22px 30px;font-size:44px;white-space:nowrap;font-weight:800;text-align:left}
+#outro .r b{color:#ffd43b;margin-right:18px}
+#outro .c{display:inline-block;margin-top:30px;background:#ef4135;font-weight:900;font-size:64px;padding:26px 56px;border-radius:70px}
+</style>
+<div id="bg"></div>
+<div id="prog" class="abs"></div><div id="brand" class="abs">🇫🇷 FRENCH FIX 🇫🇷</div>
+<div id="hook" class="abs"><div class="h" id="h1"></div><div class="h h2" id="h2"></div><div class="e" id="he">😳</div><div class="n" id="hn"><b>5</b> innocent sentences 🥐</div></div>
+<div id="item" class="abs" style="top:0;height:1920px">
+ <div id="badge" class="abs"><span></span></div>
+ <div id="intent" class="abs"><div class="e"></div><div class="l">YOU WANT TO SAY</div><div class="t"></div></div>
+ <div id="wrong" class="card"><div id="stamp">❌</div><div id="wt"></div></div>
+ <div id="hear" class="abs"><div class="l">🇫🇷 FRENCH PEOPLE HEAR:</div><div class="t"></div><div class="e"></div></div>
+ <div id="right" class="card"><div class="l">✅ SAY THIS</div><div id="rt"></div></div>
+</div>
+<div id="outro" class="abs"></div>
+<div id="cap" class="abs"></div>
+<script>
+const D=window.DATA,TL=D.timeline,SC=D.scenes,$=s=>document.querySelector(s);
+const S={};TL.segments.forEach(s=>S[s.id]=s);
+const c01=x=>Math.max(0,Math.min(1,x)),back=p=>{p=c01(p);const c=1.70158;return 1+(c+1)*Math.pow(p-1,3)+c*Math.pow(p-1,2)},out=p=>1-Math.pow(1-c01(p),3);
+const pop=(el,t,t0,d=.35)=>{const p=(t-t0)/d;el.style.opacity=p>0?c01(p*3):0;el.style.transform=`scale(${p>0?back(p):0})`;};
+const N=SC.items.length,items=SC.items.map((it,i)=>({...it,a:S[(i+1)+'a'],b:S[(i+1)+'b'],c:S[(i+1)+'c'],d:S[(i+1)+'d'],e:S[(i+1)+'e']}));
+items.forEach((it,i)=>{it.T0=it.a.start-.15;it.T1=(i<N-1?items[i+1]?.a?.start??0:S.out.start)-.15});
+items.forEach((it,i)=>{if(i<N-1)it.T1=S[(i+2)+'a'].start-.15});
+$('#prog').innerHTML='<div><i></i></div>'.repeat(N);
+$('#h1').textContent=SC.hook[0];$('#h2').innerHTML=SC.hook[1]+' 🇫🇷';
+$('#outro').innerHTML=`<div class="q">${SC.outro.q} 👇</div>`+items.map((it,i)=>`<div class="r"><b>${i+1}</b>${it.b.text} ❌</div>`).join('')+`<div class="c">➕ ${SC.outro.cta}</div>`;
+// caption chunks
+const chunks=[];TL.segments.filter(s=>s.lang=='en').forEach(s=>{let cur=[];s.words.forEach((w,i)=>{cur.push(w);if(cur.length>=3||/[.,?!:…]$/.test(w[0])||i==s.words.length-1){chunks.push({w:cur,s:cur[0][1],e:s.end+.2});cur=[]}})});
+chunks.forEach((c,i)=>{if(chunks[i+1]&&chunks[i+1].s<c.e+.3)c.e=Math.min(c.e,chunks[i+1].s)});
+const words=(seg,t,id)=>seg.words.map(w=>`<span class="w" style="opacity:${t>=w[1]-.06?1:0};transform:scale(${t>=w[1]-.06?back((t-w[1]+.06)/.25):.5})">${w[0]}</span>`).join(' ');
+let curItem=-1;
+window.render=t=>{
+ $('#bg').style.background=`radial-gradient(900px 900px at ${200+150*Math.sin(t*.5)}px ${300+120*Math.cos(t*.4)}px,#2440c9 0%,transparent 70%),radial-gradient(900px 900px at ${900+140*Math.cos(t*.45)}px ${1650+120*Math.sin(t*.35)}px,#b3122f 0%,transparent 70%),#0b1030`;
+ const hookEnd=items[0].T0,outS=S.out.start-.15;
+ // hook
+ const hk=$('#hook');hk.style.display=t<hookEnd?'':'none';
+ if(t<hookEnd){pop($('#h1'),t,-.3);pop($('#h2'),t,-.15);const he=$('#he');he.style.transform=`rotate(${8*Math.sin(t*9)}deg) scale(${1+.06*Math.sin(t*6)})`;he.textContent=t>S.hook.words[10][1]?'🥐':'😳';pop($('#hn'),t,.5);hk.style.opacity=c01((hookEnd-t)/.15)}
+ // progress
+ document.querySelectorAll('#prog i').forEach((el,i)=>{el.style.width=100*c01((t-items[i].T0)/(items[i].T1-items[i].T0))+'%'});
+ // items
+ const k=items.findIndex(it=>t>=it.T0&&t<it.T1),IT=$('#item');IT.style.display=k>=0?'':'none';
+ if(k>=0){const it=items[k];
+  if(k!=curItem){curItem=k;$('#badge span').textContent='N°'+(k+1);$('#intent .e').textContent=it.emoji;$('#intent .t').textContent=it.intent;$('#hear .t').textContent=it.hear;$('#hear .e').textContent=it.hearEmoji}
+  IT.style.transform=`translateX(${1080*(1-out((t-it.T0)/.35))}px)`;IT.style.opacity=c01((it.T1-t)/.15);
+  pop($('#badge'),t,it.T0+.1);pop($('#intent'),t,it.a.words[2][1]-.1);
+  const W=$('#wrong');pop(W,t,it.b.start-.2);$('#wt').innerHTML=words(it.b,t);
+  const bad=t>=it.c.start;W.classList.toggle('bad',bad);
+  const sh=bad?Math.max(0,1-(t-it.c.start)/.45):0;const fix=t>=it.d.start-.05;
+  if(bad)W.style.transform=`translateX(${18*sh*Math.sin(t*70)}px) rotate(${-2*c01((t-it.c.start)/.2)}deg) scale(${fix?1-.06*out((t-it.d.start)/.3):1})`;
+  W.style.opacity=fix?1-.4*out((t-it.d.start)/.3):W.style.opacity;
+  pop($('#stamp'),t,it.c.start,.3);
+  const H=$('#hear'),pw=it.c.words[it.c.words.length-it.punch][1];
+  H.style.opacity=fix?1-c01((t-it.d.start+.05)/.2):1;
+  pop(H.querySelector('.l'),t,it.c.start+.15);pop(H.querySelector('.t'),t,pw-.08);pop(H.querySelector('.e'),t,pw+.1);
+  const R=$('#right');pop(R,t,it.d.start+.12);$('#rt').innerHTML=words(it.e,t);
+  if(t>=it.e.end)R.style.transform=`scale(${1+.03*Math.sin((t-it.e.end)*10)*Math.max(0,1-(t-it.e.end)/.5)})`;
+ }
+ // outro
+ const O=$('#outro');O.style.display=t>=outS?'':'none';
+ if(t>=outS){pop(O.querySelector('.q'),t,outS);O.querySelectorAll('.r').forEach((el,i)=>pop(el,t,outS+.5+i*.22));const c=O.querySelector('.c');pop(c,t,S.out.words[11][1]-.1);if(t>S.out.words[11][1]+.3)c.style.transform=`scale(${1+.05*Math.sin(t*8)})`}
+ // captions
+ const ch=chunks.find(c=>t>=c.s-.05&&t<c.e),C=$('#cap');
+ C.style.top=(t>=outS?1500:t<hookEnd?1330:1395)+'px';
+ C.innerHTML=ch?ch.w.map(w=>`<span class="w${t>=w[1]-.03&&t<w[2]+.08?' on':''}">${w[0]}</span>`).join(' '):'';
+ if(ch)C.style.transform=`scale(${.85+.15*back((t-ch.s+.05)/.18)})`;
+};
+</script>

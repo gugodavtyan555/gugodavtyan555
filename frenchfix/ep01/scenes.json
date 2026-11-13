@@ -1,0 +1,8 @@
+{"hook":["DON'T SAY THIS","IN FRANCE"],
+ "items":[
+ {"intent":"“No preservatives, please”","emoji":"🍓","hear":"“Without condoms, please”","hearEmoji":"😳","punch":2},
+ {"intent":"“I'm full”","emoji":"🍽️","hear":"“I'm pregnant”… like a cow","hearEmoji":"🐄","punch":4},
+ {"intent":"“I'm hot”","emoji":"☀️","hear":"“I'm in the mood”","hearEmoji":"😏","punch":3},
+ {"intent":"“Let me introduce my boss”","emoji":"🤝","hear":"“Let me insert my boss”","hearEmoji":"💀","punch":3},
+ {"intent":"“I'm done”","emoji":"💼","hear":"“My life is over”","hearEmoji":"⚰️","punch":6}],
+ "outro":{"q":"Which one did YOU say?","cta":"FOLLOW for Part 2"}}

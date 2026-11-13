@@ -1,4 +1,4 @@
-"""Shorts cover (1080x1920) in the bright '3D text' style. usage: cover.py OUT 'LINE1' 'LINE2' [chip]"""
+"""Shorts cover (1080x1920); all content kept inside y 250-1670 (TikTok/grid 3:4 safe area) in the bright '3D text' style. usage: cover.py OUT 'LINE1' 'LINE2' [chip]"""
 import sys, glob
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageChops
 IMG='../dl/img/'; FD='/usr/share/fonts/opentype/inter/'; W,H=1080,1920
@@ -33,14 +33,14 @@ def box(im, name, cx, cy, h, ang, label, col):
 def make(out,l1,l2,chip=None):
     bgs=sorted(glob.glob(IMG+'Hero_BG.*.jpg')); bg=Image.open(bgs[4]).convert('RGB'); s=H/bg.height; bg=bg.resize((int(bg.width*s),H),Image.LANCZOS); x0=(bg.width-W)//2
     bg=ImageEnhance.Color(bg.crop((x0,0,x0+W,H))).enhance(1.7); im=Image.blend(bg,vgrad((W,H),[(120,60,230),(255,90,190),(60,10,110)]),0.42).convert('RGBA')
-    lg=Image.open('../full/logo.png').convert('RGBA'); lg=lg.resize((int(lg.width*330/lg.height),330),Image.LANCZOS)
-    sh=Image.new('RGBA',(lg.width+80,lg.height+80),(0,0,0,0)); sh.paste((0,0,0,170),(40,40),lg.split()[3]); im.alpha_composite(sh.filter(ImageFilter.GaussianBlur(18)),((W-lg.width)//2-40,60)); im.alpha_composite(lg,((W-lg.width)//2,100))
-    box(im,'GTAVI_FOB_StandardEdition_Desktop',292,830,600,7,'STANDARD',(255,62,150)); box(im,'GTAVI_FOB_UltimateEdition_Desktop_en_us',792,860,640,-6,'ULTIMATE',(240,170,20))
+    lg=Image.open('../full/logo.png').convert('RGBA'); lg=lg.resize((int(lg.width*250/lg.height),250),Image.LANCZOS)
+    sh=Image.new('RGBA',(lg.width+80,lg.height+80),(0,0,0,0)); sh.paste((0,0,0,170),(40,40),lg.split()[3]); im.alpha_composite(sh.filter(ImageFilter.GaussianBlur(18)),((W-lg.width)//2-40,240)); im.alpha_composite(lg,((W-lg.width)//2,280))
+    box(im,'GTAVI_FOB_StandardEdition_Desktop',300,860,500,7,'STANDARD',(255,62,150)); box(im,'GTAVI_FOB_UltimateEdition_Desktop_en_us',780,885,530,-6,'ULTIMATE',(240,170,20))
     dk=Image.new('RGBA',(W,H),NAVY+(0,)); g=Image.new('L',(1,H)); [g.putpixel((0,y),int(200*max(0,(y-1150)/770)**0.9)) for y in range(H)]; dk.putalpha(g.resize((W,H))); im.alpha_composite(dk)
     im=im.convert('RGB').convert('RGBA')
-    text3d(im,1330,l1,250,[(255,255,255),(225,215,255),(150,130,235)])
-    text3d(im,1570,l2,250,[(255,250,170),(255,205,40),(255,120,20)],glow=(255,150,30))
+    text3d(im,1265,l1,210,[(255,255,255),(225,215,255),(150,130,235)])
+    text3d(im,1465,l2,210,[(255,250,170),(255,205,40),(255,120,20)],glow=(255,150,30))
     if chip:
-        d=ImageDraw.Draw(im); f=BI(60); tw=d.textlength(chip,font=f); d.rounded_rectangle((W/2-tw/2-40,1712,W/2+tw/2+40,1806),radius=24,fill=(255,62,150),outline=(255,255,255),width=5); d.text((W/2,1759),chip,font=f,fill=(255,255,255),anchor='mm')
+        d=ImageDraw.Draw(im); f=BI(60); tw=d.textlength(chip,font=f); d.rounded_rectangle((W/2-tw/2-40,1582,W/2+tw/2+40,1668),radius=24,fill=(255,62,150),outline=(255,255,255),width=5); d.text((W/2,1625),chip,font=f,fill=(255,255,255),anchor='mm')
     im.convert('RGB').save(out,quality=95)
 if __name__=='__main__': make(sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4] if len(sys.argv)>4 else None)

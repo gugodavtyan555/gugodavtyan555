@@ -16,17 +16,17 @@ BLACK = lambda s: F('InterDisplay-Black.otf', s); BI = lambda s: F('InterDisplay
 PINK, YELLOW, NAVY, WHITE, RED = (255, 62, 150), (255, 222, 40), (14, 8, 30), (255, 255, 255), (235, 30, 40)
 SRC = {'A': ('GTAVI_Trailer_1.mp4', 0, 2160), 'X': ('GTAVI_An_Extended_Look.mp4', 0, 2160), 'T': ('GTAVI_Trailer_2.mp4', 216, 1728), 'L': ('GTAVI_Launch_Trailer.mp4', 120, 1920)}
 def V(src, a, b, cx=.5, zoom=1.0, cy=.5, g=1.0): return dict(k='V', src=src, a=a, b=b, cx=cx, zoom=zoom, cy=cy, g=g)
-def FRZ(src, t, cx, cy, zoom, hold=2.0, target=None, g=1.0): return dict(k='F', src=src, a=t, cx=cx, cy=cy, zoom=zoom, hold=hold, target=target or (cx, cy), g=g)
+def FRZ(src, t, cx, cy, zoom, hold=2.0, target=None, g=1.0, box=None): return dict(k='F', src=src, a=t, cx=cx, cy=cy, zoom=zoom, hold=hold, target=target or (cx, cy), g=g, box=box)
 X = 'X'
 PLAN = {
  'h':  [V(X, 733.0, 733.55, .455, 1.3, .45), V(X, 849.0, 850.0, .52, 1.5, .55), V(X, 725.0, 726.2, .5), V(X, 438.6, 439.6, .58, 1.4, .55), V(X, 63.4, 64.6, .505, 1.6, .33, g=1.4),
         V(X, 1105, 1106.5, .82), V(X, 964.5, 966.5, .42), V(X, 1127.7, 1129.5, .45)],
  'd1': [V(X, 59.6, 62.0, .52, 1.4, .36, g=1.4), FRZ(X, 62.0, .525, .315, 2.0, g=1.4), V(X, 62.0, 64.3, .515, 1.8, .33, g=1.4), FRZ(X, 64.1, .505, .325, 2.0, g=1.4)],
- 'd2': [V(X, 436.6, 438.4, .55), V(X, 438.4, 439.6, .60, 1.4, .55), FRZ(X, 439.1, .56, .53, 1.7)],
+ 'd2': [V(X, 436.6, 438.4, .55), V(X, 438.4, 439.6, .60, 1.4, .55), FRZ(X, 439.1, .58, .58, 1.7, target=(.58, .549), box=(900, 430))],
  'd3': [V(X, 706.5, 708.5, .5), V(X, 713.0, 715.5, .45), V(X, 716.0, 718.0, .5), V(X, 724.0, 726.3, .48)],
- 'd4': [V(X, 731.6, 733.55, .46), FRZ(X, 733.2, .456, .38, 1.7), V(X, 733.6, 735.9, .6)],
+ 'd4': [V(X, 731.6, 733.55, .46), FRZ(X, 733.2, .49, .38, 1.7, target=(.516, .375)), V(X, 733.6, 735.9, .6)],
  'd5': [V(X, 846.1, 848.6, .55), V(X, 848.6, 850.0, .52, 1.5, .55), FRZ(X, 849.5, .52, .55, 1.6, target=(.54, .56))],
- 'd6': [V(X, 1104.2, 1108.3, .82), FRZ(X, 1106.0, .86, .42, 1.25, target=(.84, .27))],
+ 'd6': [V(X, 1104.2, 1108.3, .82), FRZ(X, 1106.0, .86, .5, 1.0, target=(.77, .085), box=(340, 120))],
  'o':  [V(X, 1140, 1145, .5), V('L', 67.1, 68.5, .52), V('L', 40.4, 42.3, .45)],
 }
 ND = 6
@@ -145,10 +145,18 @@ def overlay(tt):
     if sh and sh['k'] == 'F':                                  # circle + arrow on the frozen detail (target is at the frame centre)
         ua = tt - sh['t']; a = ease(ua / 0.18); r = int(150 + 60 * (1 - back(ua / 0.3))); fn_, cw_, ah_, x0_, y0_ = crop_of(sh); zz = 1.0 + 0.10 * ease(ua / max(0.01, sh['end'] - sh['t']))
         cx = int(W / 2 + ((sh['target'][0] * 3840 - x0_) / cw_ * W - W / 2) * zz); cy = int(H / 2 + ((sh['target'][1] * 2160 - y0_) / ah_ * H - H / 2) * zz)
-        d.ellipse((cx - r - 7, cy - r - 7, cx + r + 7, cy + r + 7), outline=al(WHITE, a), width=26); d.ellipse((cx - r, cy - r, cx + r, cy + r), outline=al(RED, a), width=14)
-        b = int(20 * abs(((tt * 2.4) % 1) - 0.5) * 2); x1, y1 = cx - 112 - b, cy - 112 - b; x0, y0 = x1 - 210, y1 - 210
+        bx = sh.get('box')
+        if bx:
+            hw, hh = bx[0] // 2, bx[1] // 2; ex, ey = hw, hh
+            d.rounded_rectangle((cx - hw - 7, cy - hh - 7, cx + hw + 7, cy + hh + 7), radius=32, outline=al(WHITE, a), width=24); d.rounded_rectangle((cx - hw, cy - hh, cx + hw, cy + hh), radius=26, outline=al(RED, a), width=13)
+        else:
+            ex = ey = int(r * 0.75)
+            d.ellipse((cx - r - 7, cy - r - 7, cx + r + 7, cy + r + 7), outline=al(WHITE, a), width=26); d.ellipse((cx - r, cy - r, cx + r, cy + r), outline=al(RED, a), width=14)
+        sx, sy = (-1, -1) if cy > 620 else (1, 1)          # arrow from upper-left; from lower-right when the target is near the top
+        b = int(20 * abs(((tt * 2.4) % 1) - 0.5) * 2); x1, y1 = cx + sx * (ex + 14 + b), cy + sy * (ey + 14 + b); x0, y0 = x1 + sx * 210, y1 + sy * 210
         for wd, col, e in ((50, WHITE, 9), (32, RED, 0)):
-            d.line((x0, y0, x1 - 34, y1 - 34), fill=al(col, a), width=wd); d.polygon([(x1 + 30 + e, y1 + 30 + e), (x1 - 86 - e, y1 + 6 + e), (x1 + 6 + e, y1 - 86 - e)], fill=al(col, a))
+            d.line((x0, y0, x1 + sx * 34, y1 + sy * 34), fill=al(col, a), width=wd)
+            d.polygon([(x1 - sx * (30 + e), y1 - sy * (30 + e)), (x1 + sx * (86 + e), y1 - sy * (6 + e)), (x1 - sx * (6 + e), y1 + sy * (86 + e))], fill=al(col, a))
     for i, c in enumerate(caps):
         t0 = c[0]['t'] - 0.04; nxt = caps[i + 1][0]['t'] - 0.04 if i + 1 < len(caps) else TOTAL; t1 = min(max(c[-1]['e'] + 0.12, t0 + 0.25), nxt)
         if t0 <= tt < t1 or (i == len(caps) - 1 and tt >= t0):

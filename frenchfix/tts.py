@@ -4,7 +4,8 @@ import sys, json, os, base64, subprocess, urllib.request, hashlib
 ep = sys.argv[1]
 S = json.load(open(f"{ep}/script.json"))
 VO = {"en": ("JBFqnCBsd6RMkjVDRZzb", "eleven_multilingual_v2", None),
-      "fr": ("nPczCjzI2devNBz1zQrb", "eleven_multilingual_v2", None)}
+      "fr": ("nPczCjzI2devNBz1zQrb", "eleven_multilingual_v2", None),
+      "frf": ("XB0fDUnXU5powFXDhCwa", "eleven_turbo_v2_5", "fr")}
 def tts(text, lang):
     vid, model, lc = VO[lang]
     h = hashlib.md5(f"{vid}{model}{text}".encode()).hexdigest()[:10]

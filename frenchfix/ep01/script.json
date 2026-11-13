@@ -1,5 +1,5 @@
 {
- "lead": 0.8,
+ "lead": 1.05,
  "tail": 1.2,
  "segments": [
   {
@@ -16,7 +16,7 @@
   },
   {
    "id": "1b",
-   "lang": "fr",
+   "lang": "frf",
    "text": "Sans préservatifs, s'il vous plaît.",
    "pause": 0.3
   },
@@ -34,7 +34,7 @@
   },
   {
    "id": "1e",
-   "lang": "fr",
+   "lang": "frf",
    "text": "Sans conservateurs.",
    "pause": 0.45
   },
@@ -46,7 +46,7 @@
   },
   {
    "id": "2b",
-   "lang": "fr",
+   "lang": "frf",
    "text": "Je suis pleine.",
    "pause": 0.3
   },
@@ -64,7 +64,7 @@
   },
   {
    "id": "2e",
-   "lang": "fr",
+   "lang": "frf",
    "text": "Je n'ai plus faim.",
    "pause": 0.45
   },
@@ -76,7 +76,7 @@
   },
   {
    "id": "3b",
-   "lang": "fr",
+   "lang": "frf",
    "text": "Je suis chaud.",
    "pause": 0.3
   },
@@ -94,7 +94,7 @@
   },
   {
    "id": "3e",
-   "lang": "fr",
+   "lang": "frf",
    "text": "J'ai chaud.",
    "pause": 0.45
   },
@@ -106,7 +106,7 @@
   },
   {
    "id": "4b",
-   "lang": "fr",
+   "lang": "frf",
    "text": "Je vous introduis mon patron.",
    "pause": 0.3
   },
@@ -124,7 +124,7 @@
   },
   {
    "id": "4e",
-   "lang": "fr",
+   "lang": "frf",
    "text": "Je vous présente mon patron.",
    "pause": 0.45
   },
@@ -136,7 +136,7 @@
   },
   {
    "id": "5b",
-   "lang": "fr",
+   "lang": "frf",
    "text": "Je suis fini.",
    "pause": 0.3
   },
@@ -154,7 +154,7 @@
   },
   {
    "id": "5e",
-   "lang": "fr",
+   "lang": "frf",
    "text": "J'ai fini.",
    "pause": 0.5
   },

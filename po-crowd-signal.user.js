@@ -32,7 +32,7 @@
   const btn = document.createElement('button');
   btn.textContent = 'Copy';
   const counts = {}, samples = {};
-  const SKIP = /updateStream|updateHistory|updateCharts|chat_room|Balance|Closed|Opened|indicator|favorite|alert|ai-strategy|Pending|Express|serverName/i;
+  const SKIP = /updateStream|updateHistory|updateCharts|chat_room|Balance|updateClosedDeals|updateOpenedDeals|updateOpenedDynamic|Express|indicator|favorite|alert|ai-strategy|Pending|Express|serverName/i;
   btn.onclick = () => {
     const out = ['COUNTS ' + JSON.stringify(counts)];
     for (const n in samples) if (!SKIP.test(n)) out.push('## ' + n + '\n' + samples[n].join('\n'));
@@ -103,8 +103,8 @@
       nWs++;
       const m = d.match(/^\d*-?\[\s*"([^"]+)"/);
       if (m) { lastName = m[1]; counts[lastName] = (counts[lastName] || 0) + 1; }
-      else if (lastName) { const a = samples[lastName] || (samples[lastName] = []); a.push(d.slice(0, 500)); if (a.length > 2) a.shift(); }
-      if (!SKIP.test(lastName)) parse(d);
+      else if (lastName) { const a = samples[lastName] || (samples[lastName] = []); a.push(d.slice(0, 500)); if (a.length > 3) a.shift(); }
+      if (/OpenedSocialDeals/.test(lastName)) parse(d);
     });
     return ws;
   };

@@ -85,8 +85,8 @@
       const t = b.buy + b.sell;
       if (b.n >= MIN_TOTAL && t > 0) {
         const sb = b.buy / t, ss = b.sell / t;
-        if (sb >= THRESH) send('🔴 SELL ' + asset + ' (ամբոխ BUY ' + Math.round(sb * 100) + '%, ' + t.toFixed(0) + ')');
-        else if (ss >= THRESH) send('🟢 BUY ' + asset + ' (ամբոխ SELL ' + Math.round(ss * 100) + '%, ' + t.toFixed(0) + ')');
+        if (sb >= THRESH) send('🔴 SELL ' + asset + ' | crowd BUY ' + Math.round(sb * 100) + '% (BUY ' + b.buy + ' / SELL ' + b.sell + ')');
+        else if (ss >= THRESH) send('🟢 BUY ' + asset + ' | crowd SELL ' + Math.round(ss * 100) + '% (BUY ' + b.buy + ' / SELL ' + b.sell + ')');
       }
       delete buckets[asset];
     }

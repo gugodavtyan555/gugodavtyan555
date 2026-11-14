@@ -41,6 +41,8 @@
   box.append(info, btn);
   document.addEventListener('DOMContentLoaded', () => document.body.appendChild(box));
   let nWs = 0, nDeals = 0, lastName = '';
+  const EXPIRY_MS = 60000;
+  const lastPrice = {}, pending = [], st = { w: 0, l: 0 };
 
   function side(v) {
     const s = String(v).toLowerCase();
@@ -80,17 +82,35 @@
     fetch(u, { mode: 'no-cors' }).catch(() => {});
   }
 
+  function stat() { return st.w + '/' + st.l + ' (W/L)'; }
   setInterval(() => {
+    const now = Date.now();
+    for (let i = pending.length - 1; i >= 0; i--) {
+      const p = pending[i];
+      if (now - p.t < EXPIRY_MS) continue;
+      const cur = lastPrice[p.asset];
+      if (cur !== undefined && cur !== p.price) {
+        const up = cur > p.price;
+        if ((p.dir === 'buy') === up) st.w++; else st.l++;
+      }
+      pending.splice(i, 1);
+    }
     for (const [asset, b] of Object.entries(buckets)) {
       const t = b.buy + b.sell;
       if (b.n >= MIN_TOTAL && t > 0) {
         const sb = b.buy / t, ss = b.sell / t;
-        if (sb >= THRESH) send('🔴 SELL ' + asset + ' | crowd BUY ' + Math.round(sb * 100) + '% (BUY ' + b.buy + ' / SELL ' + b.sell + ')');
-        else if (ss >= THRESH) send('🟢 BUY ' + asset + ' | crowd SELL ' + Math.round(ss * 100) + '% (BUY ' + b.buy + ' / SELL ' + b.sell + ')');
+        const px = lastPrice[asset];
+        if (sb >= THRESH) {
+          send('🔴 SELL ' + asset + ' | crowd BUY ' + Math.round(sb * 100) + '% (BUY ' + b.buy + ' / SELL ' + b.sell + ') | stat ' + stat());
+          if (px !== undefined) pending.push({ asset, dir: 'sell', price: px, t: now });
+        } else if (ss >= THRESH) {
+          send('🟢 BUY ' + asset + ' | crowd SELL ' + Math.round(ss * 100) + '% (BUY ' + b.buy + ' / SELL ' + b.sell + ') | stat ' + stat());
+          if (px !== undefined) pending.push({ asset, dir: 'buy', price: px, t: now });
+        }
       }
       delete buckets[asset];
     }
-    info.firstChild.textContent = 'WS:' + nWs + ' deals:' + nDeals + ' ';
+    info.firstChild.textContent = 'WS:' + nWs + ' deals:' + nDeals + ' ' + stat() + ' ';
   }, WINDOW_MS);
 
   const Orig = window.WebSocket;
@@ -105,6 +125,9 @@
       const m = d.match(/^\d*-?\[\s*"([^"]+)"/);
       if (m) { lastName = m[1]; counts[lastName] = (counts[lastName] || 0) + 1; }
       else if (lastName) { const a = samples[lastName] || (samples[lastName] = []); a.push(d.slice(0, 500)); if (a.length > 3) a.shift(); }
+      if (lastName === 'updateStream' && d[0] === '[') {
+        try { const a = JSON.parse(d); if (a[0] && a[0][0]) lastPrice[a[0][0]] = a[0][2]; } catch (e) {}
+      }
       if (/OpenedSocialDeals/.test(lastName)) parse(d);
     });
     return ws;

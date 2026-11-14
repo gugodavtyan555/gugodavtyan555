@@ -18,12 +18,12 @@
     try { localStorage.setItem('po_bot', BOT_TOKEN); localStorage.setItem('po_chat', CHAT_ID); } catch (e) {}
   }, 1500));
   const WINDOW_MS = 5000;    // ժամանակահատված
-  const MIN_TOTAL = 5;       // նվազագույն գործարք պատուհանում
+  const MIN_TOTAL = 3;       // նվազագույն գործարք պատուհանում
   const THRESH = 0.65;       // ամբոխի մեկ կողմի մասնաբաժինը
   const WEIGHT_BY_AMOUNT = true; // true՝ ըստ գումարի, false՝ ըստ քանակի
   // ====================
 
-  const buckets = {};        // asset -> {buy, sell, nb, ns}
+  const buckets = {}; const seen = new Set();        // asset -> {buy, sell, nb, ns}
   const raw = [];
   const box = document.createElement('div');
   box.style.cssText = 'position:fixed;top:60px;left:4px;z-index:99999;background:#000c;color:#0f0;font:11px monospace;padding:4px;max-width:75vw';
@@ -52,10 +52,11 @@
   function walk(o) {
     if (!o || typeof o !== 'object') return;
     if (Array.isArray(o)) return o.forEach(walk);
-    const dir = o.action ?? o.cmd ?? o.command ?? o.direction ?? o.type;
-    const sd = dir !== undefined ? side(dir) : null;
-    const amt = Number(o.amount ?? o.sum ?? o.value);
-    if (sd && amt > 0) {
+    const sd = o.command !== undefined ? side(o.command) : null;
+    const amt = Number(o.amount);
+    if (sd && amt > 0 && o.asset && o.id && !seen.has(o.id)) {
+      seen.add(o.id);
+      if (seen.size > 5000) seen.clear();
       const asset = o.asset ?? o.symbol ?? o.active ?? 'all';
       const b = buckets[asset] || (buckets[asset] = { buy: 0, sell: 0, n: 0 });
       b.n++;
@@ -71,7 +72,7 @@
     try { walk(JSON.parse(text.slice(i))); } catch (e) { /* ոչ JSON */ }
   }
 
-  const SEND = false; // true՝ երբ ձևաչափը հաստատվի
+  const SEND = true;
   function send(msg) {
     if (!SEND || !BOT_TOKEN || !CHAT_ID) return;
     const u = 'https://api.telegram.org/bot' + BOT_TOKEN + '/sendMessage?chat_id=' +

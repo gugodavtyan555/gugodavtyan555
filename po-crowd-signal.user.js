@@ -34,14 +34,47 @@
   const counts = {}, samples = {};
   const SKIP = /updateStream|updateHistory|updateCharts|chat_room|Balance|updateClosedDeals|updateOpenedDeals|updateOpenedDynamic|Express|indicator|favorite|alert|ai-strategy|Pending|Express|serverName/i;
   btn.onclick = () => {
-    const out = ['COUNTS ' + JSON.stringify(counts)];
+    const out = ['TICKS ' + tickText(), 'CROWD ' + stat(), 'COUNTS ' + JSON.stringify(counts)];
     for (const n in samples) if (!SKIP.test(n)) out.push('## ' + n + '\n' + samples[n].join('\n'));
     navigator.clipboard.writeText(out.join('\n').slice(0, 6000));
   };
-  box.append(info, btn);
+  const box2 = document.createElement('div');
+  box.append(info, btn, box2);
   document.addEventListener('DOMContentLoaded', () => document.body.appendChild(box));
   let nWs = 0, nDeals = 0, lastName = '';
   const EXPIRY_MS = 60000;
+  // ---- 5s tick-strategy tester (no money, only W/L) ----
+  const ticks = {}, tpend = {}, tstat = {};
+  const sg = (x) => (x > 0 ? 1 : x < 0 ? -1 : 0);
+  const STRATS = {
+    mom3: (t) => { const n = t.length; if (n < 4) return 0; const a = sg(t[n-1].p - t[n-2].p), b = sg(t[n-2].p - t[n-3].p), c = sg(t[n-3].p - t[n-4].p); return a && a === b && b === c ? a : 0; },
+    mom6: (t) => { const n = t.length; return n < 7 ? 0 : sg(t[n-1].p - t[n-7].p); },
+    rev3: (t) => -STRATS.mom3(t),
+    rev6: (t) => -STRATS.mom6(t),
+    meanrev20: (t) => { const n = t.length; if (n < 20) return 0; const avg = t.slice(-20).reduce((x, y) => x + y.p, 0) / 20; return -sg(t[n-1].p - avg); },
+  };
+  for (const k in STRATS) tstat[k] = { w: 0, l: 0 };
+  function onTick(asset, ts, price) {
+    const arr = ticks[asset] || (ticks[asset] = []);
+    arr.push({ ts, p: price });
+    if (arr.length > 40) arr.shift();
+    const pe = tpend[asset] || (tpend[asset] = {});
+    for (const k in STRATS) {
+      const q = pe[k];
+      if (q) {
+        if (ts >= q.ts + 5) {
+          if (price !== q.p) { if ((price > q.p) === (q.dir > 0)) tstat[k].w++; else tstat[k].l++; }
+          delete pe[k];
+        }
+      } else {
+        const d = STRATS[k](arr);
+        if (d) pe[k] = { ts, p: price, dir: d };
+      }
+    }
+  }
+  function tickText() {
+    return Object.entries(tstat).map(([k, v]) => k + ' ' + v.w + '/' + v.l + (v.w + v.l ? ' ' + Math.round(100 * v.w / (v.w + v.l)) + '%' : '')).join(' | ');
+  }
   const lastPrice = {}, pending = [], st = { w: 0, l: 0 };
 
   function side(v) {
@@ -110,7 +143,8 @@
       }
       delete buckets[asset];
     }
-    info.firstChild.textContent = 'WS:' + nWs + ' deals:' + nDeals + ' ' + stat() + ' ';
+    info.firstChild.textContent = 'WS:' + nWs + ' deals:' + nDeals + ' crowd ' + stat() + ' ';
+    box2.textContent = tickText();
   }, WINDOW_MS);
 
   const Orig = window.WebSocket;
@@ -126,7 +160,7 @@
       if (m) { lastName = m[1]; counts[lastName] = (counts[lastName] || 0) + 1; }
       else if (lastName) { const a = samples[lastName] || (samples[lastName] = []); a.push(d.slice(0, 500)); if (a.length > 3) a.shift(); }
       if (lastName === 'updateStream' && d[0] === '[') {
-        try { const a = JSON.parse(d); if (a[0] && a[0][0]) lastPrice[a[0][0]] = a[0][2]; } catch (e) {}
+        try { const a = JSON.parse(d); for (const r of a) if (r && r[0]) { lastPrice[r[0]] = r[2]; onTick(r[0], r[1], r[2]); } } catch (e) {}
       }
       if (/OpenedSocialDeals/.test(lastName)) parse(d);
     });

@@ -22,3 +22,19 @@ Steps:
 
 `sheet.py <name> <duration>` builds a timestamped scene contact sheet for choosing footage.
 Source footage and rendered videos are not stored in the repo.
+
+## Fresh footage (no repeated shots)
+
+`footage/footage.py` keeps a catalog of every scene in the four official videos (`footage/catalog.json`) and scans
+all plan files for source ranges that earlier videos already used. Before choosing shots for a new video:
+
+```bash
+export FOOTAGE_DIR=<folder with GTAVI_*_1080.mp4 proxies>
+python3 footage/footage.py pick X 15 --len 3 --seed 7      # fresh shots from the 27-min gameplay video
+python3 footage/footage.py pick A 6 --len 2                # A=Trailer 1, T=Trailer 2, L=Launch Trailer
+python3 footage/footage.py used                            # how much of each source is already used
+```
+
+It prints ready-to-paste `V(X, a, b, cx)` entries (overlap with earlier videos < 15 %, bright scenes only, crop
+centre estimated from image detail). Look at one contact sheet before rendering: the centre is a heuristic.
+Rule: at least 80 % of the shots in a new video must come from `pick`.

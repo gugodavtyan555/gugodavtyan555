@@ -17,11 +17,12 @@ G = [('X', 478.82, 481.32, .16), ('X', 1017.35, 1019.57, .21), ('X', 1083.52, 10
      ('X', 1026.38, 1028.88, .58), ('X', 686.18, 688.68, .67), ('X', 564.95, 567.45, .16), ('X', 1147.48, 1149.98, .84),
      ('T', 76.82, 79.02, .49), ('T', 66.35, 68.55, .83), ('T', 99.82, 102.02, .78), ('T', 129.52, 131.72, .67),
      ('L', 21.32, 23.52, .54), ('L', 15.32, 17.52, .47), ('L', 73.95, 76.15, .5),
-     ('A', 50.05, 52.07, .44), ('A', 11.08, 13.28, .54), ('A', 70.42, 72.62, .16), ('A', 57.48, 59.43, .5)]
+     ('A', 50.05, 52.07, .44), ('A', 11.08, 13.28, .54), ('A', 70.42, 72.62, .16), ('A', 57.48, 59.43, .5),
+     ('X', 1088.72, 1091.02, 0.58), ('X', 688.78, 691.08, 0.67), ('X', 691.38, 693.68, 0.67), ('X', 1560.42, 1562.72, 0.16), ('X', 932.42, 934.72, 0.46), ('X', 919.42, 921.72, 0.46), ('X', 1151.32, 1153.62, 0.39), ('X', 853.22, 855.52, 0.49), ('X', 935.02, 937.32, 0.46), ('X', 698.75, 701.05, 0.82), ('X', 1080.15, 1082.45, 0.84), ('X', 929.82, 932.12, 0.46), ('X', 868.82, 871.12, 0.49), ('X', 708.45, 710.75, 0.77)]
 # real-world clips per segment (Pixabay ids; v = video, i = photo)
 R = {'h': ['v205873', 'v144820', 'v137425'], 's1': ['i979238', 'v6474', 'v169443', 'v144820'], 's2': ['v81359', 'v216720', 'v83831', 'v47336'],
-     's3': ['v6474', 'v42410', 'i979238', 'v137425'], 's4': ['v205225', 'v114445', 'v223461', 'v206272'], 'o': ['v206272', 'v183960', 'v169443']}
-CARDS = {'s1': ('НЕОН И ПАЛЬМЫ', 'ВАЙС-СИТИ vs МАЙАМИ'), 's2': ('БОЛОТА', 'ГРАССРИВЕР vs ЭВЕРГЛЕЙДС'), 's3': ('МАШИНЫ', 'ПРОБКИ, СПОРТКАРЫ, РЕТРО'), 's4': ('ЛОДКИ', 'АЭРОЛОДКИ, КАТЕРА, ЯХТЫ')}
+     's3': ['v6474', 'v42410', 'i979238', 'v137425'], 's4': ['v205225', 'v114445', 'v223461', 'v206272'], 's5': ['i979238', 'v137425', 'v6474', 'v42410'], 's6': ['v205225', 'v114445', 'v206272', 'v144820'], 'o': ['v206272', 'v183960', 'v169443']}
+CARDS = {'s1': ('НЕОН И ПАЛЬМЫ', 'ВАЙС-СИТИ vs МАЙАМИ'), 's2': ('БОЛОТА', 'ГРАССРИВЕР vs ЭВЕРГЛЕЙДС'), 's3': ('МАШИНЫ', 'ПРОБКИ, СПОРТКАРЫ, РЕТРО'), 's4': ('ЛОДКИ', 'АЭРОЛОДКИ, КАТЕРА, ЯХТЫ'), 's5': ('ОУШЕН-БИЧ', 'АРТ-ДЕКО vs САУТ-БИЧ'), 's6': ('ЛЕОНИДА-КИС', 'МОСТЫ И ОСТРОВА vs ФЛОРИДА-КИС')}
 HOOK = ('GTA 6', 'vs РЕАЛЬНЫЙ МАЙАМИ')
 segs = json.load(open(ROOT + '/script.json')); t = 0.0
 for i, s in enumerate(segs):
@@ -105,23 +106,20 @@ def fit(d, tx, size, wmax, fn=BI):
     return fn(size)
 def overlay(tt):
     ov = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(ov); seg = next((s for s in segs if s['rs'] <= tt < s['re']), segs[-1]); u = tt - seg['rs']
-    d.rectangle((0, HH - 5, W, HH + 5), fill=al(PINK, 1)); pill(d, 36, 40, 'GTA 6', PINK, WHITE); pill(d, 36, H - 130, 'РЕАЛЬНЫЙ КАДР', YELLOW, NAVY)
-    if seg['id'] == 'h':
-        a = ease(u / .2); sc = .7 + .3 * back(u / .3)
-        text_c(d, W / 2, 520, [('GTA 6', YELLOW, a)], BI(int(190 * sc)), sw=16); text_c(d, W / 2, 690, [('vs РЕАЛЬНЫЙ МАЙАМИ', WHITE, a)], fit(d, 'vs РЕАЛЬНЫЙ МАЙАМИ', int(100 * sc), W - 70), sw=12)
-    elif seg['id'] in CARDS:
-        a = ease(u / .2); sc = .8 + .2 * back(u / .3); l1, l2 = CARDS[seg['id']]
-        text_c(d, W / 2, 400, [(l1, YELLOW, a)], fit(d, l1, int(150 * sc), W - 80), sw=15)
-        f2 = fit(d, l2, 60, W - 180, BK); tw = d.textlength(l2, font=f2); d.rounded_rectangle((W / 2 - tw / 2 - 36, 440, W / 2 + tw / 2 + 36, 540), radius=24, fill=al(PINK, a)); d.text((W / 2, 490), l2, font=f2, fill=al(WHITE, a), anchor='mm')
-    else:
-        a = ease(u / .2); sc = .75 + .25 * back(u / .3)
-        text_c(d, W / 2, 470, [('ПОЛНЫЙ ', WHITE, a), ('РАЗБОР', YELLOW, a)], BI(int(110 * sc)), sw=14)
-        pill(d, W / 2 - 330, 510, 'УЖЕ НА КАНАЛЕ', PINK, WHITE, a, 70)
+    d.rectangle((0, HH - 5, W, HH + 5), fill=al(PINK, 1)); pill(d, 36, 40, 'GTA 6', PINK, WHITE); pill(d, 36, HH + 96, 'РЕАЛЬНЫЙ КАДР', YELLOW, NAVY, 1.0, 34)
+    def bar(l1, l2, a, sc=1.0):
+        f1 = fit(d, l1, int(78 * sc), W - 90, BI); f2 = fit(d, l2, 44, W - 130, BK); w1 = d.textlength(l1, font=f1); w2 = d.textlength(l2, font=f2); ww = max(w1, w2) + 80
+        d.rounded_rectangle((W / 2 - ww / 2, HH - 78, W / 2 + ww / 2, HH + 78), radius=30, fill=al(NAVY, .86 * a), outline=al(PINK, a), width=6)
+        d.text((W / 2, HH - 22), l1, font=f1, fill=al(YELLOW, a), anchor='mm'); d.text((W / 2, HH + 44), l2, font=f2, fill=al(WHITE, a), anchor='mm')
+    a_ = ease(u / .2)
+    if seg['id'] == 'h': bar('GTA 6', 'vs РЕАЛЬНЫЙ МАЙАМИ', a_, 1.25)
+    elif seg['id'] in CARDS: bar(*CARDS[seg['id']], a_)
+    else: bar('ПОЛНЫЙ РАЗБОР', 'УЖЕ НА КАНАЛЕ', a_)
     for i, c in enumerate(caps):
         t0 = c[0]['t'] - .04; nxt = caps[i + 1][0]['t'] - .04 if i + 1 < len(caps) else TOTAL; t1 = min(max(c[-1]['e'] + .12, t0 + .25), nxt)
         if t0 <= tt < t1 or (i == len(caps) - 1 and tt >= t0):
             sc = .82 + .18 * back((tt - t0) / .16); f = fit(d, ' '.join(w['w'].upper() for w in c), int(120 * sc), W - 90); txt = [w['w'].upper().strip('.,:—') for w in c]
-            text_c(d, W / 2, HH + 62, [(x + (' ' if j < len(txt) - 1 else ''), YELLOW if c[j]['t'] - .03 <= tt else WHITE, 1.0) for j, x in enumerate(txt)], f, sw=14)
+            text_c(d, W / 2, H - 205, [(x + (' ' if j < len(txt) - 1 else ''), YELLOW if c[j]['t'] - .03 <= tt else WHITE, 1.0) for j, x in enumerate(txt)], f, sw=14)
     for hit in [s['rs'] for s in segs[1:]]:
         if 0 <= tt - hit < .14: ov.alpha_composite(Image.new('RGBA', (W, H), al(WHITE, .5 * (1 - (tt - hit) / .14))))
     return ov

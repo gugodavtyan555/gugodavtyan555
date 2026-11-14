@@ -50,6 +50,7 @@
   let nWs = 0, nDeals = 0, lastName = '';
   const EXPIRY_MS = 60000;
   // ---- 5s tick analysis: many variants, every tick, persisted ----
+  const HZ = 60, OVL = HZ * 2; // 1 րոպե, ~2 տիկ/վրկ
   const ticks = {}, tq = {}, tstat = {}, cstat = {};
   const sg = (x) => (x > 0 ? 1 : x < 0 ? -1 : 0);
   const VARS = {};
@@ -62,14 +63,14 @@
     VARS['meanrev' + W] = (t) => -dev(t);
     VARS['trend' + W] = (t) => dev(t);
   }
-  try { Object.assign(tstat, JSON.parse(localStorage.getItem('po_an') || '{}').t || {}); Object.assign(cstat, JSON.parse(localStorage.getItem('po_an') || '{}').c || {}); } catch (e) {}
+  try { Object.assign(tstat, JSON.parse(localStorage.getItem('po_an60') || '{}').t || {}); Object.assign(cstat, JSON.parse(localStorage.getItem('po_an60') || '{}').c || {}); } catch (e) {}
   for (const k in VARS) if (!tstat[k]) tstat[k] = { w: 0, l: 0 };
   function onTick(asset, ts, price) {
     const arr = ticks[asset] || (ticks[asset] = []);
     arr.push({ ts, p: price });
     if (arr.length > 100) arr.shift();
     const q = tq[asset] || (tq[asset] = []);
-    while (q.length && ts >= q[0].ts + 5) {
+    while (q.length && ts >= q[0].ts + HZ) {
       const e = q.shift();
       if (price !== e.p) { if ((price > e.p) === (e.dir > 0)) tstat[e.k].w++; else tstat[e.k].l++; }
     }
@@ -79,14 +80,14 @@
     }
   }
   const TSEND = true;
-  const MIN_RATE = 0.55, MIN_TRIALS = 100, GAP_MS = 5000;
+  const MIN_RATE = 0.55, MIN_TRIALS = 2400, GAP_MS = 20000;
   let lastSent = 0;
   function tsignal(asset, k, d) {
     let best = null, bz = 0;
     for (const n in tstat) {
       const v = tstat[n], t = v.w + v.l;
       if (t < MIN_TRIALS) continue;
-      const z = (v.w - t / 2) / Math.sqrt(t / 4);
+      const z = (v.w - t / 2) / Math.sqrt(t / 4) / Math.sqrt(OVL);
       if (z > bz) { bz = z; best = n; }
     }
     const v = tstat[k], t = v.w + v.l;
@@ -97,14 +98,14 @@
     send((d > 0 ? '🟢 ' : '🔴 ') + asset + ' ' + Math.round(100 * v.w / t) + '%');
   }
   function rows() {
-    return Object.entries(tstat).map(([k, v]) => { const n = v.w + v.l; return { k, n, w: v.w, r: n ? v.w / n : 0, z: n ? (v.w - n / 2) / Math.sqrt(n / 4) : 0 }; })
+    return Object.entries(tstat).map(([k, v]) => { const n = v.w + v.l; return { k, n, w: v.w, r: n ? v.w / n : 0, z: n ? (v.w - n / 2) / Math.sqrt(n / 4) / Math.sqrt(OVL) : 0 }; })
       .sort((a, b) => Math.abs(b.z) - Math.abs(a.z));
   }
   function tickText() {
     return rows().slice(0, 3).map((x) => x.k + ' ' + (x.r * 100).toFixed(1) + '% n' + x.n).join(' | ');
   }
   function report() {
-    return 'VARIANTS (sorted by |z|, 5s horizon, every tick):\\n' +
+    return 'VARIANTS (sorted by |z|, 60s horizon, z corrected for overlap):\\n' +
       rows().map((x) => x.k + ' ' + x.w + '/' + (x.n - x.w) + ' ' + (x.r * 100).toFixed(1) + '% z' + x.z.toFixed(1)).join('\\n') +
       '\\nCROWD (up/down after 5s & 60s) ' + JSON.stringify(cstat) + '\\nCROWDWL ' + stat();
   }
@@ -192,7 +193,7 @@
     }
     info.firstChild.textContent = 'WS:' + nWs + ' deals:' + nDeals + ' crowd ' + stat() + ' ';
     box2.textContent = tickText();
-    try { localStorage.setItem('po_an', JSON.stringify({ t: tstat, c: cstat })); } catch (e) {}
+    try { localStorage.setItem('po_an60', JSON.stringify({ t: tstat, c: cstat })); } catch (e) {}
   }, WINDOW_MS);
 
   const Orig = window.WebSocket;

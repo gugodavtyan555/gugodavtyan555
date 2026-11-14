@@ -34,9 +34,7 @@
   const counts = {}, samples = {};
   const SKIP = /updateStream|updateHistory|updateCharts|chat_room|Balance|updateClosedDeals|updateOpenedDeals|updateOpenedDynamic|Express|indicator|favorite|alert|ai-strategy|Pending|Express|serverName/i;
   btn.onclick = () => {
-    const out = ['TICKS ' + tickText(), 'CROWD ' + stat(), 'COUNTS ' + JSON.stringify(counts)];
-    for (const n in samples) if (!SKIP.test(n)) out.push('## ' + n + '\n' + samples[n].join('\n'));
-    navigator.clipboard.writeText(out.join('\n').slice(0, 6000));
+    navigator.clipboard.writeText(report());
   };
   const box2 = document.createElement('div');
   info.onclick = () => {
@@ -51,36 +49,37 @@
   document.addEventListener('DOMContentLoaded', () => document.body.appendChild(box));
   let nWs = 0, nDeals = 0, lastName = '';
   const EXPIRY_MS = 60000;
-  // ---- 5s tick-strategy tester (no money, only W/L) ----
-  const ticks = {}, tpend = {}, tstat = {};
+  // ---- 5s tick analysis: many variants, every tick, persisted ----
+  const ticks = {}, tq = {}, tstat = {}, cstat = {};
   const sg = (x) => (x > 0 ? 1 : x < 0 ? -1 : 0);
-  const STRATS = {
-    mom3: (t) => { const n = t.length; if (n < 4) return 0; const a = sg(t[n-1].p - t[n-2].p), b = sg(t[n-2].p - t[n-3].p), c = sg(t[n-3].p - t[n-4].p); return a && a === b && b === c ? a : 0; },
-    mom6: (t) => { const n = t.length; return n < 7 ? 0 : sg(t[n-1].p - t[n-7].p); },
-    rev3: (t) => -STRATS.mom3(t),
-    rev6: (t) => -STRATS.mom6(t),
-    meanrev20: (t) => { const n = t.length; if (n < 20) return 0; const avg = t.slice(-20).reduce((x, y) => x + y.p, 0) / 20; return -sg(t[n-1].p - avg); },
-  };
-  for (const k in STRATS) tstat[k] = { w: 0, l: 0 };
+  const VARS = {};
+  for (const L of [1, 2, 3, 4, 6, 10, 20]) {
+    VARS['mom' + L] = (t) => { const n = t.length; return n > L ? sg(t[n-1].p - t[n-1-L].p) : 0; };
+    VARS['rev' + L] = (t) => -VARS['mom' + L](t);
+  }
+  for (const W of [10, 20, 40, 80]) {
+    const dev = (t) => { const n = t.length; if (n < W) return 0; let sum = 0; for (let i = n - W; i < n; i++) sum += t[i].p; return sg(t[n-1].p - sum / W); };
+    VARS['meanrev' + W] = (t) => -dev(t);
+    VARS['trend' + W] = (t) => dev(t);
+  }
+  try { Object.assign(tstat, JSON.parse(localStorage.getItem('po_an') || '{}').t || {}); Object.assign(cstat, JSON.parse(localStorage.getItem('po_an') || '{}').c || {}); } catch (e) {}
+  for (const k in VARS) if (!tstat[k]) tstat[k] = { w: 0, l: 0 };
   function onTick(asset, ts, price) {
     const arr = ticks[asset] || (ticks[asset] = []);
     arr.push({ ts, p: price });
-    if (arr.length > 40) arr.shift();
-    const pe = tpend[asset] || (tpend[asset] = {});
-    for (const k in STRATS) {
-      const q = pe[k];
-      if (q) {
-        if (ts >= q.ts + 5) {
-          if (price !== q.p) { if ((price > q.p) === (q.dir > 0)) tstat[k].w++; else tstat[k].l++; }
-          delete pe[k];
-        }
-      } else {
-        const d = STRATS[k](arr);
-        if (d) { pe[k] = { ts, p: price, dir: d }; tsignal(asset, k, d); }
-      }
+    if (arr.length > 100) arr.shift();
+    const q = tq[asset] || (tq[asset] = []);
+    while (q.length && ts >= q[0].ts + 5) {
+      const e = q.shift();
+      if (price !== e.p) { if ((price > e.p) === (e.dir > 0)) tstat[e.k].w++; else tstat[e.k].l++; }
+    }
+    for (const k in VARS) {
+      const d = VARS[k](arr);
+      if (d) { q.push({ k, ts, p: price, dir: d }); if (TSEND) tsignal(asset, k, d); }
     }
   }
-  const MIN_RATE = 0.55, MIN_TRIALS = 10, GAP_MS = 5000;
+  const TSEND = false;
+  const MIN_RATE = 0.55, MIN_TRIALS = 200, GAP_MS = 5000;
   let lastSent = 0;
   function tsignal(asset, k, d) {
     const v = tstat[k], t = v.w + v.l;
@@ -90,10 +89,19 @@
     lastSent = now;
     send((d > 0 ? '🟢 ' : '🔴 ') + asset + ' ' + Math.round(100 * v.w / t) + '%');
   }
-  function tickText() {
-    return Object.entries(tstat).map(([k, v]) => k + ' ' + v.w + '/' + v.l + (v.w + v.l ? ' ' + Math.round(100 * v.w / (v.w + v.l)) + '%' : '')).join(' | ');
+  function rows() {
+    return Object.entries(tstat).map(([k, v]) => { const n = v.w + v.l; return { k, n, w: v.w, r: n ? v.w / n : 0, z: n ? (v.w - n / 2) / Math.sqrt(n / 4) : 0 }; })
+      .sort((a, b) => Math.abs(b.z) - Math.abs(a.z));
   }
-  const lastPrice = {}, pending = [], st = { w: 0, l: 0 };
+  function tickText() {
+    return rows().slice(0, 3).map((x) => x.k + ' ' + (x.r * 100).toFixed(1) + '% n' + x.n).join(' | ');
+  }
+  function report() {
+    return 'VARIANTS (sorted by |z|, 5s horizon, every tick):\\n' +
+      rows().map((x) => x.k + ' ' + x.w + '/' + (x.n - x.w) + ' ' + (x.r * 100).toFixed(1) + '% z' + x.z.toFixed(1)).join('\\n') +
+      '\\nCROWD (up/down after 5s & 60s) ' + JSON.stringify(cstat) + '\\nCROWDWL ' + stat();
+  }
+  const lastPrice = {}, pending = [], cpend = [], st = { w: 0, l: 0 };
 
   function side(v) {
     const s = String(v).toLowerCase();
@@ -146,11 +154,25 @@
       }
       pending.splice(i, 1);
     }
+    for (let i = cpend.length - 1; i >= 0; i--) {
+      const c = cpend[i];
+      if (now - c.t < c.h) continue;
+      const cur = lastPrice[c.asset];
+      if (cur !== undefined && cur !== c.p) {
+        const key = c.bin + '_' + c.h / 1000, o = cstat[key] || (cstat[key] = { up: 0, dn: 0 });
+        if (cur > c.p) o.up++; else o.dn++;
+      }
+      cpend.splice(i, 1);
+    }
     for (const [asset, b] of Object.entries(buckets)) {
       const t = b.buy + b.sell;
       if (b.n >= MIN_TOTAL && t > 0) {
         const sb = b.buy / t, ss = b.sell / t;
         const px = lastPrice[asset];
+        if (px !== undefined) {
+          const bin = sb >= 0.65 ? 'crowdBUY' : ss >= 0.65 ? 'crowdSELL' : 'mixed';
+          cpend.push({ asset, bin, p: px, t: now, h: 5000 }, { asset, bin, p: px, t: now, h: 60000 });
+        }
         if (sb >= THRESH) {
           send('🔴 SELL ' + asset + ' | crowd BUY ' + Math.round(sb * 100) + '% (BUY ' + b.buy + ' / SELL ' + b.sell + ') | stat ' + stat());
           if (px !== undefined) pending.push({ asset, dir: 'sell', price: px, t: now });
@@ -163,6 +185,7 @@
     }
     info.firstChild.textContent = 'WS:' + nWs + ' deals:' + nDeals + ' crowd ' + stat() + ' ';
     box2.textContent = tickText();
+    try { localStorage.setItem('po_an', JSON.stringify({ t: tstat, c: cstat })); } catch (e) {}
   }, WINDOW_MS);
 
   const Orig = window.WebSocket;

@@ -6,8 +6,17 @@
 // ==/UserScript==
 (function () {
   // ===== ԼՐԱՑՐԵՔ =====
-  const BOT_TOKEN = '';      // @BotFather-ից
-  const CHAT_ID = '';        // Ձեր chat id
+  let BOT_TOKEN = '', CHAT_ID = '';
+  try {
+    BOT_TOKEN = localStorage.getItem('po_bot') || '';
+    CHAT_ID = localStorage.getItem('po_chat') || '';
+  } catch (e) {}
+  document.addEventListener('DOMContentLoaded', () => setTimeout(() => {
+    if (BOT_TOKEN && CHAT_ID) return;
+    BOT_TOKEN = prompt('Bot token:') || '';
+    CHAT_ID = prompt('Chat id:') || '';
+    try { localStorage.setItem('po_bot', BOT_TOKEN); localStorage.setItem('po_chat', CHAT_ID); } catch (e) {}
+  }, 1500));
   const WINDOW_MS = 5000;    // ժամանակահատված
   const MIN_TOTAL = 5;       // նվազագույն գործարք պատուհանում
   const THRESH = 0.65;       // ամբոխի մեկ կողմի մասնաբաժինը

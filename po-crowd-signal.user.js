@@ -20,7 +20,7 @@
   const WINDOW_MS = 5000;    // ժամանակահատված
   const MIN_TOTAL = 3;       // նվազագույն գործարք պատուհանում
   const THRESH = 0.65;       // ամբոխի մեկ կողմի մասնաբաժինը
-  const WEIGHT_BY_AMOUNT = true; // true՝ ըստ գումարի, false՝ ըստ քանակի
+  const WEIGHT_BY_AMOUNT = false; // true՝ ըստ գումարի, false՝ ըստ քանակի
   // ====================
 
   const buckets = {}; const seen = new Set();        // asset -> {buy, sell, nb, ns}

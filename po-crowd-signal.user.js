@@ -39,6 +39,14 @@
     navigator.clipboard.writeText(out.join('\n').slice(0, 6000));
   };
   const box2 = document.createElement('div');
+  info.onclick = () => {
+    const b = prompt('Bot token (123456:ABC...):', BOT_TOKEN), c = prompt('Chat id:', CHAT_ID);
+    if (b !== null && c !== null) {
+      BOT_TOKEN = b.trim().replace(/^bot/i, ''); CHAT_ID = c.trim();
+      try { localStorage.setItem('po_bot', BOT_TOKEN); localStorage.setItem('po_chat', CHAT_ID); } catch (e) {}
+      send('✅ test');
+    }
+  };
   box.append(info, btn, box2);
   document.addEventListener('DOMContentLoaded', () => document.body.appendChild(box));
   let nWs = 0, nDeals = 0, lastName = '';

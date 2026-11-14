@@ -68,9 +68,19 @@
         }
       } else {
         const d = STRATS[k](arr);
-        if (d) pe[k] = { ts, p: price, dir: d };
+        if (d) { pe[k] = { ts, p: price, dir: d }; tsignal(asset, k, d); }
       }
     }
+  }
+  function tsignal(asset, k, d) {
+    let best = null, br = 0;
+    for (const n in tstat) {
+      const v = tstat[n], t = v.w + v.l;
+      if (t >= 10 && v.w / t > br) { br = v.w / t; best = n; }
+    }
+    if (best !== k || br < 0.52) return;
+    const v = tstat[k];
+    send((d > 0 ? '⬆️ UP ' : '⬇️ DOWN ') + asset + ' 5s | ' + k + ' ' + Math.round(br * 100) + '% (' + v.w + '/' + v.l + ')');
   }
   function tickText() {
     return Object.entries(tstat).map(([k, v]) => k + ' ' + v.w + '/' + v.l + (v.w + v.l ? ' ' + Math.round(100 * v.w / (v.w + v.l)) + '%' : '')).join(' | ');

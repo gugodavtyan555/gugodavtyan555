@@ -39,16 +39,18 @@ for i, s in enumerate(segs):
 segs[-1]['re'] += TAIL; TOTAL = segs[-1]['re']; NF = int(TOTAL * FPS)
 shots = []; gi = 0
 for s in segs:
-    f0, f1 = round(s['rs'] * FPS), min(NF, round(s['re'] * FPS)); n = max(2, round((f1 - f0) / FPS / 2.6)); base = (f1 - f0) // n; f = f0
-    for k in range(n):
-        m = (f1 - f) if k == n - 1 else base; (gp, rr) = PAIRS[s['id']][k % len(PAIRS[s['id']])]; gi += 1
-        shots.append(dict(seg=s['id'], f0=f, n=m, g=gwin(*gp), r=rr, k=k)); f += m
-
+    f0, f1 = round(s['rs'] * FPS), min(NF, round(s['re'] * FPS)); tot = f1 - f0; prs = PAIRS[s['id']]; sel = []; cap = 0.0; k = 0
+    while cap * 1.45 < tot / FPS and k < len(prs) * 2:          # add pairs until real-time footage (max 1.45x slow) fills the segment
+        gp, rr = prs[k % len(prs)]; g = gwin(*gp); sel.append((g, rr)); cap += g[2] - g[1]; k += 1
+    wsum = sum(g[2] - g[1] for g, _ in sel); f = f0
+    for k, (g, rr) in enumerate(sel):
+        m = (f1 - f) if k == len(sel) - 1 else int(round((g[2] - g[1]) / wsum * tot))
+        shots.append(dict(seg=s['id'], f0=f, n=m, g=g, r=rr, k=k)); f += m
 def build_clips():
     files = []
     for i, x in enumerate(shots):
         out = f'{CL}/s{i:03d}.mp4'; files.append(out); dur = x['n'] / FPS; src, a, b, cx = x['g']; fn, ay, ah0 = SRC[src]
-        cw = int(ah0 * 9 / 8) // 2 * 2; x0 = int(min(max(cx * 3840 - cw / 2, 0), 3840 - cw)); sp = (b - a) / dur
+        cw = int(ah0 * 9 / 8) // 2 * 2; x0 = int(min(max(cx * 3840 - cw / 2, 0), 3840 - cw)); sp = dur / (b - a)
         top = f'[0:v]crop={cw}:{ah0}:{x0}:{ay},scale={W}:{HH}:flags=lanczos,setpts={sp:.4f}*PTS,fps={FPS},eq=contrast=1.07:saturation=1.15,trim=end={dur:.3f},setpts=PTS-STARTPTS[t]'
         rin = []; kind, rid = x['r'][0], x['r'][1:]
         if kind == 'v':

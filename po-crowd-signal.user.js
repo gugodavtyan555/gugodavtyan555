@@ -78,12 +78,19 @@
       if (d) { q.push({ k, ts, p: price, dir: d }); if (TSEND) tsignal(asset, k, d); }
     }
   }
-  const TSEND = false;
-  const MIN_RATE = 0.55, MIN_TRIALS = 200, GAP_MS = 5000;
+  const TSEND = true;
+  const MIN_RATE = 0.55, MIN_TRIALS = 100, GAP_MS = 5000;
   let lastSent = 0;
   function tsignal(asset, k, d) {
+    let best = null, bz = 0;
+    for (const n in tstat) {
+      const v = tstat[n], t = v.w + v.l;
+      if (t < MIN_TRIALS) continue;
+      const z = (v.w - t / 2) / Math.sqrt(t / 4);
+      if (z > bz) { bz = z; best = n; }
+    }
     const v = tstat[k], t = v.w + v.l;
-    if (t < MIN_TRIALS || v.w / t < MIN_RATE) return;
+    if (best !== k || v.w / t < MIN_RATE) return;
     const now = Date.now();
     if (now - lastSent < GAP_MS) return;
     lastSent = now;

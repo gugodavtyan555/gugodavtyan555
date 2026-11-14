@@ -31,10 +31,16 @@
   info.textContent = 'WS:0 deals:0 ';
   const btn = document.createElement('button');
   btn.textContent = 'Copy';
-  btn.onclick = () => navigator.clipboard.writeText(raw.slice(-25).join('\n'));
+  const counts = {}, samples = {};
+  const SKIP = /updateStream|updateHistory|updateCharts|chat_room|Balance|Closed|Opened|indicator|favorite|alert|ai-strategy|Pending|Express|serverName/i;
+  btn.onclick = () => {
+    const out = ['COUNTS ' + JSON.stringify(counts)];
+    for (const n in samples) if (!SKIP.test(n)) out.push('## ' + n + '\n' + samples[n].join('\n'));
+    navigator.clipboard.writeText(out.join('\n').slice(0, 6000));
+  };
   box.append(info, btn);
   document.addEventListener('DOMContentLoaded', () => document.body.appendChild(box));
-  let nWs = 0, nDeals = 0;
+  let nWs = 0, nDeals = 0, lastName = '';
 
   function side(v) {
     const s = String(v).toLowerCase();
@@ -95,8 +101,10 @@
       else if (d instanceof ArrayBuffer) d = new TextDecoder().decode(d);
       d = String(d);
       nWs++;
-      if (!/^\[\[/.test(d) && !d.includes('updateStream') && !d.includes('chat_room')) raw.push(d.slice(0, 500));
-      parse(d);
+      const m = d.match(/^\d*-?\[\s*"([^"]+)"/);
+      if (m) { lastName = m[1]; counts[lastName] = (counts[lastName] || 0) + 1; }
+      else if (lastName) { const a = samples[lastName] || (samples[lastName] = []); a.push(d.slice(0, 500)); if (a.length > 2) a.shift(); }
+      if (!SKIP.test(lastName)) parse(d);
     });
     return ws;
   };

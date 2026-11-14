@@ -63,7 +63,7 @@ def merge(rs):
 def overlap(a, b, rs):
     return sum(max(0.0, min(b, y) - max(a, x)) for x, y in rs) / max(1e-6, b - a)
 
-def pick(src, seconds, length=3.0, seed=1, min_luma=55.0, after=0.0, before=1e9):
+def pick(src, seconds, length=3.0, seed=1, min_luma=55.0, after=0.0, before=1e9, multi=False):
     cat = load().get(src); used = merge(used_ranges()[src]); rnd = random.Random(seed)
     if not cat: sys.exit(f'no catalog for {src}: run catalog first')
     cand = []
@@ -75,7 +75,7 @@ def pick(src, seconds, length=3.0, seed=1, min_luma=55.0, after=0.0, before=1e9)
             if overlap(t, b, used) < 0.15:
                 cand.append((0.5 * s['motion'] / 6 + 0.3 * s['luma'] / 255 + 0.4 * rnd.random(), round(t, 2), round(b, 2), s['cx']))
             t += length + 0.3
-            break                              # one window per scene keeps variety
+            if not multi: break                # one window per scene keeps variety (use --multi to allow more)
     cand.sort(reverse=True); got = 0.0; res = []
     for sc, a, b, cx in cand:
         if got >= seconds: break
@@ -99,6 +99,7 @@ if __name__ == '__main__':
             if x == '--min-luma': kw['min_luma'] = float(a[i + 1])
             if x == '--after': kw['after'] = float(a[i + 1])
             if x == '--before': kw['before'] = float(a[i + 1])
+            if x == '--multi': kw['multi'] = True
         res, used_s, tot = pick(src, secs, **kw)
         print(f'# {src}: {used_s:.0f}s of {tot:.0f}s already used; {len(res)} fresh shots')
         for x, y, cx in res: print(f'V({src}, {x}, {y}, {cx})')

@@ -31,7 +31,7 @@
   info.textContent = 'WS:0 deals:0 ';
   const btn = document.createElement('button');
   btn.textContent = 'Copy';
-  btn.onclick = () => navigator.clipboard.writeText(raw.slice(-30).join('\n'));
+  btn.onclick = () => navigator.clipboard.writeText(raw.slice(-25).join('\n'));
   box.append(info, btn);
   document.addEventListener('DOMContentLoaded', () => document.body.appendChild(box));
   let nWs = 0, nDeals = 0;
@@ -65,8 +65,9 @@
     try { walk(JSON.parse(text.slice(i))); } catch (e) { /* ոչ JSON */ }
   }
 
+  const SEND = false; // true՝ երբ ձևաչափը հաստատվի
   function send(msg) {
-    if (!BOT_TOKEN || !CHAT_ID) return;
+    if (!SEND || !BOT_TOKEN || !CHAT_ID) return;
     const u = 'https://api.telegram.org/bot' + BOT_TOKEN + '/sendMessage?chat_id=' +
       encodeURIComponent(CHAT_ID) + '&text=' + encodeURIComponent(msg);
     fetch(u, { mode: 'no-cors' }).catch(() => {});
@@ -94,7 +95,7 @@
       else if (d instanceof ArrayBuffer) d = new TextDecoder().decode(d);
       d = String(d);
       nWs++;
-      raw.push(d.slice(0, 400));
+      if (!/^\[\[/.test(d) && !d.includes('updateStream') && !d.includes('chat_room')) raw.push(d.slice(0, 500));
       parse(d);
     });
     return ws;

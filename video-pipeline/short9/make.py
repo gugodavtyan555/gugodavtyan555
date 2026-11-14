@@ -113,7 +113,9 @@ def pill(d, x, y, tx, bg, fg, a=1.0, size=46):
 def fit(d, tx, size, wmax, fn=BI):
     while d.textlength(tx, font=fn(size)) > wmax and size > 30: size -= 4
     return fn(size)
+COVER = Image.open(ROOT + '/cover.jpg').convert('RGBA'); COVER_T = 0.4
 def overlay(tt):
+    if tt < COVER_T: return COVER
     ov = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(ov); seg = next((s for s in segs if s['rs'] <= tt < s['re']), segs[-1]); u = tt - seg['rs']
     d.rectangle((0, HH - 5, W, HH + 5), fill=al(PINK, 1)); pill(d, 36, 40, 'GTA 6', PINK, WHITE); pill(d, 36, HH + 96, 'РЕАЛЬНЫЙ КАДР', YELLOW, NAVY, 1.0, 34)
     def bar(l1, l2, a, sc=1.0):

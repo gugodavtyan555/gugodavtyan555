@@ -80,15 +80,15 @@
       }
     }
   }
+  const MIN_RATE = 0.70, MIN_TRIALS = 10, GAP_MS = 5000;
+  let lastSent = 0;
   function tsignal(asset, k, d) {
-    let best = null, br = 0;
-    for (const n in tstat) {
-      const v = tstat[n], t = v.w + v.l;
-      if (t >= 10 && v.w / t > br) { br = v.w / t; best = n; }
-    }
-    if (best !== k || br < 0.52) return;
-    const v = tstat[k];
-    send((d > 0 ? '⬆️ UP ' : '⬇️ DOWN ') + asset + ' 5s | ' + k + ' ' + Math.round(br * 100) + '% (' + v.w + '/' + v.l + ')');
+    const v = tstat[k], t = v.w + v.l;
+    if (t < MIN_TRIALS || v.w / t < MIN_RATE) return;
+    const now = Date.now();
+    if (now - lastSent < GAP_MS) return;
+    lastSent = now;
+    send((d > 0 ? '⬆️ UP ' : '⬇️ DOWN ') + asset + ' 5s | ' + k + ' ' + Math.round(100 * v.w / t) + '% (' + v.w + '/' + v.l + ')');
   }
   function tickText() {
     return Object.entries(tstat).map(([k, v]) => k + ' ' + v.w + '/' + v.l + (v.w + v.l ? ' ' + Math.round(100 * v.w / (v.w + v.l)) + '%' : '')).join(' | ');

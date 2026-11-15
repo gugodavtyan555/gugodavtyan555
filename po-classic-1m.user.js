@@ -100,9 +100,9 @@
   }
   const TSEND = true;
   const CSEND = false;
-  const MIN_RATE = 0.52, MIN_TRIALS = 500, GAP_MS = 60000;
-  const HOLD_S = 10;       // վրկ. ուղղությունը պետք է կայուն մնա սիգնալից առաջ
-  const ALL_MIN = 0.51;    // 5-ից յուրաքանչյուր կանոնի նվազագույն հաջողություն
+  const MIN_RATE = 0.51, MIN_TRIALS = 500, GAP_MS = 60000;
+  const HOLD_S = 5;       // վրկ. ուղղությունը պետք է կայուն մնա սիգնալից առաջ
+  const ALL_MIN = 0.50;    // 5-ից յուրաքանչյուր կանոնի նվազագույն հաջողություն
   const hold = {};         // asset -> {dir, since}
   const AGREE_MIN = 5; // 5 լավագույն կանոններից քանիսը պետք է համաձայն լինեն (5՝ առավելագույն վստահություն)
   const sigPend = [];

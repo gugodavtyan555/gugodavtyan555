@@ -206,7 +206,7 @@
     const bad = Q.asset === asset && Q.state === 'bad';
     const calm = !bad && !(ol && ol.bad >= 3);
     let best = null;
-    for (const c of cands) { const st = stat(c.joint); c.st = st; if (st.n >= COND_N && st.rate >= COND_RATE && (!best || st.rate > best.st.rate)) best = c; }
+    for (const c of cands) { const st = stat(c.joint); c.st = st; if (st.n >= (c.main ? COND_N : 150) && st.rate >= COND_RATE && (!best || st.rate > best.st.rate)) best = c; }
     const main = cands.find((c) => c.main);
     if (main) lastCand = { joint: main.joint, dir: main.dir, n: main.st ? main.st.n : stat(main.joint).n, rate: main.st ? main.st.rate : stat(main.joint).rate };
     let pick = null, proven = false;

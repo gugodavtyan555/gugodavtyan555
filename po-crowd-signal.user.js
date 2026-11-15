@@ -327,7 +327,7 @@
     for (let i = 1; i < w100.length; i++) path += Math.abs(w100[i].p - w100[i-1].p);
     const er = path ? Math.abs(w100[w100.length-1].p - w100[0].p) / path : 0;
     DIAG.er = +er.toFixed(3);
-    const badNow = ratio > 1.8 || (hr !== null && rr.length >= 20 && hr < 0.40);
+    const badNow = arr.length >= 360 && (ratio > 1.8) || (hr !== null && rr.length >= 20 && hr < 0.40);
     // կայունացում՝ վիճակը փոխվում է միայն եթե նույն պայմանը պահպանվում է (վատ՝ 15 վրկ, լավ՝ 40 վրկ)
     if (badNow) { Q.bad++; Q.good = 0; } else { Q.good++; Q.bad = 0; }
     if (Q.state === 'ok' && Q.bad >= 2) { Q.state = 'bad'; Q.since = Date.now(); }

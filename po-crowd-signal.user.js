@@ -64,7 +64,7 @@
   // ---- 5s tick analysis: many variants, every tick, persisted ----
   const HZ = 60, OVL = HZ * 2; // 1 րոպե, ~2 տիկ/վրկ
   const ticks = {}, tq = {}, tstat = {}, cstat = {}, rec = {};
-  let curAsset = '', bestName = '', lastSig = null, sentMin = -1;
+  let curAsset = '', selAsset = '', bestName = '', lastSig = null, sentMin = -1;
   const sg = (x) => (x > 0 ? 1 : x < 0 ? -1 : 0);
   const VARS = {};
   for (const L of [1, 2, 3, 4, 6, 10, 20]) {
@@ -80,7 +80,7 @@
   for (const k in VARS) if (!tstat[k]) tstat[k] = { w: 0, l: 0 };
   function onTick(asset, ts, price) {
     const arr = ticks[asset] || (ticks[asset] = []);
-    curAsset = asset;
+    if (!selAsset) curAsset = asset;
     arr.push({ ts, p: price });
     if (arr.length > 100) arr.shift();
     const q = tq[asset] || (tq[asset] = []);
@@ -91,7 +91,7 @@
     }
     for (const k in VARS) {
       const d = VARS[k](arr);
-      if (d) { q.push({ k, ts, p: price, dir: d }); if (TSEND && ts % 60 >= 50 && sentMin !== Math.floor(ts / 60) && tsignal(asset, k, d)) sentMin = Math.floor(ts / 60); }
+      if (d) { q.push({ k, ts, p: price, dir: d }); if (TSEND && ts % 60 >= 50 && sentMin !== Math.floor(ts / 60) && (asset === (selAsset || curAsset)) && tsignal(asset, k, d)) sentMin = Math.floor(ts / 60); }
     }
   }
   const TSEND = true;
@@ -124,20 +124,21 @@
   }
   function statusText() {
     bestName = bestVar();
-    const arr = ticks[curAsset] || [];
-    if (arr.length < 30) return '⏳ ' + curAsset + ' տվյալ է հավաքվում';
+    const ca = selAsset || curAsset;
+    const arr = ticks[ca] || [];
+    if (arr.length < 30) return '⏳ ' + ca + ' տվյալ է հավաքվում';
     const w = arr.slice(-100);
     let path = 0;
     for (let i = 1; i < w.length; i++) path += Math.abs(w[i].p - w[i-1].p);
     const er = path ? Math.abs(w[w.length-1].p - w[0].p) / path : 0;
     const lastTs = arr[arr.length - 1].ts;
-    const rr = (rec[curAsset] || []).filter((x) => lastTs - x.ts <= 180);
+    const rr = (rec[ca] || []).filter((x) => lastTs - x.ts <= 180);
     const hr = rr.length ? rr.filter((x) => x.ok).length / rr.length : null;
     let flag = '🟢 հարմար';
     if (hr !== null && rr.length >= 20 && hr < 0.40) flag = '🔴 ՄԻ ՄՏՆԵՔ՝ շարժումը հակառակ է';
     else if (er < 0.05) flag = '🟡 անկանոն/աղմկոտ';
     let sig = '';
-    if (lastSig && lastSig.asset === curAsset && Date.now() - lastSig.t < 70000) {
+    if (lastSig && lastSig.asset === ca && Date.now() - lastSig.t < 70000) {
       const mv = arr[arr.length - 1].p - lastSig.p;
       sig = ' | սիգնալ ' + (lastSig.d > 0 ? '🟢' : '🔴') + ' ' + ((mv > 0) === (lastSig.d > 0) && mv !== 0 ? '✔ հաջող' : mv === 0 ? '= նույն' : '✖ հակառակ');
     }
@@ -270,6 +271,16 @@
   window.WebSocket = function (...a) {
     const ws = new Orig(...a);
     let last = '';
+    const origSend = ws.send.bind(ws);
+    ws.send = function (m) {
+      try {
+        if (typeof m === 'string' && m.includes('changeSymbol')) {
+          const o = JSON.parse(m.slice(m.indexOf('{')));
+          if (o.asset) { selAsset = o.asset; curAsset = o.asset; }
+        }
+      } catch (e) {}
+      return origSend(m);
+    };
     let chain = Promise.resolve();
     ws.addEventListener('message', (e) => {
       chain = chain.then(async () => {
@@ -292,6 +303,7 @@
               ticks[h.asset] = arr;
               tq[h.asset] = [];
               curAsset = h.asset;
+              selAsset = h.asset;
               lastPrice[h.asset] = arr[arr.length - 1].p;
             }
           } catch (e) {}

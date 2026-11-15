@@ -90,7 +90,7 @@
       if (d) { q.push({ k, ts, p: price, dir: d }); if (TSEND) tsignal(asset, k, d); }
     }
   }
-  const TSEND = true;
+  const TSEND = false;
   const MIN_RATE = 0.55, MIN_TRIALS = 2400, GAP_MS = 60000;
   let lastSent = 0;
   function tsignal(asset, k, d) {

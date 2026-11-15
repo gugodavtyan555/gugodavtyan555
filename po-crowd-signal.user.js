@@ -27,7 +27,7 @@
   const buckets = {}; const seen = new Set();        // asset -> {buy, sell, nb, ns}
   const raw = [];
   const box = document.createElement('div');
-  box.style.cssText = 'position:fixed;top:60px;left:4px;z-index:99999;background:#000c;color:#0f0;font:11px monospace;padding:4px;max-width:75vw';
+  box.style.cssText = 'position:fixed;bottom:90px;left:4px;z-index:99999;background:#000c;color:#0f0;font:11px monospace;padding:4px;max-width:75vw';
   const info = document.createElement('span');
   info.textContent = 'WS:0 deals:0 ';
   const btn = document.createElement('button');
@@ -46,7 +46,17 @@
       send('✅ test');
     }
   };
-  box.append(info, btn, box2);
+  const grip = document.createElement('span');
+  grip.textContent = ' ✥ ';
+  grip.style.cssText = 'padding:4px 8px;background:#333;margin-left:4px;font-size:14px';
+  grip.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    box.style.bottom = 'auto';
+    box.style.left = Math.max(0, t.clientX - 20) + 'px';
+    box.style.top = Math.max(0, t.clientY - 10) + 'px';
+    e.preventDefault();
+  }, { passive: false });
+  box.append(info, btn, grip, box2);
   document.addEventListener('DOMContentLoaded', () => document.body.appendChild(box));
   let nWs = 0, nDeals = 0, lastName = '';
   const EXPIRY_MS = 60000;

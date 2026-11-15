@@ -83,6 +83,11 @@
   function onTick(asset, ts, price) {
     const arr = ticks[asset] || (ticks[asset] = []);
     if (!selAsset) curAsset = asset;
+    if (arr.length) {
+      const sv = secVol[asset] || (secVol[asset] = new Array(60).fill(null));
+      const sec = Math.floor(ts % 60), dlt = Math.abs(price - arr[arr.length - 1].p);
+      sv[sec] = sv[sec] === null ? dlt : sv[sec] * 0.98 + dlt * 0.02;
+    }
     arr.push({ ts, p: price });
     if (arr.length > 700) arr.shift();
     const q = tq[asset] || (tq[asset] = []);
@@ -138,6 +143,7 @@
     return best;
   }
   const DIAG = { maxRatio: 0, n: 0 };
+  const secVol = {};
   const sigPend = [];
   let sigStat = { global: { w: 0, l: 0 }, recent: { w: 0, l: 0 } };
   try { const o = JSON.parse(localStorage.getItem('po_sig') || 'null'); if (o) sigStat = o; } catch (e) {}
@@ -177,7 +183,16 @@
     if (Q.asset !== ca) { Q.asset = ca; Q.state = 'ok'; Q.bad = 0; Q.good = 0; Q.since = 0; }
     const mad = (w) => { let sum = 0; for (let i = 1; i < w.length; i++) sum += Math.abs(w[i].p - w[i-1].p); return w.length > 1 ? sum / (w.length - 1) : 0; };
     const v180 = mad(arr.slice(-360)), v30 = mad(arr.slice(-60));
-    const ratio = v180 ? v30 / v180 : 1;
+    const svs = secVol[ca] || [];
+    const lastSec = Math.floor(arr[arr.length - 1].ts % 60);
+    let esum = 0, ecnt = 0;
+    for (let i = 0; i < 30; i++) { const x = svs[(lastSec - i + 60) % 60]; if (x !== null && x !== undefined) { esum += x; ecnt++; } }
+    const expected = ecnt >= 15 ? esum / ecnt : v180; // նույն վայրկյանների սովորական տատանումը
+    const ratio = expected ? v30 / expected : 1;
+    const prof = [];
+    for (let b = 0; b < 6; b++) { let sm = 0, c = 0; for (let i = b * 10; i < b * 10 + 10; i++) if (svs[i] !== null && svs[i] !== undefined) { sm += svs[i]; c++; } prof.push(c ? sm / c : 0); }
+    const pm = prof.reduce((x, y) => x + y, 0) / 6 || 1;
+    DIAG.profile = prof.map((x) => +(x / pm).toFixed(2));
     const lastTs = arr[arr.length - 1].ts;
     const rr = (rec[ca] || []).filter((x) => lastTs - x.ts <= 180);
     const hr = rr.length ? rr.filter((x) => x.ok).length / rr.length : null;
@@ -187,7 +202,7 @@
     for (let i = 1; i < w100.length; i++) path += Math.abs(w100[i].p - w100[i-1].p);
     const er = path ? Math.abs(w100[w100.length-1].p - w100[0].p) / path : 0;
     DIAG.er = +er.toFixed(3);
-    const badNow = er < 0.06 || ratio > 1.6 || (hr !== null && rr.length >= 20 && hr < 0.40);
+    const badNow = ratio > 1.8 || (hr !== null && rr.length >= 20 && hr < 0.40);
     // կայունացում՝ վիճակը փոխվում է միայն եթե նույն պայմանը պահպանվում է (վատ՝ 15 վրկ, լավ՝ 40 վրկ)
     if (badNow) { Q.bad++; Q.good = 0; } else { Q.good++; Q.bad = 0; }
     if (Q.state === 'ok' && Q.bad >= 2) { Q.state = 'bad'; Q.since = Date.now(); }

@@ -90,7 +90,8 @@
       if (d) { q.push({ k, ts, p: price, dir: d }); if (TSEND) tsignal(asset, k, d); }
     }
   }
-  const TSEND = false;
+  const TSEND = true;
+  const CSEND = false;
   const MIN_RATE = 0.55, MIN_TRIALS = 2400, GAP_MS = 60000;
   let lastSent = 0;
   function tsignal(asset, k, d) {
@@ -218,7 +219,7 @@
     }
     if (!best) return;
     const mine = best.crowd === 'buy' ? 'sell' : 'buy';
-    send((mine === 'buy' ? '🟢 BUY ' : '🔴 SELL ') + best.asset + ' | crowd ' + best.crowd.toUpperCase() + ' ' + Math.round(best.share * 100) + '% (' + best.n + ')');
+    if (CSEND) send((mine === 'buy' ? '🟢 BUY ' : '🔴 SELL ') + best.asset + ' | crowd ' + best.crowd.toUpperCase() + ' ' + Math.round(best.share * 100) + '% (' + best.n + ')');
     const px = lastPrice[best.asset];
     if (px !== undefined) pending.push({ asset: best.asset, dir: mine, price: px, t: now });
   }, 60000);

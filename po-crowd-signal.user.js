@@ -123,6 +123,7 @@
     for (const n in tstat) { const v = tstat[n], t = v.w + v.l; if (t < MIN_TRIALS) continue; const z = (v.w - t / 2) / Math.sqrt(t / 4); if (z > bz) { bz = z; best = n; } }
     return best;
   }
+  const DIAG = { maxRatio: 0, n: 0 };
   const Q = { asset: '', state: 'ok', bad: 0, good: 0, since: 0 };
   function statusText() {
     bestName = bestVar();
@@ -136,6 +137,7 @@
     const lastTs = arr[arr.length - 1].ts;
     const rr = (rec[ca] || []).filter((x) => lastTs - x.ts <= 180);
     const hr = rr.length ? rr.filter((x) => x.ok).length / rr.length : null;
+    DIAG.sel = ca; DIAG.ticks = arr.length; DIAG.ratio = +ratio.toFixed(2); DIAG.maxRatio = Math.max(DIAG.maxRatio, ratio); DIAG.hr = hr === null ? null : +hr.toFixed(2); DIAG.hrN = rr.length; DIAG.n++;
     const badNow = ratio > 2 || (hr !== null && rr.length >= 20 && hr < 0.40);
     // կայունացում՝ վիճակը փոխվում է միայն եթե նույն պայմանը պահպանվում է (վատ՝ 15 վրկ, լավ՝ 40 վրկ)
     if (badNow) { Q.bad++; Q.good = 0; } else { Q.good++; Q.bad = 0; }
@@ -156,7 +158,7 @@
   function report() {
     return 'VARIANTS (sorted by |z|, 60s horizon, z corrected for overlap):\n' +
       rows().map((x) => x.k + ' ' + x.w + '/' + (x.n - x.w) + ' ' + (x.r * 100).toFixed(1) + '% z' + x.z.toFixed(1)).join('\n') +
-      '\nCROWD (up/down after 5s & 60s) ' + JSON.stringify(cstat) + '\nCROWDWL ' + stat() + ' deals=' + nDeals + '\nCOUNTS ' + JSON.stringify(counts);
+      '\nCROWD (up/down after 5s & 60s) ' + JSON.stringify(cstat) + '\nCROWDWL ' + stat() + ' deals=' + nDeals + '\nCOUNTS ' + JSON.stringify(counts) + '\nDIAG ' + JSON.stringify(Object.assign({}, DIAG, { state: Q.state, bad: Q.bad, good: Q.good, bestName }));
   }
   const lastPrice = {}, pending = [], cpend = [], st = { w: 0, l: 0 };
 

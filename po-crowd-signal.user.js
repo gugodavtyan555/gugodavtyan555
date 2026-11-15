@@ -518,8 +518,8 @@
             const h = JSON.parse(d);
             if (h.asset && Array.isArray(h.history) && h.history.length) {
               const arr = h.history.slice(-BUF).map((r) => ({ ts: r[0], p: r[1] }));
-              ticks[h.asset] = arr;
-              tq[h.asset] = [];
+              const old = ticks[h.asset];
+              if (!old || old.length < 100 || old[old.length - 1].ts < arr[0].ts) ticks[h.asset] = arr; // գոյություն ունեցող տվյալները և սպասվող կանխատեսումները չենք ջնջում
               curAsset = h.asset;
               selAsset = h.asset;
               lastPrice[h.asset] = arr[arr.length - 1].p;

@@ -107,10 +107,18 @@
       if (z > bz) { bz = z; best = n; }
     }
     const v = tstat[k], t = v.w + v.l;
-    if (best !== k || v.w / t < MIN_RATE) return false;
+    if (best !== k) return false;
+    const ta = ticks[asset], lts = ta[ta.length - 1].ts;
+    const rr = (rec[asset] || []).filter((x) => lts - x.ts <= 180);
+    const hr = rr.length ? rr.filter((x) => x.ok).length / rr.length : null;
+    let src = null;
+    if (v.w / t >= MIN_RATE) src = 'global';
+    else if (hr !== null && rr.length >= 60 && hr >= 0.60) src = 'recent';
+    if (!src) return false;
     if (Q.asset === asset && (Q.state === 'bad' || Q.outBad >= 3)) return false; // անկանոն շարժման ժամանակ սիգնալ չենք տալիս
     const now = Date.now();
     send((d > 0 ? '🟢 ' : '🔴 ') + asset + ' ' + Math.round(100 * v.w / t) + '% | մոմի վերջ, մտեք հաջորդի սկզբին');
+    sigPend.push({ asset, d, p: ticks[asset][ticks[asset].length - 1].p, t: Date.now(), src });
     lastSig = { asset, d, p: ticks[asset][ticks[asset].length - 1].p, t: now };
     return true;
   }
@@ -124,6 +132,20 @@
     return best;
   }
   const DIAG = { maxRatio: 0, n: 0 };
+  const sigPend = [];
+  let sigStat = { global: { w: 0, l: 0 }, recent: { w: 0, l: 0 } };
+  try { const o = JSON.parse(localStorage.getItem('po_sig') || 'null'); if (o) sigStat = o; } catch (e) {}
+  function resolveSigs() {
+    const now = Date.now();
+    for (let i = sigPend.length - 1; i >= 0; i--) {
+      const q = sigPend[i];
+      if (now - q.t < 65000) continue;
+      const cur = lastPrice[q.asset];
+      if (cur !== undefined && cur !== q.p) { if ((cur > q.p) === (q.d > 0)) sigStat[q.src].w++; else sigStat[q.src].l++; }
+      sigPend.splice(i, 1);
+    }
+    try { localStorage.setItem('po_sig', JSON.stringify(sigStat)); } catch (e) {}
+  }
   function outlook(arr) {
     const g = {};
     for (const x of arr) { const m = Math.floor(x.ts / 60); (g[m] || (g[m] = [])).push(x.p); }
@@ -142,6 +164,7 @@
   const Q = { asset: '', outBad: 0, state: 'ok', bad: 0, good: 0, since: 0 };
   function statusText() {
     bestName = bestVar();
+    resolveSigs();
     const ca = selAsset || curAsset;
     const arr = ticks[ca] || [];
     if (arr.length < 60) return '⏳ ' + ca + ' տվյալ է հավաքվում';
@@ -174,7 +197,8 @@
       sig = ' | սիգնալ ' + (lastSig.d > 0 ? '🟢' : '🔴') + ' ' + ((mv > 0) === (lastSig.d > 0) && mv !== 0 ? '✔' : mv === 0 ? '=' : '✖');
     }
     const fc = ol ? '\n🔮 վերջին րոպեներ ' + ol.marks + ' → ' + (ol.bad <= 1 ? 'հաջորդները կայուն' : ol.bad === 2 ? 'միջին' : 'խառը, զգուշ') : '\n🔮 հավաքվում է';
-    return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig + fc;
+    const sl = '\n📊 սիգնալների արդյունք՝ global ' + sigStat.global.w + '/' + sigStat.global.l + ' · recent ' + sigStat.recent.w + '/' + sigStat.recent.l;
+    return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig + fc + sl;
   }
   function tickText() {
     return rows().slice(0, 3).map((x) => x.k + ' ' + (x.r * 100).toFixed(1) + '% n' + x.n).join(' | ');

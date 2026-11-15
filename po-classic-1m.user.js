@@ -93,6 +93,9 @@
   const TSEND = true;
   const CSEND = false;
   const MIN_RATE = 0.52, MIN_TRIALS = 600, GAP_MS = 60000;
+  const HOLD_S = 10;       // վրկ. ուղղությունը պետք է կայուն մնա սիգնալից առաջ
+  const ALL_MIN = 0.51;    // 5-ից յուրաքանչյուր կանոնի նվազագույն հաջողություն
+  const hold = {};         // asset -> {dir, since}
   const AGREE_MIN = 5; // 5 լավագույն կանոններից քանիսը պետք է համաձայն լինեն (5՝ առավելագույն վստահություն)
   const sigPend = [];
   let sigStat = { w: 0, l: 0 };
@@ -113,11 +116,14 @@
     const ranked = Object.entries(tstat).map(([n, x]) => ({ n, t: x.w + x.l, r: x.w / Math.max(1, x.w + x.l) })).filter((x) => x.t >= MIN_TRIALS).sort((a, b) => b.r - a.r).slice(0, 5);
     if (ranked.length < 5) return;
     const agree = ranked.map((x) => VARS[x.n](arrA)).filter((x) => x === d).length;
-    if (agree < AGREE_MIN) return;
+    if (agree < AGREE_MIN || ranked.some((x) => x.r < ALL_MIN)) { delete hold[asset]; return; }
+    const tsNow = arrA[arrA.length - 1].ts, hs = hold[asset];
+    if (!hs || hs.dir !== d) { hold[asset] = { dir: d, since: tsNow }; return; }
+    if (tsNow - hs.since < HOLD_S) return;
     const now = Date.now();
     if (now - lastSent < GAP_MS) return;
     lastSent = now;
-    send((d > 0 ? '🟢 ' : '🔴 ') + asset + ' ' + Math.round(100 * v.w / t) + '% | վստահություն ' + agree + '/5');
+    send((d > 0 ? '🟢 ' : '🔴 ') + asset + ' ' + Math.round(100 * v.w / t) + '% | վստահություն ' + agree + '/5 · ' + Math.round(tsNow - hs.since) + 'վրկ կայուն');
     sigPend.push({ asset, dir: d, p: ticks[asset][ticks[asset].length - 1].p, t: now });
   }
   function rows() {

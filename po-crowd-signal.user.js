@@ -116,9 +116,9 @@
     return rows().slice(0, 3).map((x) => x.k + ' ' + (x.r * 100).toFixed(1) + '% n' + x.n).join(' | ');
   }
   function report() {
-    return 'VARIANTS (sorted by |z|, 60s horizon, z corrected for overlap):\\n' +
-      rows().map((x) => x.k + ' ' + x.w + '/' + (x.n - x.w) + ' ' + (x.r * 100).toFixed(1) + '% z' + x.z.toFixed(1)).join('\\n') +
-      '\\nCROWD (up/down after 5s & 60s) ' + JSON.stringify(cstat) + '\\nCROWDWL ' + stat();
+    return 'VARIANTS (sorted by |z|, 60s horizon, z corrected for overlap):\n' +
+      rows().map((x) => x.k + ' ' + x.w + '/' + (x.n - x.w) + ' ' + (x.r * 100).toFixed(1) + '% z' + x.z.toFixed(1)).join('\n') +
+      '\nCROWD (up/down after 5s & 60s) ' + JSON.stringify(cstat) + '\nCROWDWL ' + stat() + ' deals=' + nDeals + '\nCOUNTS ' + JSON.stringify(counts);
   }
   const lastPrice = {}, pending = [], cpend = [], st = { w: 0, l: 0 };
 
@@ -226,19 +226,23 @@
   const Orig = window.WebSocket;
   window.WebSocket = function (...a) {
     const ws = new Orig(...a);
-    ws.addEventListener('message', async (e) => {
-      let d = e.data;
-      if (d instanceof Blob) d = await d.text();
-      else if (d instanceof ArrayBuffer) d = new TextDecoder().decode(d);
-      d = String(d);
-      nWs++;
-      const m = d.match(/^\d*-?\[\s*"([^"]+)"/);
-      if (m) { lastName = m[1]; counts[lastName] = (counts[lastName] || 0) + 1; }
-      else if (lastName) { const a = samples[lastName] || (samples[lastName] = []); a.push(d.slice(0, 500)); if (a.length > 3) a.shift(); }
-      if (lastName === 'updateStream' && d[0] === '[') {
-        try { const a = JSON.parse(d); for (const r of a) if (r && r[0]) { lastPrice[r[0]] = r[2]; onTick(r[0], r[1], r[2]); } } catch (e) {}
-      }
-      if (/OpenedSocialDeals/.test(lastName)) parse(d);
+    let last = '';
+    let chain = Promise.resolve();
+    ws.addEventListener('message', (e) => {
+      chain = chain.then(async () => {
+        let d = e.data;
+        if (d instanceof Blob) d = await d.text();
+        else if (d instanceof ArrayBuffer) d = new TextDecoder().decode(d);
+        d = String(d);
+        nWs++;
+        const m = d.match(/^\d*-?\[\s*"([^"]+)"/);
+        if (m) { last = m[1]; counts[last] = (counts[last] || 0) + 1; }
+        else if (last) { const a = samples[last] || (samples[last] = []); a.push(d.slice(0, 500)); if (a.length > 3) a.shift(); }
+        if (last === 'updateStream' && d[0] === '[') {
+          try { const a = JSON.parse(d); for (const r of a) if (r && r[0]) { lastPrice[r[0]] = r[2]; onTick(r[0], r[1], r[2]); } } catch (e) {}
+        }
+        if (/OpenedSocialDeals/.test(last)) parse(d);
+      }).catch(() => {});
     });
     return ws;
   };

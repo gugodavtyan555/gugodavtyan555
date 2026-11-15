@@ -82,7 +82,7 @@
     const arr = ticks[asset] || (ticks[asset] = []);
     if (!selAsset) curAsset = asset;
     arr.push({ ts, p: price });
-    if (arr.length > 400) arr.shift();
+    if (arr.length > 700) arr.shift();
     const q = tq[asset] || (tq[asset] = []);
     while (q.length && ts >= q[0].ts + HZ) {
       const e = q.shift();
@@ -108,7 +108,7 @@
     }
     const v = tstat[k], t = v.w + v.l;
     if (best !== k || v.w / t < MIN_RATE) return false;
-    if (Q.state === 'bad' && Q.asset === asset) return false; // անկանոն շարժման ժամանակ սիգնալ չենք տալիս
+    if (Q.asset === asset && (Q.state === 'bad' || Q.outBad >= 3)) return false; // անկանոն շարժման ժամանակ սիգնալ չենք տալիս
     const now = Date.now();
     send((d > 0 ? '🟢 ' : '🔴 ') + asset + ' ' + Math.round(100 * v.w / t) + '% | մոմի վերջ, մտեք հաջորդի սկզբին');
     lastSig = { asset, d, p: ticks[asset][ticks[asset].length - 1].p, t: now };
@@ -124,7 +124,22 @@
     return best;
   }
   const DIAG = { maxRatio: 0, n: 0 };
-  const Q = { asset: '', state: 'ok', bad: 0, good: 0, since: 0 };
+  function outlook(arr) {
+    const g = {};
+    for (const x of arr) { const m = Math.floor(x.ts / 60); (g[m] || (g[m] = [])).push(x.p); }
+    const keys = Object.keys(g).map(Number).sort((a, b) => a - b);
+    keys.pop(); // ընթացիկ (թերի) րոպեն չենք հաշվում
+    const rows = keys.filter((m) => g[m].length >= 60).map((m) => {
+      const w = g[m]; let path = 0;
+      for (let i = 1; i < w.length; i++) path += Math.abs(w[i] - w[i-1]);
+      return { er: path ? Math.abs(w[w.length-1] - w[0]) / path : 0, v: path / (w.length - 1) };
+    });
+    if (rows.length < 3) return null;
+    const vs = rows.map((r) => r.v).sort((a, b) => a - b), med = vs[Math.floor(vs.length / 2)];
+    const last = rows.slice(-5).map((r) => r.er < 0.05 || r.v > 1.5 * med);
+    return { marks: last.map((b) => (b ? '⛔' : '✅')).join(''), bad: last.filter(Boolean).length, n: last.length };
+  }
+  const Q = { asset: '', outBad: 0, state: 'ok', bad: 0, good: 0, since: 0 };
   function statusText() {
     bestName = bestVar();
     const ca = selAsset || curAsset;
@@ -148,6 +163,9 @@
     if (badNow) { Q.bad++; Q.good = 0; } else { Q.good++; Q.bad = 0; }
     if (Q.state === 'ok' && Q.bad >= 2) { Q.state = 'bad'; Q.since = Date.now(); }
     else if (Q.state === 'bad' && Q.good >= 8) { Q.state = 'ok'; Q.since = 0; }
+    const ol = outlook(arr);
+    Q.outBad = ol ? ol.bad : 0;
+    DIAG.outlook = ol;
     let flag = '✅ հարմար՝ կարող եք մտնել';
     if (Q.state === 'bad') flag = (Date.now() - Q.since > 120000) ? '⛔ երկար անկանոն՝ փոխեք զույգը' : '⛔ անկանոն՝ սպասեք';
     let sig = '';
@@ -155,7 +173,8 @@
       const mv = arr[arr.length - 1].p - lastSig.p;
       sig = ' | սիգնալ ' + (lastSig.d > 0 ? '🟢' : '🔴') + ' ' + ((mv > 0) === (lastSig.d > 0) && mv !== 0 ? '✔' : mv === 0 ? '=' : '✖');
     }
-    return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig;
+    const fc = ol ? '\n🔮 վերջին րոպեներ ' + ol.marks + ' → ' + (ol.bad <= 1 ? 'հաջորդները կայուն' : ol.bad === 2 ? 'միջին' : 'խառը, զգուշ') : '\n🔮 հավաքվում է';
+    return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig + fc;
   }
   function tickText() {
     return rows().slice(0, 3).map((x) => x.k + ' ' + (x.r * 100).toFixed(1) + '% n' + x.n).join(' | ');
@@ -312,7 +331,7 @@
           try {
             const h = JSON.parse(d);
             if (h.asset && Array.isArray(h.history) && h.history.length) {
-              const arr = h.history.slice(-400).map((r) => ({ ts: r[0], p: r[1] }));
+              const arr = h.history.slice(-700).map((r) => ({ ts: r[0], p: r[1] }));
               ticks[h.asset] = arr;
               tq[h.asset] = [];
               curAsset = h.asset;

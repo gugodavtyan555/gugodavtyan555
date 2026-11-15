@@ -82,7 +82,7 @@
     const arr = ticks[asset] || (ticks[asset] = []);
     if (!selAsset) curAsset = asset;
     arr.push({ ts, p: price });
-    if (arr.length > 100) arr.shift();
+    if (arr.length > 400) arr.shift();
     const q = tq[asset] || (tq[asset] = []);
     while (q.length && ts >= q[0].ts + HZ) {
       const e = q.shift();
@@ -108,6 +108,7 @@
     }
     const v = tstat[k], t = v.w + v.l;
     if (best !== k || v.w / t < MIN_RATE) return false;
+    if (Q.state === 'bad' && Q.asset === asset) return false; // անկանոն շարժման ժամանակ սիգնալ չենք տալիս
     const now = Date.now();
     send((d > 0 ? '🟢 ' : '🔴 ') + asset + ' ' + Math.round(100 * v.w / t) + '% | մոմի վերջ, մտեք հաջորդի սկզբին');
     lastSig = { asset, d, p: ticks[asset][ticks[asset].length - 1].p, t: now };
@@ -122,27 +123,32 @@
     for (const n in tstat) { const v = tstat[n], t = v.w + v.l; if (t < MIN_TRIALS) continue; const z = (v.w - t / 2) / Math.sqrt(t / 4); if (z > bz) { bz = z; best = n; } }
     return best;
   }
+  const Q = { asset: '', state: 'ok', bad: 0, good: 0, since: 0 };
   function statusText() {
     bestName = bestVar();
     const ca = selAsset || curAsset;
     const arr = ticks[ca] || [];
-    if (arr.length < 30) return '⏳ ' + ca + ' տվյալ է հավաքվում';
-    const w = arr.slice(-100);
-    let path = 0;
-    for (let i = 1; i < w.length; i++) path += Math.abs(w[i].p - w[i-1].p);
-    const er = path ? Math.abs(w[w.length-1].p - w[0].p) / path : 0;
+    if (arr.length < 60) return '⏳ ' + ca + ' տվյալ է հավաքվում';
+    if (Q.asset !== ca) { Q.asset = ca; Q.state = 'ok'; Q.bad = 0; Q.good = 0; Q.since = 0; }
+    const mad = (w) => { let sum = 0; for (let i = 1; i < w.length; i++) sum += Math.abs(w[i].p - w[i-1].p); return w.length > 1 ? sum / (w.length - 1) : 0; };
+    const v180 = mad(arr.slice(-360)), v30 = mad(arr.slice(-60));
+    const ratio = v180 ? v30 / v180 : 1;
     const lastTs = arr[arr.length - 1].ts;
     const rr = (rec[ca] || []).filter((x) => lastTs - x.ts <= 180);
     const hr = rr.length ? rr.filter((x) => x.ok).length / rr.length : null;
-    let flag = '🟢 հարմար';
-    if (hr !== null && rr.length >= 20 && hr < 0.40) flag = '🔴 ՄԻ ՄՏՆԵՔ՝ շարժումը հակառակ է';
-    else if (er < 0.05) flag = '🟡 անկանոն/աղմկոտ';
+    const badNow = ratio > 2 || (hr !== null && rr.length >= 20 && hr < 0.40);
+    // կայունացում՝ վիճակը փոխվում է միայն եթե նույն պայմանը պահպանվում է (վատ՝ 15 վրկ, լավ՝ 40 վրկ)
+    if (badNow) { Q.bad++; Q.good = 0; } else { Q.good++; Q.bad = 0; }
+    if (Q.state === 'ok' && Q.bad >= 3) { Q.state = 'bad'; Q.since = Date.now(); }
+    else if (Q.state === 'bad' && Q.good >= 8) { Q.state = 'ok'; Q.since = 0; }
+    let flag = '✅ հարմար՝ կարող եք մտնել';
+    if (Q.state === 'bad') flag = (Date.now() - Q.since > 120000) ? '⛔ երկար անկանոն՝ փոխեք զույգը' : '⛔ անկանոն՝ սպասեք';
     let sig = '';
     if (lastSig && lastSig.asset === ca && Date.now() - lastSig.t < 70000) {
       const mv = arr[arr.length - 1].p - lastSig.p;
-      sig = ' | սիգնալ ' + (lastSig.d > 0 ? '🟢' : '🔴') + ' ' + ((mv > 0) === (lastSig.d > 0) && mv !== 0 ? '✔ հաջող' : mv === 0 ? '= նույն' : '✖ հակառակ');
+      sig = ' | սիգնալ ' + (lastSig.d > 0 ? '🟢' : '🔴') + ' ' + ((mv > 0) === (lastSig.d > 0) && mv !== 0 ? '✔' : mv === 0 ? '=' : '✖');
     }
-    return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | վերջ. 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig;
+    return flag + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig;
   }
   function tickText() {
     return rows().slice(0, 3).map((x) => x.k + ' ' + (x.r * 100).toFixed(1) + '% n' + x.n).join(' | ');
@@ -299,7 +305,7 @@
           try {
             const h = JSON.parse(d);
             if (h.asset && Array.isArray(h.history) && h.history.length) {
-              const arr = h.history.slice(-100).map((r) => ({ ts: r[0], p: r[1] }));
+              const arr = h.history.slice(-400).map((r) => ({ ts: r[0], p: r[1] }));
               ticks[h.asset] = arr;
               tq[h.asset] = [];
               curAsset = h.asset;

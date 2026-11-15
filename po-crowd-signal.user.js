@@ -92,7 +92,7 @@
   }
   const TSEND = true;
   const CSEND = false;
-  const MIN_RATE = 0.55, MIN_TRIALS = 2400, GAP_MS = 60000;
+  const MIN_RATE = 0.52, MIN_TRIALS = 2400, GAP_MS = 60000;
   let lastSent = 0;
   function tsignal(asset, k, d) {
     let best = null, bz = 0;

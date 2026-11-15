@@ -138,10 +138,15 @@
     const rr = (rec[ca] || []).filter((x) => lastTs - x.ts <= 180);
     const hr = rr.length ? rr.filter((x) => x.ok).length / rr.length : null;
     DIAG.sel = ca; DIAG.ticks = arr.length; DIAG.ratio = +ratio.toFixed(2); DIAG.maxRatio = Math.max(DIAG.maxRatio, ratio); DIAG.hr = hr === null ? null : +hr.toFixed(2); DIAG.hrN = rr.length; DIAG.n++;
-    const badNow = ratio > 2 || (hr !== null && rr.length >= 20 && hr < 0.40);
+    const w100 = arr.slice(-100);
+    let path = 0;
+    for (let i = 1; i < w100.length; i++) path += Math.abs(w100[i].p - w100[i-1].p);
+    const er = path ? Math.abs(w100[w100.length-1].p - w100[0].p) / path : 0;
+    DIAG.er = +er.toFixed(3);
+    const badNow = er < 0.06 || ratio > 1.6 || (hr !== null && rr.length >= 20 && hr < 0.40);
     // կայունացում՝ վիճակը փոխվում է միայն եթե նույն պայմանը պահպանվում է (վատ՝ 15 վրկ, լավ՝ 40 վրկ)
     if (badNow) { Q.bad++; Q.good = 0; } else { Q.good++; Q.bad = 0; }
-    if (Q.state === 'ok' && Q.bad >= 3) { Q.state = 'bad'; Q.since = Date.now(); }
+    if (Q.state === 'ok' && Q.bad >= 2) { Q.state = 'bad'; Q.since = Date.now(); }
     else if (Q.state === 'bad' && Q.good >= 8) { Q.state = 'ok'; Q.since = 0; }
     let flag = '✅ հարմար՝ կարող եք մտնել';
     if (Q.state === 'bad') flag = (Date.now() - Q.since > 120000) ? '⛔ երկար անկանոն՝ փոխեք զույգը' : '⛔ անկանոն՝ սպասեք';
@@ -150,7 +155,7 @@
       const mv = arr[arr.length - 1].p - lastSig.p;
       sig = ' | սիգնալ ' + (lastSig.d > 0 ? '🟢' : '🔴') + ' ' + ((mv > 0) === (lastSig.d > 0) && mv !== 0 ? '✔' : mv === 0 ? '=' : '✖');
     }
-    return flag + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig;
+    return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig;
   }
   function tickText() {
     return rows().slice(0, 3).map((x) => x.k + ' ' + (x.r * 100).toFixed(1) + '% n' + x.n).join(' | ');

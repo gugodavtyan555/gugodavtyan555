@@ -102,13 +102,78 @@
     }
     for (const k in VARS) {
       const d = VARS[k](arr);
-      if (d) { q.push({ k, ts, p: price, dir: d }); if (TSEND && ts % 60 >= 50 && sentMin !== Math.floor(ts / 60) && (asset === (selAsset || curAsset)) && tsignal(asset, k, d)) sentMin = Math.floor(ts / 60); }
+      if (d) q.push({ k, ts, p: price, dir: d });
+    }
+    if (TSEND && ts % 60 >= 50 && sentMin !== Math.floor(ts / 60) && asset === (selAsset || curAsset)) {
+      sentMin = Math.floor(ts / 60);
+      try { minuteEnd(asset); } catch (e) {}
     }
   }
   const TSEND = true;
   const CSEND = false;
   const MIN_RATE = 0.52, MIN_TRIALS = 500, GAP_MS = 60000;
   let lastSent = 0;
+  // ---- պայմանային վիճակագրություն ----
+  const COND_N = 50, COND_RATE = 0.60;
+  let cond = {};
+  try { cond = JSON.parse(localStorage.getItem('po_cond') || '{}'); } catch (e) {}
+  const vsig = [];
+  let lastCand = null;
+  function minuteEnd(asset) {
+    const arr = ticks[asset];
+    if (!arr || arr.length < 100) return;
+    const ranked = Object.entries(tstat).map(([n, v]) => ({ n, t: v.w + v.l, r: v.w / Math.max(1, v.w + v.l) })).filter((x) => x.t >= MIN_TRIALS).sort((a, b) => b.r - a.r).slice(0, 5);
+    if (ranked.length < 3) return;
+    const dirs = ranked.map((x) => VARS[x.n](arr));
+    const dir = sg(dirs.reduce((a, b) => a + b, 0));
+    if (!dir) return;
+    const agree = dirs.filter((x) => x === dir).length;
+    const ol = outlook(arr);
+    const ob = ol ? (ol.bad <= 1 ? '0-1' : ol.bad === 2 ? '2' : '3+') : '?';
+    const lts = arr[arr.length - 1].ts;
+    const rr = (rec[asset] || []).filter((x) => lts - x.ts <= 180);
+    const hr = rr.length >= 30 ? rr.filter((x) => x.ok).length / rr.length : null;
+    const hb = hr === null ? 'na' : hr < 0.5 ? 'lo' : hr < 0.6 ? 'mid' : 'hi';
+    const now = Date.now();
+    let buy = 0, sell = 0;
+    for (const d of deals) if (d.asset === asset && now - d.t <= 60000) { if (d.sd === 'buy') buy++; else sell++; }
+    const cn = buy + sell, share = cn ? Math.max(buy, sell) / cn : 0;
+    const cb = cn < 5 ? 'none' : share < 0.6 ? 'mixed' : ((buy > sell) === (dir > 0) ? 'with' : 'against');
+    const keys = ['agree=' + agree, 'out=' + ob, 'hr=' + hb, 'crowd=' + cb];
+    const joint = 'A' + agree + '|O' + ob + '|H' + hb + '|C' + cb;
+    keys.push(joint);
+    const px = lastPrice[asset];
+    if (px !== undefined) vsig.push({ keys, dir, asset, p: px, t: now });
+    const ct = cond[joint] || { w: 0, l: 0 }, n = ct.w + ct.l, rate = n ? ct.w / n : 0;
+    lastCand = { joint, dir, n, rate };
+    const bad = Q.asset === asset && Q.state === 'bad';
+    if (n >= COND_N && rate >= COND_RATE && !bad) {
+      send((dir > 0 ? '🟢 ' : '🔴 ') + asset + ' ' + Math.round(rate * 100) + '% (' + n + ') | մոմի վերջ, մտեք հաջորդի սկզբին');
+      sigPend.push({ asset, d: dir, p: px, t: now, src: 'cond' });
+      lastSig = { asset, d: dir, p: px, t: now };
+    }
+  }
+  function resolveCond() {
+    const now = Date.now();
+    for (let i = vsig.length - 1; i >= 0; i--) {
+      const q = vsig[i];
+      if (now - q.t < 65000) continue;
+      const cur = lastPrice[q.asset];
+      if (cur !== undefined && cur !== q.p) {
+        const win = (cur > q.p) === (q.dir > 0);
+        for (const k of q.keys) { const c = cond[k] || (cond[k] = { w: 0, l: 0 }); if (win) c.w++; else c.l++; }
+      }
+      vsig.splice(i, 1);
+    }
+    try { localStorage.setItem('po_cond', JSON.stringify(cond)); } catch (e) {}
+  }
+  function condText() {
+    const top = Object.entries(cond).filter(([k, v]) => k.startsWith('A') && v.w + v.l >= 10)
+      .map(([k, v]) => ({ k, n: v.w + v.l, r: v.w / (v.w + v.l) })).sort((a, b) => b.r - a.r).slice(0, 2);
+    const tot = Object.entries(cond).filter(([k]) => k.startsWith('A')).reduce((a, [, v]) => a + v.w + v.l, 0);
+    return '🎯 ընթացիկ ' + (lastCand ? lastCand.joint + ' ' + Math.round(lastCand.rate * 100) + '% (' + lastCand.n + ')' : '—') +
+      '\n🏆 ' + (top.length ? top.map((x) => x.k + ' ' + Math.round(x.r * 100) + '% (' + x.n + ')').join(' | ') : 'դեռ քիչ տվյալ (' + tot + ')');
+  }
   function tsignal(asset, k, d) {
     let best = null, bz = 0;
     for (const n in tstat) {
@@ -145,8 +210,8 @@
   const DIAG = { maxRatio: 0, n: 0 };
   const secVol = {};
   const sigPend = [];
-  let sigStat = { global: { w: 0, l: 0 }, recent: { w: 0, l: 0 } };
-  try { const o = JSON.parse(localStorage.getItem('po_sig') || 'null'); if (o) sigStat = o; } catch (e) {}
+  let sigStat = { global: { w: 0, l: 0 }, recent: { w: 0, l: 0 }, cond: { w: 0, l: 0 } };
+  try { const o = JSON.parse(localStorage.getItem('po_sig') || 'null'); if (o) sigStat = Object.assign(sigStat, o); } catch (e) {}
   function resolveSigs() {
     const now = Date.now();
     for (let i = sigPend.length - 1; i >= 0; i--) {
@@ -177,6 +242,7 @@
   function statusText() {
     bestName = bestVar();
     resolveSigs();
+    resolveCond();
     const ca = selAsset || curAsset;
     const arr = ticks[ca] || [];
     if (arr.length < 60) return '⏳ ' + ca + ' տվյալ է հավաքվում';
@@ -219,16 +285,13 @@
     }
     const fc = ol ? '\n🔮 վերջին րոպեներ ' + ol.marks + ' → ' + (ol.bad <= 1 ? 'հաջորդները կայուն' : ol.bad === 2 ? 'միջին' : 'խառը, զգուշ') : '\n🔮 հավաքվում է';
     let why = '';
-    {
-      const bn = bestName, bv = bn ? tstat[bn] : null, bt = bv ? bv.w + bv.l : 0, br = bt ? bv.w / bt : 0;
-      if (Q.state === 'bad') why = 'անկանոն շարժում';
-      else if (Q.outBad >= 3) why = 'խառը ռեժիմ (վերջին րոպեներ)';
-      else if (!bn) why = 'վիճակագրություն է հավաքվում';
-      else if (br < MIN_RATE) why = 'լավագույն կանոնը ' + bn + ' ' + (br * 100).toFixed(1) + '% < ' + Math.round(MIN_RATE * 100) + '%';
-      else why = 'լավագույն կանոնը ' + bn + ' ' + (br * 100).toFixed(1) + '%, սպասում եմ :50-ին';
-    }
-    const sl = '\nℹ️ ' + why + '\n📊 սիգնալների արդյունք՝ global ' + sigStat.global.w + '/' + sigStat.global.l + ' · recent ' + sigStat.recent.w + '/' + sigStat.recent.l;
-    return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig + fc + sl;
+    if (Q.state === 'bad') why = 'անկանոն շարժում՝ սիգնալ չի տրվի';
+    else if (!lastCand) why = 'սպասում եմ մոմի վերջին (:50)';
+    else if (lastCand.n < COND_N) why = 'ընթացիկ պայմանը քիչ տվյալ ունի (' + lastCand.n + '/' + COND_N + ')՝ սիգնալ դեռ չկա';
+    else if (lastCand.rate < COND_RATE) why = 'ընթացիկ պայմանը ' + Math.round(lastCand.rate * 100) + '% < ' + Math.round(COND_RATE * 100) + '%՝ սիգնալ չկա';
+    else why = 'ընթացիկ պայմանը ' + Math.round(lastCand.rate * 100) + '%՝ սիգնալ կուղարկվի';
+    const sl = '\nℹ️ ' + why + '\n📊 սիգնալների արդյունք՝ global ' + sigStat.global.w + '/' + sigStat.global.l + ' · recent ' + sigStat.recent.w + '/' + sigStat.recent.l + ' · cond ' + sigStat.cond.w + '/' + sigStat.cond.l;
+    return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig + fc + '\n' + condText() + sl;
   }
   function tickText() {
     return rows().slice(0, 3).map((x) => x.k + ' ' + (x.r * 100).toFixed(1) + '% n' + Math.round(x.n)).join(' | ');
@@ -236,7 +299,7 @@
   function report() {
     return 'VARIANTS (sorted by |z|, 60s horizon, z corrected for overlap):\n' +
       rows().map((x) => x.k + ' ' + x.w + '/' + (x.n - x.w) + ' ' + (x.r * 100).toFixed(1) + '% z' + x.z.toFixed(1)).join('\n') +
-      '\nCROWD (up/down after 5s & 60s) ' + JSON.stringify(cstat) + '\nCROWDWL ' + stat() + ' deals=' + nDeals + '\nCOUNTS ' + JSON.stringify(counts) + '\nDIAG ' + JSON.stringify(Object.assign({}, DIAG, { state: Q.state, bad: Q.bad, good: Q.good, bestName }));
+      '\nCROWD (up/down after 5s & 60s) ' + JSON.stringify(cstat) + '\nCROWDWL ' + stat() + ' deals=' + nDeals + '\nCOND ' + JSON.stringify(cond) + '\nCOUNTS ' + JSON.stringify(counts) + '\nDIAG ' + JSON.stringify(Object.assign({}, DIAG, { state: Q.state, bad: Q.bad, good: Q.good, bestName }));
   }
   const lastPrice = {}, pending = [], cpend = [], st = { w: 0, l: 0 };
 

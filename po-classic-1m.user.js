@@ -93,6 +93,10 @@
   const TSEND = true;
   const CSEND = false;
   const MIN_RATE = 0.52, MIN_TRIALS = 600, GAP_MS = 60000;
+  const AGREE_MIN = 5; // 5 լավագույն կանոններից քանիսը պետք է համաձայն լինեն (5՝ առավելագույն վստահություն)
+  const sigPend = [];
+  let sigStat = { w: 0, l: 0 };
+  try { const o = JSON.parse(localStorage.getItem('po_sig_classic') || 'null'); if (o) sigStat = o; } catch (e) {}
   let lastSent = 0, selAsset = '';
   function tsignal(asset, k, d) {
     if (selAsset && asset !== selAsset) return; // միայն ընտրված զույգի համար
@@ -105,10 +109,16 @@
     }
     const v = tstat[k], t = v.w + v.l;
     if (best !== k || v.w / t < MIN_RATE) return;
+    const arrA = ticks[asset];
+    const ranked = Object.entries(tstat).map(([n, x]) => ({ n, t: x.w + x.l, r: x.w / Math.max(1, x.w + x.l) })).filter((x) => x.t >= MIN_TRIALS).sort((a, b) => b.r - a.r).slice(0, 5);
+    if (ranked.length < 5) return;
+    const agree = ranked.map((x) => VARS[x.n](arrA)).filter((x) => x === d).length;
+    if (agree < AGREE_MIN) return;
     const now = Date.now();
     if (now - lastSent < GAP_MS) return;
     lastSent = now;
-    send((d > 0 ? '🟢 ' : '🔴 ') + asset + ' ' + Math.round(100 * v.w / t) + '%');
+    send((d > 0 ? '🟢 ' : '🔴 ') + asset + ' ' + Math.round(100 * v.w / t) + '% | վստահություն ' + agree + '/5');
+    sigPend.push({ asset, dir: d, p: ticks[asset][ticks[asset].length - 1].p, t: now });
   }
   function rows() {
     return Object.entries(tstat).map(([k, v]) => { const n = v.w + v.l; return { k, n, w: v.w, r: n ? v.w / n : 0, z: n ? (v.w - n / 2) / Math.sqrt(n / 4) / Math.sqrt(OVL) : 0 }; })
@@ -199,7 +209,15 @@
       delete buckets[asset];
     }
     info.firstChild.textContent = 'WS:' + nWs + ' deals:' + nDeals + ' crowd ' + stat() + ' ';
-    box2.textContent = tickText();
+    for (let i = sigPend.length - 1; i >= 0; i--) {
+      const q = sigPend[i];
+      if (Date.now() - q.t < 62000) continue;
+      const cur = lastPrice[q.asset];
+      if (cur !== undefined && cur !== q.p) { if ((cur > q.p) === (q.dir > 0)) sigStat.w++; else sigStat.l++; }
+      sigPend.splice(i, 1);
+    }
+    try { localStorage.setItem('po_sig_classic', JSON.stringify(sigStat)); } catch (e) {}
+    box2.textContent = tickText() + '\n📊 սիգնալներ ' + sigStat.w + '/' + sigStat.l;
     try { localStorage.setItem('po_an_classic', JSON.stringify({ t: tstat, c: cstat })); } catch (e) {}
   }, WINDOW_MS);
 

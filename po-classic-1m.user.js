@@ -276,6 +276,18 @@
     if (px !== undefined) pending.push({ asset: best.asset, dir: mine, price: px, t: now });
   }, 60000);
 
+  // ---- watchdog: եթե գնի հոսքը չի բռնվել, էջը ինքնաբերաբար թարմացնել (առավելագույնը 3 անգամ) ----
+  document.addEventListener('DOMContentLoaded', () => setTimeout(function chk() {
+    let n = 0;
+    try { n = Number(sessionStorage.getItem('po_rl_c') || 0); } catch (e) {}
+    if (counts.updateStream) { try { sessionStorage.setItem('po_rl_c', '0'); } catch (e) {} return; }
+    if (n < 3) {
+      try { sessionStorage.setItem('po_rl_c', String(n + 1)); } catch (e) {}
+      info.firstChild.textContent = '⚠ հոսքը չբռնվեց, թարմացնում եմ… ';
+      setTimeout(() => location.reload(), 800);
+    } else info.firstChild.textContent = '⚠ հոսքը չի բռնվում, թարմացրեք ձեռքով ';
+  }, 15000));
+
   const Orig = window.WebSocket;
   window.WebSocket = function (...a) {
     const ws = new Orig(...a);

@@ -76,11 +76,13 @@
   }
   try { Object.assign(tstat, JSON.parse(localStorage.getItem('po_an_classic') || '{}').t || {}); Object.assign(cstat, JSON.parse(localStorage.getItem('po_an_classic') || '{}').c || {}); } catch (e) {}
   for (const k in VARS) if (!tstat[k]) tstat[k] = { w: 0, l: 0 };
+  let lastAssetSeen = '';
   const WIN = 800, DECAY = 1 - 1 / WIN;
   for (const k in tstat) { const v = tstat[k], t = v.w + v.l; if (t > WIN) { v.w *= WIN / t; v.l *= WIN / t; } }
   function onTick(asset, ts, price) {
     const arr = ticks[asset] || (ticks[asset] = []);
     arr.push({ ts, p: price });
+    lastAssetSeen = asset;
     if (arr.length > 100) arr.shift();
     const q = tq[asset] || (tq[asset] = []);
     while (q.length && ts >= q[0].ts + HZ) {
@@ -135,6 +137,25 @@
   function rows() {
     return Object.entries(tstat).map(([k, v]) => { const n = v.w + v.l; return { k, n, w: v.w, r: n ? v.w / n : 0, z: n ? (v.w - n / 2) / Math.sqrt(n / 4) / Math.sqrt(OVL) : 0 }; })
       .sort((a, b) => Math.abs(b.z) - Math.abs(a.z));
+  }
+  function whyNo() {
+    const asset = selAsset || lastAssetSeen, arr = ticks[asset];
+    if (!arr || arr.length < 80) return 'տվյալ է հավաքվում';
+    const ranked = Object.entries(tstat).map(([n, x]) => ({ n, t: x.w + x.l, r: x.w / Math.max(1, x.w + x.l) })).filter((x) => x.t >= MIN_TRIALS).sort((a, b) => b.r - a.r).slice(0, 5);
+    if (ranked.length < 5) return 'վիճակագրություն է հավաքվում';
+    let best = null, bz = 0;
+    for (const n in tstat) { const v = tstat[n], t = v.w + v.l; if (t < MIN_TRIALS) continue; const z = (v.w - t / 2) / Math.sqrt(t / 4) / Math.sqrt(OVL); if (z > bz) { bz = z; best = n; } }
+    const bv = best ? tstat[best] : null;
+    if (!bv) return 'լավագույն կանոն չկա (բոլորը ≤50%)';
+    const br = bv.w / (bv.w + bv.l);
+    if (br < MIN_RATE) return 'լավագույն ' + best + ' ' + (br * 100).toFixed(1) + '% < ' + Math.round(MIN_RATE * 100) + '%';
+    const low = ranked.find((x) => x.r < ALL_MIN);
+    if (low) return low.n + ' ' + (low.r * 100).toFixed(1) + '% < ' + Math.round(ALL_MIN * 100) + '%';
+    const dirs = ranked.map((x) => VARS[x.n](arr)), pos = dirs.filter((x) => x > 0).length, neg = dirs.filter((x) => x < 0).length;
+    if (Math.max(pos, neg) < AGREE_MIN) return 'համաձայնություն ' + Math.max(pos, neg) + '/5 (պետք է 5)';
+    const hs = hold[asset];
+    if (!hs) return 'ուղղությունը նոր է ձևավորվում';
+    return 'կայունացում ' + Math.round(arr[arr.length - 1].ts - hs.since) + '/' + HOLD_S + ' վրկ';
   }
   function tickText() {
     return rows().slice(0, 3).map((x) => x.k + ' ' + (x.r * 100).toFixed(1) + '% n' + Math.round(x.n)).join(' | ');
@@ -229,7 +250,7 @@
       sigPend.splice(i, 1);
     }
     try { localStorage.setItem('po_sig_classic', JSON.stringify(sigStat)); } catch (e) {}
-    box2.textContent = tickText() + '\n📊 սիգնալներ ' + sigStat.w + '/' + sigStat.l;
+    box2.textContent = tickText() + '\n📊 սիգնալներ ' + sigStat.w + '/' + sigStat.l + '\nℹ️ ' + whyNo();
     try { localStorage.setItem('po_an_classic', JSON.stringify({ t: tstat, c: cstat })); } catch (e) {}
   }, WINDOW_MS);
 

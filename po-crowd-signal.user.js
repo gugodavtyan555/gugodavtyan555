@@ -213,6 +213,8 @@
         add('main', mainDir, ['agree=' + agree, 'out=' + ob, 'hr=' + hb, 'crowd=' + cb, 'skill=' + kb, 'last=' + lw, 'pos=' + pos], joint, true);
       }
     }
+    // ---- լաբորատորիա՝ ամեն կանոն առանձին վիրտուալ գործարք ----
+    for (const k in VARS) { const dv = VARS[k](arr); if (dv) add('v:' + k, dv, [], 'v:' + k + '|', false); }
     // ---- գրանցում (բոլորը, վիրտուալ) ----
     for (const c of cands) vsig.push({ keys: c.keys, dir: c.dir, asset, ts0, t: now });
     // ---- Telegram ----
@@ -224,11 +226,18 @@
     const main = cands.find((c) => c.main);
     if (main) lastCand = { joint: main.joint, dir: main.dir, n: main.st ? main.st.n : stat(main.joint).n, rate: main.st ? main.st.rate : stat(main.joint).rate };
     let pick = null, proven = false;
+    let lead = null, lp = 0;
+    for (const c of cands) {
+      if (!c.name.startsWith('v:') || !c.st || c.st.n < 60) continue;
+      const w = c.st.rate * c.st.n, pnl = w * 0.92 - (c.st.n - w);
+      if (pnl > lp) { lp = pnl; lead = c; c.pnl = pnl; }
+    }
     if (best) { pick = best; proven = true; }
+    else if (lead) pick = lead;
     else if (main) { const st = main.st || stat(main.joint); if (!(st.n >= COND_N && st.rate < 0.5)) pick = main; }
     if (pick && calm) {
       const st = pick.st || stat(pick.joint);
-      send((pick.dir > 0 ? '🟢 ' : '🔴 ') + asset + (pick.main ? '' : ' [' + pick.name + ']') + (st.n >= 10 ? ' ' + Math.round(st.rate * 100) + '% (' + st.n + ')' : '') + (proven ? ' ⭐' : '') + ' | ' + (TF === 60 ? '1' : '5') + ' րոպեանոց մոմի վերջ, մտեք հաջորդի սկզբին' + (TF === 60 ? '' : ', ժամկետ 5ր'));
+      send((pick.dir > 0 ? '🟢 ' : '🔴 ') + asset + (pick.main ? '' : ' [' + pick.name + ']') + (st.n >= 10 ? ' ' + Math.round(st.rate * 100) + '% (' + st.n + ')' : '') + (proven ? ' ⭐' : '') + (pick.pnl !== undefined ? ' P&L ' + (pick.pnl > 0 ? '+' : '') + pick.pnl.toFixed(1) : '') + ' | ' + (TF === 60 ? '1' : '5') + ' րոպեանոց մոմի վերջ, մտեք հաջորդի սկզբին' + (TF === 60 ? '' : ', ժամկետ 5ր'));
       sigPend.push({ asset, dir: pick.dir, d: pick.dir, ts0, t: now, src: 'cond' });
       if (px !== undefined) oldPend.push({ asset, dir: pick.dir, p: px, t: now });
       lastSig = { asset, d: pick.dir, p: px !== undefined ? px : arr[arr.length - 1].p, t: now };
@@ -238,10 +247,13 @@
     try { localStorage.setItem(K.cond, JSON.stringify(cond)); } catch (e) {}
   }
   function condText() {
-    const top = Object.entries(cond).filter(([k, v]) => k.includes('|') && v.w + v.l >= 20)
+    const top = Object.entries(cond).filter(([k, v]) => k.includes('|') && !k.startsWith('v:') && v.w + v.l >= 20)
       .map(([k, v]) => ({ k, n: v.w + v.l, r: v.w / (v.w + v.l) })).sort((a, b) => b.r - a.r).slice(0, 2);
     const tot = Object.entries(cond).filter(([k]) => k.includes('|')).reduce((a, [, v]) => a + v.w + v.l, 0);
-    return '🎯 ընթացիկ ' + (lastCand ? lastCand.joint + ' ' + Math.round(lastCand.rate * 100) + '% (' + lastCand.n + ')' : '—') +
+    const lb = Object.entries(cond).filter(([k]) => k.startsWith('v:') && !k.includes('|')).map(([k, v]) => { const n = v.w + v.l; return { k: k.slice(2), n, pnl: v.w * 0.92 - v.l, r: v.w / n, z: (v.w - n / 2) / Math.sqrt(n / 4) }; })
+      .filter((x) => x.n >= 20).sort((a, b) => b.pnl - a.pnl).slice(0, 3);
+    return '🏁 ' + (lb.length ? lb.map((x) => x.k + ' ' + Math.round(x.r * 100) + '% n' + x.n + ' P&L ' + (x.pnl > 0 ? '+' : '') + x.pnl.toFixed(1) + ' z' + x.z.toFixed(1)).join(' | ') : 'լաբորատորիա՝ տվյալ է հավաքվում') +
+      '\n🎯 ընթացիկ ' + (lastCand ? lastCand.joint + ' ' + Math.round(lastCand.rate * 100) + '% (' + lastCand.n + ')' : '—') +
       '\n🏆 ' + (top.length ? top.map((x) => x.k + ' ' + Math.round(x.r * 100) + '% (' + x.n + ')').join(' | ') : 'դեռ քիչ տվյալ (' + tot + ')');
   }
   function tsignal(asset, k, d) {

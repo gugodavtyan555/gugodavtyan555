@@ -77,7 +77,7 @@
     VARS['trend' + W] = (t) => dev(t);
   }
   try { Object.assign(tstat, JSON.parse(localStorage.getItem('po_an60') || '{}').t || {}); Object.assign(cstat, JSON.parse(localStorage.getItem('po_an60') || '{}').c || {}); } catch (e) {}
-  const WIN = 3000, DECAY = 1 - 1 / WIN;
+  const WIN = 600, DECAY = 1 - 1 / WIN;
   for (const k in VARS) if (!tstat[k]) tstat[k] = { w: 0, l: 0 };
   for (const k in tstat) { const v = tstat[k], t = v.w + v.l; if (t > WIN) { v.w *= WIN / t; v.l *= WIN / t; } }
   function onTick(asset, ts, price) {
@@ -102,7 +102,7 @@
   }
   const TSEND = true;
   const CSEND = false;
-  const MIN_RATE = 0.52, MIN_TRIALS = 2400, GAP_MS = 60000;
+  const MIN_RATE = 0.52, MIN_TRIALS = 500, GAP_MS = 60000;
   let lastSent = 0;
   function tsignal(asset, k, d) {
     let best = null, bz = 0;
@@ -164,7 +164,7 @@
     });
     if (rows.length < 3) return null;
     const vs = rows.map((r) => r.v).sort((a, b) => a - b), med = vs[Math.floor(vs.length / 2)];
-    const last = rows.slice(-5).map((r) => r.er < 0.05 || r.v > 1.5 * med);
+    const last = rows.slice(-5).map((r) => r.er < 0.03 || r.v > 1.6 * med);
     return { marks: last.map((b) => (b ? '⛔' : '✅')).join(''), bad: last.filter(Boolean).length, n: last.length };
   }
   const Q = { asset: '', outBad: 0, state: 'ok', bad: 0, good: 0, since: 0 };
@@ -203,7 +203,16 @@
       sig = ' | սիգնալ ' + (lastSig.d > 0 ? '🟢' : '🔴') + ' ' + ((mv > 0) === (lastSig.d > 0) && mv !== 0 ? '✔' : mv === 0 ? '=' : '✖');
     }
     const fc = ol ? '\n🔮 վերջին րոպեներ ' + ol.marks + ' → ' + (ol.bad <= 1 ? 'հաջորդները կայուն' : ol.bad === 2 ? 'միջին' : 'խառը, զգուշ') : '\n🔮 հավաքվում է';
-    const sl = '\n📊 սիգնալների արդյունք՝ global ' + sigStat.global.w + '/' + sigStat.global.l + ' · recent ' + sigStat.recent.w + '/' + sigStat.recent.l;
+    let why = '';
+    {
+      const bn = bestName, bv = bn ? tstat[bn] : null, bt = bv ? bv.w + bv.l : 0, br = bt ? bv.w / bt : 0;
+      if (Q.state === 'bad') why = 'անկանոն շարժում';
+      else if (Q.outBad >= 3) why = 'խառը ռեժիմ (վերջին րոպեներ)';
+      else if (!bn) why = 'վիճակագրություն է հավաքվում';
+      else if (br < MIN_RATE) why = 'լավագույն կանոնը ' + bn + ' ' + (br * 100).toFixed(1) + '% < ' + Math.round(MIN_RATE * 100) + '%';
+      else why = 'լավագույն կանոնը ' + bn + ' ' + (br * 100).toFixed(1) + '%, սպասում եմ :50-ին';
+    }
+    const sl = '\nℹ️ ' + why + '\n📊 սիգնալների արդյունք՝ global ' + sigStat.global.w + '/' + sigStat.global.l + ' · recent ' + sigStat.recent.w + '/' + sigStat.recent.l;
     return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig + fc + sl;
   }
   function tickText() {

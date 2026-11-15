@@ -284,6 +284,18 @@
         if (last === 'updateStream' && d[0] === '[') {
           try { const a = JSON.parse(d); for (const r of a) if (r && r[0]) { lastPrice[r[0]] = r[2]; onTick(r[0], r[1], r[2]); } } catch (e) {}
         }
+        if (last === 'updateHistoryNewFast' && d[0] === '{') {
+          try {
+            const h = JSON.parse(d);
+            if (h.asset && Array.isArray(h.history) && h.history.length) {
+              const arr = h.history.slice(-100).map((r) => ({ ts: r[0], p: r[1] }));
+              ticks[h.asset] = arr;
+              tq[h.asset] = [];
+              curAsset = h.asset;
+              lastPrice[h.asset] = arr[arr.length - 1].p;
+            }
+          } catch (e) {}
+        }
         if (/OpenedSocialDeals/.test(last)) parse(d);
       }).catch(() => {});
     });

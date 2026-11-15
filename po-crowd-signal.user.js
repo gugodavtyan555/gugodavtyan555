@@ -64,7 +64,7 @@
   // ---- 5s tick analysis: many variants, every tick, persisted ----
   const HZ = 60, OVL = HZ * 2; // 1 րոպե, ~2 տիկ/վրկ
   const ticks = {}, tq = {}, tstat = {}, cstat = {}, rec = {};
-  let curAsset = '', bestName = '', lastSig = null;
+  let curAsset = '', bestName = '', lastSig = null, sentMin = -1;
   const sg = (x) => (x > 0 ? 1 : x < 0 ? -1 : 0);
   const VARS = {};
   for (const L of [1, 2, 3, 4, 6, 10, 20]) {
@@ -91,7 +91,7 @@
     }
     for (const k in VARS) {
       const d = VARS[k](arr);
-      if (d) { q.push({ k, ts, p: price, dir: d }); if (TSEND) tsignal(asset, k, d); }
+      if (d) { q.push({ k, ts, p: price, dir: d }); if (TSEND && ts % 60 >= 50 && sentMin !== Math.floor(ts / 60) && tsignal(asset, k, d)) sentMin = Math.floor(ts / 60); }
     }
   }
   const TSEND = true;
@@ -107,12 +107,11 @@
       if (z > bz) { bz = z; best = n; }
     }
     const v = tstat[k], t = v.w + v.l;
-    if (best !== k || v.w / t < MIN_RATE) return;
+    if (best !== k || v.w / t < MIN_RATE) return false;
     const now = Date.now();
-    if (now - lastSent < GAP_MS) return;
-    lastSent = now;
-    send((d > 0 ? '🟢 ' : '🔴 ') + asset + ' ' + Math.round(100 * v.w / t) + '%');
+    send((d > 0 ? '🟢 ' : '🔴 ') + asset + ' ' + Math.round(100 * v.w / t) + '% | մոմի վերջ, մտեք հաջորդի սկզբին');
     lastSig = { asset, d, p: ticks[asset][ticks[asset].length - 1].p, t: now };
+    return true;
   }
   function rows() {
     return Object.entries(tstat).map(([k, v]) => { const n = v.w + v.l; return { k, n, w: v.w, r: n ? v.w / n : 0, z: n ? (v.w - n / 2) / Math.sqrt(n / 4) / Math.sqrt(OVL) : 0 }; })

@@ -76,6 +76,8 @@
   }
   try { Object.assign(tstat, JSON.parse(localStorage.getItem('po_an_classic') || '{}').t || {}); Object.assign(cstat, JSON.parse(localStorage.getItem('po_an_classic') || '{}').c || {}); } catch (e) {}
   for (const k in VARS) if (!tstat[k]) tstat[k] = { w: 0, l: 0 };
+  const WIN = 800, DECAY = 1 - 1 / WIN;
+  for (const k in tstat) { const v = tstat[k], t = v.w + v.l; if (t > WIN) { v.w *= WIN / t; v.l *= WIN / t; } }
   function onTick(asset, ts, price) {
     const arr = ticks[asset] || (ticks[asset] = []);
     arr.push({ ts, p: price });
@@ -83,7 +85,11 @@
     const q = tq[asset] || (tq[asset] = []);
     while (q.length && ts >= q[0].ts + HZ) {
       const e = q.shift();
-      if (price !== e.p) { if ((price > e.p) === (e.dir > 0)) tstat[e.k].w++; else tstat[e.k].l++; }
+      if (price !== e.p) {
+        const v = tstat[e.k];
+        v.w *= DECAY; v.l *= DECAY; // շարժվող պատուհան՝ տոկոսները արձագանքում են վերջին շուկային
+        if ((price > e.p) === (e.dir > 0)) v.w++; else v.l++;
+      }
     }
     for (const k in VARS) {
       const d = VARS[k](arr);
@@ -92,7 +98,7 @@
   }
   const TSEND = true;
   const CSEND = false;
-  const MIN_RATE = 0.52, MIN_TRIALS = 600, GAP_MS = 60000;
+  const MIN_RATE = 0.52, MIN_TRIALS = 500, GAP_MS = 60000;
   const HOLD_S = 10;       // վրկ. ուղղությունը պետք է կայուն մնա սիգնալից առաջ
   const ALL_MIN = 0.51;    // 5-ից յուրաքանչյուր կանոնի նվազագույն հաջողություն
   const hold = {};         // asset -> {dir, since}
@@ -131,7 +137,7 @@
       .sort((a, b) => Math.abs(b.z) - Math.abs(a.z));
   }
   function tickText() {
-    return rows().slice(0, 3).map((x) => x.k + ' ' + (x.r * 100).toFixed(1) + '% n' + x.n).join(' | ');
+    return rows().slice(0, 3).map((x) => x.k + ' ' + (x.r * 100).toFixed(1) + '% n' + Math.round(x.n)).join(' | ');
   }
   function report() {
     return 'VARIANTS (sorted by |z|, 60s horizon, z corrected for overlap):\n' +

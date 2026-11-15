@@ -38,6 +38,7 @@
     navigator.clipboard.writeText(report());
   };
   const box2 = document.createElement('div');
+  box2.style.whiteSpace = 'pre-wrap';
   info.onclick = () => {
     const b = prompt('Bot token (123456:ABC...):', BOT_TOKEN), c = prompt('Chat id:', CHAT_ID);
     if (b !== null && c !== null) {
@@ -62,7 +63,8 @@
   const EXPIRY_MS = 60000;
   // ---- 5s tick analysis: many variants, every tick, persisted ----
   const HZ = 60, OVL = HZ * 2; // 1 րոպե, ~2 տիկ/վրկ
-  const ticks = {}, tq = {}, tstat = {}, cstat = {};
+  const ticks = {}, tq = {}, tstat = {}, cstat = {}, rec = {};
+  let curAsset = '', bestName = '', lastSig = null;
   const sg = (x) => (x > 0 ? 1 : x < 0 ? -1 : 0);
   const VARS = {};
   for (const L of [1, 2, 3, 4, 6, 10, 20]) {
@@ -78,11 +80,13 @@
   for (const k in VARS) if (!tstat[k]) tstat[k] = { w: 0, l: 0 };
   function onTick(asset, ts, price) {
     const arr = ticks[asset] || (ticks[asset] = []);
+    curAsset = asset;
     arr.push({ ts, p: price });
     if (arr.length > 100) arr.shift();
     const q = tq[asset] || (tq[asset] = []);
     while (q.length && ts >= q[0].ts + HZ) {
       const e = q.shift();
+      if (e.k === bestName && price !== e.p) { const r = rec[asset] || (rec[asset] = []); r.push({ ts, ok: (price > e.p) === (e.dir > 0) }); if (r.length > 400) r.shift(); }
       if (price !== e.p) { if ((price > e.p) === (e.dir > 0)) tstat[e.k].w++; else tstat[e.k].l++; }
     }
     for (const k in VARS) {
@@ -108,10 +112,37 @@
     if (now - lastSent < GAP_MS) return;
     lastSent = now;
     send((d > 0 ? '🟢 ' : '🔴 ') + asset + ' ' + Math.round(100 * v.w / t) + '%');
+    lastSig = { asset, d, p: ticks[asset][ticks[asset].length - 1].p, t: now };
   }
   function rows() {
     return Object.entries(tstat).map(([k, v]) => { const n = v.w + v.l; return { k, n, w: v.w, r: n ? v.w / n : 0, z: n ? (v.w - n / 2) / Math.sqrt(n / 4) / Math.sqrt(OVL) : 0 }; })
       .sort((a, b) => Math.abs(b.z) - Math.abs(a.z));
+  }
+  function bestVar() {
+    let best = '', bz = -1e9;
+    for (const n in tstat) { const v = tstat[n], t = v.w + v.l; if (t < MIN_TRIALS) continue; const z = (v.w - t / 2) / Math.sqrt(t / 4); if (z > bz) { bz = z; best = n; } }
+    return best;
+  }
+  function statusText() {
+    bestName = bestVar();
+    const arr = ticks[curAsset] || [];
+    if (arr.length < 30) return '⏳ ' + curAsset + ' տվյալ է հավաքվում';
+    const w = arr.slice(-100);
+    let path = 0;
+    for (let i = 1; i < w.length; i++) path += Math.abs(w[i].p - w[i-1].p);
+    const er = path ? Math.abs(w[w.length-1].p - w[0].p) / path : 0;
+    const lastTs = arr[arr.length - 1].ts;
+    const rr = (rec[curAsset] || []).filter((x) => lastTs - x.ts <= 180);
+    const hr = rr.length ? rr.filter((x) => x.ok).length / rr.length : null;
+    let flag = '🟢 հարմար';
+    if (hr !== null && rr.length >= 20 && hr < 0.40) flag = '🔴 ՄԻ ՄՏՆԵՔ՝ շարժումը հակառակ է';
+    else if (er < 0.05) flag = '🟡 անկանոն/աղմկոտ';
+    let sig = '';
+    if (lastSig && lastSig.asset === curAsset && Date.now() - lastSig.t < 70000) {
+      const mv = arr[arr.length - 1].p - lastSig.p;
+      sig = ' | սիգնալ ' + (lastSig.d > 0 ? '🟢' : '🔴') + ' ' + ((mv > 0) === (lastSig.d > 0) && mv !== 0 ? '✔ հաջող' : mv === 0 ? '= նույն' : '✖ հակառակ');
+    }
+    return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | վերջ. 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig;
   }
   function tickText() {
     return rows().slice(0, 3).map((x) => x.k + ' ' + (x.r * 100).toFixed(1) + '% n' + x.n).join(' | ');
@@ -198,7 +229,7 @@
       delete buckets[asset];
     }
     info.firstChild.textContent = 'WS:' + nWs + ' deals:' + nDeals + ' crowd ' + stat() + ' ';
-    box2.textContent = tickText();
+    box2.textContent = statusText() + '\n' + tickText();
     try { localStorage.setItem('po_an60', JSON.stringify({ t: tstat, c: cstat })); } catch (e) {}
   }, WINDOW_MS);
 

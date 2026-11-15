@@ -63,7 +63,7 @@
   const EXPIRY_MS = 60000;
   // ---- 5s tick analysis: many variants, every tick, persisted ----
   const TF = 60; // մոմի տևողություն՝ 60 (1 րոպե) կամ 300 (5 րոպե)
-  const HZ = TF, OVL = HZ * 2, BUF = TF === 60 ? 700 : 2600;
+  const HZ = TF, OVL = HZ * 2, BUF = TF === 60 ? 1300 : 2600;
   const K = { an: TF === 60 ? 'po_an60' : 'po_an' + TF, cond: TF === 60 ? 'po_cond2' : 'po_cond' + TF, sig: TF === 60 ? 'po_sig2' : 'po_sig' + TF };
   const ticks = {}, tq = {}, tstat = {}, cstat = {}, rec = {};
   let curAsset = '', selAsset = '', bestName = '', lastSig = null, sentMin = -1;
@@ -77,6 +77,16 @@
     const dev = (t) => { const n = t.length; if (n < W) return 0; let sum = 0; for (let i = n - W; i < n; i++) sum += t[i].p; return sg(t[n-1].p - sum / W); };
     VARS['meanrev' + W] = (t) => -dev(t);
     VARS['trend' + W] = (t) => dev(t);
+  }
+  for (const W of [150, 300, 600, 1200]) {
+    const dev = (t) => { const n = t.length; if (n < W) return 0; let sum = 0; for (let i = n - W; i < n; i++) sum += t[i].p; return sg(t[n-1].p - sum / W); };
+    VARS['meanrev' + W] = (t) => -dev(t);
+    VARS['trend' + W] = (t) => dev(t);
+  }
+  for (const W of [300, 900]) {
+    const pos = (t) => { const n = t.length; if (n < W) return 0; let hi = -Infinity, lo = Infinity; for (let i = n - W; i < n; i++) { const p = t[i].p; if (p > hi) hi = p; if (p < lo) lo = p; } const r = hi - lo; if (!r) return 0; const q = (t[n-1].p - lo) / r; return q > 0.9 ? 1 : q < 0.1 ? -1 : 0; };
+    VARS['rngRev' + W] = (t) => -pos(t); // վերևում՝ կիջնի, ներքևում՝ կբարձրանա
+    VARS['rngBrk' + W] = (t) => pos(t);  // շարունակում է
   }
   try { Object.assign(tstat, JSON.parse(localStorage.getItem(K.an) || '{}').t || {}); Object.assign(cstat, JSON.parse(localStorage.getItem(K.an) || '{}').c || {}); } catch (e) {}
   const WIN = 600, DECAY = 1 - 1 / WIN;
@@ -92,6 +102,7 @@
     }
     arr.push({ ts, p: price });
     if (arr.length > BUF) arr.shift();
+    if (TF === 60) { upBuf.push([asset, ts, price]); if (upBuf.length > 20000) upBuf.splice(0, 5000); }
     tickCount++; lastTickAt = Date.now(); tickLog.push(lastTickAt); if (tickLog.length > 400) tickLog.shift();
     trackList(vsig, asset, ts, price, (q, win) => { for (const k of q.keys) { const c = cond[k] || (cond[k] = { w: 0, l: 0 }); if (win) c.w++; else c.l++; } });
     trackList(sigPend, asset, ts, price, (q, win) => { const z = sigStat[q.src]; if (win) z.w++; else z.l++; });
@@ -268,6 +279,13 @@
   }
   const DIAG = { maxRatio: 0, n: 0 };
   const secVol = {};
+  const INGEST = 'https://po-collect.gugodavtyan555.workers.dev/ingest?k=cc2563ad2efaefe5eec1a91f';
+  const upBuf = [];
+  if (TF === 60) setInterval(() => {
+    if (!upBuf.length) return;
+    const body = JSON.stringify(upBuf.splice(0));
+    try { fetch(INGEST, { method: 'POST', mode: 'no-cors', body }).catch(() => {}); } catch (e) {}
+  }, 180000);
   let tickCount = 0, lastTickAt = 0;
   const tickLog = [];
   const sigPend = [];

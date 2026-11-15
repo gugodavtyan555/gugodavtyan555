@@ -92,6 +92,7 @@
     }
     arr.push({ ts, p: price });
     if (arr.length > BUF) arr.shift();
+    tickCount++; lastTickAt = Date.now(); tickLog.push(lastTickAt); if (tickLog.length > 400) tickLog.shift();
     trackList(vsig, asset, ts, price, (q, win) => { for (const k of q.keys) { const c = cond[k] || (cond[k] = { w: 0, l: 0 }); if (win) c.w++; else c.l++; } });
     trackList(sigPend, asset, ts, price, (q, win) => { const z = sigStat[q.src]; if (win) z.w++; else z.l++; });
     const q = tq[asset] || (tq[asset] = []);
@@ -267,6 +268,8 @@
   }
   const DIAG = { maxRatio: 0, n: 0 };
   const secVol = {};
+  let tickCount = 0, lastTickAt = 0;
+  const tickLog = [];
   const sigPend = [];
   let sigStat = { global: { w: 0, l: 0 }, recent: { w: 0, l: 0 }, cond: { w: 0, l: 0 }, old: { w: 0, l: 0 } };
   const oldPend = [];
@@ -353,7 +356,10 @@
       why = 'տաքացում՝ վիճակագրություն ' + Math.round(mx) + '/' + MIN_TRIALS + (TF === 60 ? '' : ' (առաջին արդյունքը 5 րոպե հետո)');
     }
     else why = 'սիգնալ կգա մոմի վերջին վայրկյաններին' + (lastCand && lastCand.n >= COND_N && lastCand.rate >= COND_RATE ? ' ⭐ ապացուցված պայման' : '');
-    const sl = '\nℹ️ ' + why + '\n📊 սիգնալների արդյունք՝ global ' + sigStat.global.w + '/' + sigStat.global.l + ' · recent ' + sigStat.recent.w + '/' + sigStat.recent.l + ' · cond ' + sigStat.cond.w + '/' + sigStat.cond.l + ' · հին եղանակ ' + sigStat.old.w + '/' + sigStat.old.l;
+    const nowT = Date.now(), age = lastTickAt ? Math.round((nowT - lastTickAt) / 1000) : -1;
+    const lastMin = tickLog.filter((x) => nowT - x <= 60000).length;
+    const alive = '\n📡 տիկեր ' + tickCount + ' · վերջինը ' + (age < 0 ? '—' : age + ' վրկ առաջ') + ' · վերջին րոպե ' + lastMin + ' · հերթ ' + ((tq[ca] || []).length) + (age > 15 ? ' ⚠ հոսքը կանգնել է' : '');
+    const sl = alive + '\nℹ️ ' + why + '\n📊 սիգնալների արդյունք՝ global ' + sigStat.global.w + '/' + sigStat.global.l + ' · recent ' + sigStat.recent.w + '/' + sigStat.recent.l + ' · cond ' + sigStat.cond.w + '/' + sigStat.cond.l + ' · հին եղանակ ' + sigStat.old.w + '/' + sigStat.old.l;
     return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig + fc + '\n' + condText() + sl;
   }
   function tickText() {

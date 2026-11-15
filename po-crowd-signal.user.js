@@ -147,8 +147,10 @@
     const ct = cond[joint] || { w: 0, l: 0 }, n = ct.w + ct.l, rate = n ? ct.w / n : 0;
     lastCand = { joint, dir, n, rate };
     const bad = Q.asset === asset && Q.state === 'bad';
-    if (n >= COND_N && rate >= COND_RATE && !bad) {
-      send((dir > 0 ? '🟢 ' : '🔴 ') + asset + ' ' + Math.round(rate * 100) + '% (' + n + ') | մոմի վերջ, մտեք հաջորդի սկզբին');
+    const proven = n >= COND_N && rate >= COND_RATE;
+    const provenBad = n >= COND_N && rate < 0.5;
+    if (!bad && !provenBad && !(ol && ol.bad >= 3)) {
+      send((dir > 0 ? '🟢 ' : '🔴 ') + asset + (n >= 10 ? ' ' + Math.round(rate * 100) + '% (' + n + ')' : '') + (proven ? ' ⭐' : '') + ' | մոմի վերջ, մտեք հաջորդի սկզբին');
       sigPend.push({ asset, d: dir, p: px, t: now, src: 'cond' });
       lastSig = { asset, d: dir, p: px, t: now };
     }
@@ -286,10 +288,9 @@
     const fc = ol ? '\n🔮 վերջին րոպեներ ' + ol.marks + ' → ' + (ol.bad <= 1 ? 'հաջորդները կայուն' : ol.bad === 2 ? 'միջին' : 'խառը, զգուշ') : '\n🔮 հավաքվում է';
     let why = '';
     if (Q.state === 'bad') why = 'անկանոն շարժում՝ սիգնալ չի տրվի';
-    else if (!lastCand) why = 'սպասում եմ մոմի վերջին (:50)';
-    else if (lastCand.n < COND_N) why = 'ընթացիկ պայմանը քիչ տվյալ ունի (' + lastCand.n + '/' + COND_N + ')՝ սիգնալ դեռ չկա';
-    else if (lastCand.rate < COND_RATE) why = 'ընթացիկ պայմանը ' + Math.round(lastCand.rate * 100) + '% < ' + Math.round(COND_RATE * 100) + '%՝ սիգնալ չկա';
-    else why = 'ընթացիկ պայմանը ' + Math.round(lastCand.rate * 100) + '%՝ սիգնալ կուղարկվի';
+    else if (Q.outBad >= 3) why = 'խառը ռեժիմ՝ սիգնալ չի տրվի';
+    else if (lastCand && lastCand.n >= COND_N && lastCand.rate < 0.5) why = 'ընթացիկ պայմանը ապացուցված վատ է (' + Math.round(lastCand.rate * 100) + '%)՝ սիգնալ չի տրվի';
+    else why = 'սիգնալ կգա մոմի վերջին (:50)' + (lastCand && lastCand.n >= COND_N && lastCand.rate >= COND_RATE ? ' ⭐ ապացուցված պայման' : '');
     const sl = '\nℹ️ ' + why + '\n📊 սիգնալների արդյունք՝ global ' + sigStat.global.w + '/' + sigStat.global.l + ' · recent ' + sigStat.recent.w + '/' + sigStat.recent.l + ' · cond ' + sigStat.cond.w + '/' + sigStat.cond.l;
     return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig + fc + '\n' + condText() + sl;
   }

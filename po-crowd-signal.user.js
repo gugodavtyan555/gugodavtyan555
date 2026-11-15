@@ -23,6 +23,7 @@
   const WEIGHT_BY_AMOUNT = false; // true՝ ըստ գումարի, false՝ ըստ քանակի
   // ====================
 
+  const deals = [];
   const buckets = {}; const seen = new Set();        // asset -> {buy, sell, nb, ns}
   const raw = [];
   const box = document.createElement('div');
@@ -79,7 +80,7 @@
       if (d) { q.push({ k, ts, p: price, dir: d }); if (TSEND) tsignal(asset, k, d); }
     }
   }
-  const TSEND = true;
+  const TSEND = false;
   const MIN_RATE = 0.55, MIN_TRIALS = 2400, GAP_MS = 60000;
   let lastSent = 0;
   function tsignal(asset, k, d) {
@@ -130,6 +131,7 @@
       const b = buckets[asset] || (buckets[asset] = { buy: 0, sell: 0, n: 0 });
       b.n++;
       b[sd] += WEIGHT_BY_AMOUNT ? amt : 1;
+      deals.push({ asset, sd, t: Date.now() });
       nDeals++;
     }
     Object.values(o).forEach(walk);
@@ -181,13 +183,6 @@
           const bin = sb >= 0.65 ? 'crowdBUY' : ss >= 0.65 ? 'crowdSELL' : 'mixed';
           cpend.push({ asset, bin, p: px, t: now, h: 5000 }, { asset, bin, p: px, t: now, h: 60000 });
         }
-        if (sb >= THRESH) {
-          send('🔴 SELL ' + asset + ' | crowd BUY ' + Math.round(sb * 100) + '% (BUY ' + b.buy + ' / SELL ' + b.sell + ') | stat ' + stat());
-          if (px !== undefined) pending.push({ asset, dir: 'sell', price: px, t: now });
-        } else if (ss >= THRESH) {
-          send('🟢 BUY ' + asset + ' | crowd SELL ' + Math.round(ss * 100) + '% (BUY ' + b.buy + ' / SELL ' + b.sell + ') | stat ' + stat());
-          if (px !== undefined) pending.push({ asset, dir: 'buy', price: px, t: now });
-        }
       }
       delete buckets[asset];
     }
@@ -195,6 +190,28 @@
     box2.textContent = tickText();
     try { localStorage.setItem('po_an60', JSON.stringify({ t: tstat, c: cstat })); } catch (e) {}
   }, WINDOW_MS);
+
+  // ---- ամեն րոպե՝ ամենաուժեղ ամբոխի դեմ սիգնալ ----
+  setInterval(() => {
+    const now = Date.now();
+    while (deals.length && now - deals[0].t > 60000) deals.shift();
+    const g = {};
+    for (const d of deals) { const o = g[d.asset] || (g[d.asset] = { buy: 0, sell: 0 }); o[d.sd]++; }
+    let best = null, bs = 0;
+    for (const [asset, o] of Object.entries(g)) {
+      const n = o.buy + o.sell;
+      if (n < 5) continue;
+      const share = Math.max(o.buy, o.sell) / n;
+      if (share < 0.65) continue;
+      const score = Math.abs(o.buy - o.sell) / Math.sqrt(n);
+      if (score > bs) { bs = score; best = { asset, o, n, share, crowd: o.buy > o.sell ? 'buy' : 'sell' }; }
+    }
+    if (!best) return;
+    const mine = best.crowd === 'buy' ? 'sell' : 'buy';
+    send((mine === 'buy' ? '🟢 BUY ' : '🔴 SELL ') + best.asset + ' | crowd ' + best.crowd.toUpperCase() + ' ' + Math.round(best.share * 100) + '% (' + best.n + ')');
+    const px = lastPrice[best.asset];
+    if (px !== undefined) pending.push({ asset: best.asset, dir: mine, price: px, t: now });
+  }, 60000);
 
   const Orig = window.WebSocket;
   window.WebSocket = function (...a) {

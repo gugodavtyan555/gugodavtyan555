@@ -115,7 +115,7 @@
   }
   const TSEND = true;
   const CSEND = false;
-  const MIN_RATE = 0.52, MIN_TRIALS = 500, GAP_MS = 60000;
+  const MIN_RATE = 0.52, MIN_TRIALS = TF === 60 ? 500 : 150, GAP_MS = 60000;
   let lastSent = 0;
   // ---- պայմանային վիճակագրություն ----
   const COND_N = 50, COND_RATE = 0.60;
@@ -347,6 +347,11 @@
     if (Q.state === 'bad') why = 'անկանոն շարժում՝ սիգնալ չի տրվի';
     else if (Q.outBad >= 3) why = 'խառը ռեժիմ՝ սիգնալ չի տրվի';
     else if (lastCand && lastCand.n >= COND_N && lastCand.rate < 0.5) why = 'ընթացիկ պայմանը ապացուցված վատ է (' + Math.round(lastCand.rate * 100) + '%)՝ սիգնալ չի տրվի';
+    else if (!lastCand) {
+      let mx = 0;
+      for (const n in tstat) mx = Math.max(mx, tstat[n].w + tstat[n].l);
+      why = 'տաքացում՝ վիճակագրություն ' + Math.round(mx) + '/' + MIN_TRIALS + (TF === 60 ? '' : ' (առաջին արդյունքը 5 րոպե հետո)');
+    }
     else why = 'սիգնալ կգա մոմի վերջին վայրկյաններին' + (lastCand && lastCand.n >= COND_N && lastCand.rate >= COND_RATE ? ' ⭐ ապացուցված պայման' : '');
     const sl = '\nℹ️ ' + why + '\n📊 սիգնալների արդյունք՝ global ' + sigStat.global.w + '/' + sigStat.global.l + ' · recent ' + sigStat.recent.w + '/' + sigStat.recent.l + ' · cond ' + sigStat.cond.w + '/' + sigStat.cond.l + ' · հին եղանակ ' + sigStat.old.w + '/' + sigStat.old.l;
     return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig + fc + '\n' + condText() + sl;

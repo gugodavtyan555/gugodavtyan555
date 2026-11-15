@@ -90,6 +90,8 @@
     }
     arr.push({ ts, p: price });
     if (arr.length > 700) arr.shift();
+    trackList(vsig, asset, ts, price, (q, win) => { for (const k of q.keys) { const c = cond[k] || (cond[k] = { w: 0, l: 0 }); if (win) c.w++; else c.l++; } });
+    trackList(sigPend, asset, ts, price, (q, win) => { const z = sigStat[q.src]; if (win) z.w++; else z.l++; });
     const q = tq[asset] || (tq[asset] = []);
     while (q.length && ts >= q[0].ts + HZ) {
       const e = q.shift();
@@ -106,7 +108,7 @@
     }
     if (TSEND && ts % 60 >= 50 && sentMin !== Math.floor(ts / 60) && asset === (selAsset || curAsset)) {
       sentMin = Math.floor(ts / 60);
-      try { minuteEnd(asset); } catch (e) {}
+      try { minuteEnd(asset, ts); } catch (e) {}
     }
   }
   const TSEND = true;
@@ -116,63 +118,114 @@
   // ---- պայմանային վիճակագրություն ----
   const COND_N = 50, COND_RATE = 0.60;
   let cond = {};
-  try { cond = JSON.parse(localStorage.getItem('po_cond') || '{}'); } catch (e) {}
+  try { cond = JSON.parse(localStorage.getItem('po_cond2') || '{}'); } catch (e) {}
   const vsig = [];
   let lastCand = null;
-  function minuteEnd(asset) {
+  const sgn = (x) => (x > 0 ? 1 : x < 0 ? -1 : 0);
+  function candlesOf(arr) {
+    const g = {};
+    for (const x of arr) { const m = Math.floor(x.ts / 60); (g[m] || (g[m] = [])).push(x.p); }
+    return Object.keys(g).map(Number).sort((a, b) => a - b).map((m) => { const w = g[m]; return { m, o: w[0], c: w[w.length - 1], h: Math.max(...w), l: Math.min(...w), n: w.length }; });
+  }
+  function trackList(list, asset, ts, price, cb) {
+    for (let i = list.length - 1; i >= 0; i--) {
+      const q = list[i];
+      if (Date.now() - q.t > 900000) { list.splice(i, 1); continue; }
+      if (q.asset !== asset) continue;
+      if (q.entry === undefined) { if (ts >= q.ts0) q.entry = price; }
+      else if (ts >= q.ts0 + 60) { if (price !== q.entry) cb(q, (price > q.entry) === (q.dir > 0)); list.splice(i, 1); }
+    }
+  }
+  function minuteEnd(asset, ts) {
     const arr = ticks[asset];
     if (!arr || arr.length < 100) return;
-    const ranked = Object.entries(tstat).map(([n, v]) => ({ n, t: v.w + v.l, r: v.w / Math.max(1, v.w + v.l) })).filter((x) => x.t >= MIN_TRIALS).sort((a, b) => b.r - a.r).slice(0, 5);
-    if (ranked.length < 3) return;
-    const dirs = ranked.map((x) => VARS[x.n](arr));
-    const dir = sg(dirs.reduce((a, b) => a + b, 0));
-    if (!dir) return;
-    const agree = dirs.filter((x) => x === dir).length;
-    const ol = outlook(arr);
-    const ob = ol ? (ol.bad <= 1 ? '0-1' : ol.bad === 2 ? '2' : '3+') : '?';
-    const lts = arr[arr.length - 1].ts;
-    const rr = (rec[asset] || []).filter((x) => lts - x.ts <= 180);
-    const hr = rr.length >= 30 ? rr.filter((x) => x.ok).length / rr.length : null;
-    const hb = hr === null ? 'na' : hr < 0.5 ? 'lo' : hr < 0.6 ? 'mid' : 'hi';
-    const now = Date.now();
-    let buy = 0, sell = 0;
-    for (const d of deals) if (d.asset === asset && now - d.t <= 60000) { if (d.sd === 'buy') buy++; else sell++; }
-    const cn = buy + sell, share = cn ? Math.max(buy, sell) / cn : 0;
-    const cb = cn < 5 ? 'none' : share < 0.6 ? 'mixed' : ((buy > sell) === (dir > 0) ? 'with' : 'against');
-    const keys = ['agree=' + agree, 'out=' + ob, 'hr=' + hb, 'crowd=' + cb];
-    const joint = 'A' + agree + '|O' + ob + '|H' + hb + '|C' + cb;
-    keys.push(joint);
+    const now = Date.now(), ts0 = (Math.floor(ts / 60) + 1) * 60;
+    const cs = candlesOf(arr), done = cs.slice(0, -1).filter((c) => c.n >= 60), cur = cs[cs.length - 1];
     const px = lastPrice[asset];
-    if (px !== undefined) vsig.push({ keys, dir, asset, p: px, t: now });
-    const ct = cond[joint] || { w: 0, l: 0 }, n = ct.w + ct.l, rate = n ? ct.w / n : 0;
-    lastCand = { joint, dir, n, rate };
+    const ol = outlook(arr);
+    const cands = []; // {name, dir, keys, joint, main}
+    const add = (name, dir, extra, joint, main) => { if (dir) cands.push({ name, dir, keys: [name].concat(extra, [joint]), joint, main: !!main }); };
+    // ---- 1) համաձայնություն (5 լավագույն կանոն) ----
+    const ranked = Object.entries(tstat).map(([n, v]) => ({ n, t: v.w + v.l, r: v.w / Math.max(1, v.w + v.l) })).filter((x) => x.t >= MIN_TRIALS).sort((a, b) => b.r - a.r).slice(0, 5);
+    // ---- մոմերի հատկանիշներ ----
+    let lastDir = 0, streak = 0, bodyB = 'na';
+    if (done.length >= 2) {
+      const L = done[done.length - 1];
+      lastDir = sgn(L.c - L.o);
+      for (let i = done.length - 1; i >= 0 && lastDir && sgn(done[i].c - done[i].o) === lastDir; i--) streak++;
+      streak = Math.min(streak, 4);
+      const bodies = done.map((c) => Math.abs(c.c - c.o)), mean = bodies.reduce((x, y) => x + y, 0) / bodies.length || 1;
+      const r = Math.abs(L.c - L.o) / mean;
+      bodyB = r < 0.7 ? 'small' : r > 1.5 ? 'large' : 'med';
+    }
+    if (lastDir) {
+      add('cont', lastDir, ['cont|st' + streak], 'cont|st' + streak + '|' + bodyB, false);
+      add('rev', -lastDir, ['rev|st' + streak], 'rev|st' + streak + '|' + bodyB, false);
+    }
+    // ---- ամբոխ և փորձառու թրեյդերներ ----
+    let buy = 0, sell = 0, sb = 0, ss = 0;
+    for (const d of deals) if (d.asset === asset && now - d.t <= 60000) { if (d.sd === 'buy') buy++; else sell++; if (d.pp >= 55) { if (d.sd === 'buy') sb++; else ss++; } }
+    const cn = buy + sell, sn = sb + ss;
+    const nb = (n) => (n >= 6 ? '6+' : '3-5');
+    if (cn >= 3 && Math.max(buy, sell) / cn >= 0.6) {
+      const cd = buy > sell ? 1 : -1;
+      add('crowdFollow', cd, [], 'crowdFollow|n' + nb(cn), false);
+      add('crowdFade', -cd, [], 'crowdFade|n' + nb(cn), false);
+    }
+    if (sn >= 3 && Math.max(sb, ss) / sn >= 0.6) {
+      const kd = sb > ss ? 1 : -1;
+      add('skillFollow', kd, [], 'skillFollow|n' + nb(sn), false);
+      add('skillFade', -kd, [], 'skillFade|n' + nb(sn), false);
+    }
+    // ---- հիմնական (համաձայնության) սիգնալ ----
+    let mainDir = 0;
+    if (ranked.length >= 3) {
+      const dirs = ranked.map((x) => VARS[x.n](arr));
+      mainDir = sgn(dirs.reduce((a, b) => a + b, 0));
+      if (mainDir) {
+        const agree = dirs.filter((x) => x === mainDir).length;
+        const ob = ol ? (ol.bad <= 1 ? '0-1' : ol.bad === 2 ? '2' : '3+') : '?';
+        const lts = arr[arr.length - 1].ts;
+        const rr = (rec[asset] || []).filter((x) => lts - x.ts <= 180);
+        const hr = rr.length >= 30 ? rr.filter((x) => x.ok).length / rr.length : null;
+        const hb = hr === null ? 'na' : hr < 0.5 ? 'lo' : hr < 0.6 ? 'mid' : 'hi';
+        const share = cn ? Math.max(buy, sell) / cn : 0;
+        const cb = cn < 5 ? 'none' : share < 0.6 ? 'mixed' : ((buy > sell) === (mainDir > 0) ? 'with' : 'against');
+        const kb = sn < 3 ? 'none' : (sb === ss ? 'mixed' : ((sb > ss) === (mainDir > 0) ? 'with' : 'against'));
+        const lw = lastDir === 0 ? 'doji' : (lastDir === mainDir ? 'with' : 'against');
+        let pos = 'na';
+        if (cur && cur.h > cur.l) { let q = (arr[arr.length - 1].p - cur.l) / (cur.h - cur.l); if (mainDir < 0) q = 1 - q; pos = q > 0.7 ? 'hi' : q < 0.3 ? 'lo' : 'mid'; }
+        const joint = 'A' + agree + '|O' + ob + '|H' + hb + '|C' + cb;
+        add('main', mainDir, ['agree=' + agree, 'out=' + ob, 'hr=' + hb, 'crowd=' + cb, 'skill=' + kb, 'last=' + lw, 'pos=' + pos], joint, true);
+      }
+    }
+    // ---- գրանցում (բոլորը, վիրտուալ) ----
+    for (const c of cands) vsig.push({ keys: c.keys, dir: c.dir, asset, ts0, t: now });
+    // ---- Telegram ----
+    const stat = (j) => { const x = cond[j] || { w: 0, l: 0 }, n = x.w + x.l; return { n, rate: n ? x.w / n : 0 }; };
     const bad = Q.asset === asset && Q.state === 'bad';
-    const proven = n >= COND_N && rate >= COND_RATE;
-    const provenBad = n >= COND_N && rate < 0.5;
-    if (!bad && !provenBad && !(ol && ol.bad >= 3)) {
-      send((dir > 0 ? '🟢 ' : '🔴 ') + asset + (n >= 10 ? ' ' + Math.round(rate * 100) + '% (' + n + ')' : '') + (proven ? ' ⭐' : '') + ' | մոմի վերջ, մտեք հաջորդի սկզբին');
-      sigPend.push({ asset, d: dir, p: px, t: now, src: 'cond' });
-      lastSig = { asset, d: dir, p: px, t: now };
+    const calm = !bad && !(ol && ol.bad >= 3);
+    let best = null;
+    for (const c of cands) { const st = stat(c.joint); c.st = st; if (st.n >= COND_N && st.rate >= COND_RATE && (!best || st.rate > best.st.rate)) best = c; }
+    const main = cands.find((c) => c.main);
+    if (main) lastCand = { joint: main.joint, dir: main.dir, n: main.st ? main.st.n : stat(main.joint).n, rate: main.st ? main.st.rate : stat(main.joint).rate };
+    let pick = null, proven = false;
+    if (best) { pick = best; proven = true; }
+    else if (main) { const st = main.st || stat(main.joint); if (!(st.n >= COND_N && st.rate < 0.5)) pick = main; }
+    if (pick && calm) {
+      const st = pick.st || stat(pick.joint);
+      send((pick.dir > 0 ? '🟢 ' : '🔴 ') + asset + (pick.main ? '' : ' [' + pick.name + ']') + (st.n >= 10 ? ' ' + Math.round(st.rate * 100) + '% (' + st.n + ')' : '') + (proven ? ' ⭐' : '') + ' | մոմի վերջ, մտեք հաջորդի սկզբին');
+      sigPend.push({ asset, dir: pick.dir, d: pick.dir, ts0, t: now, src: 'cond' });
+      lastSig = { asset, d: pick.dir, p: px !== undefined ? px : arr[arr.length - 1].p, t: now };
     }
   }
   function resolveCond() {
-    const now = Date.now();
-    for (let i = vsig.length - 1; i >= 0; i--) {
-      const q = vsig[i];
-      if (now - q.t < 65000) continue;
-      const cur = lastPrice[q.asset];
-      if (cur !== undefined && cur !== q.p) {
-        const win = (cur > q.p) === (q.dir > 0);
-        for (const k of q.keys) { const c = cond[k] || (cond[k] = { w: 0, l: 0 }); if (win) c.w++; else c.l++; }
-      }
-      vsig.splice(i, 1);
-    }
-    try { localStorage.setItem('po_cond', JSON.stringify(cond)); } catch (e) {}
+    try { localStorage.setItem('po_cond2', JSON.stringify(cond)); } catch (e) {}
   }
   function condText() {
-    const top = Object.entries(cond).filter(([k, v]) => k.startsWith('A') && v.w + v.l >= 10)
+    const top = Object.entries(cond).filter(([k, v]) => k.includes('|') && v.w + v.l >= 20)
       .map(([k, v]) => ({ k, n: v.w + v.l, r: v.w / (v.w + v.l) })).sort((a, b) => b.r - a.r).slice(0, 2);
-    const tot = Object.entries(cond).filter(([k]) => k.startsWith('A')).reduce((a, [, v]) => a + v.w + v.l, 0);
+    const tot = Object.entries(cond).filter(([k]) => k.includes('|')).reduce((a, [, v]) => a + v.w + v.l, 0);
     return '🎯 ընթացիկ ' + (lastCand ? lastCand.joint + ' ' + Math.round(lastCand.rate * 100) + '% (' + lastCand.n + ')' : '—') +
       '\n🏆 ' + (top.length ? top.map((x) => x.k + ' ' + Math.round(x.r * 100) + '% (' + x.n + ')').join(' | ') : 'դեռ քիչ տվյալ (' + tot + ')');
   }
@@ -213,17 +266,9 @@
   const secVol = {};
   const sigPend = [];
   let sigStat = { global: { w: 0, l: 0 }, recent: { w: 0, l: 0 }, cond: { w: 0, l: 0 } };
-  try { const o = JSON.parse(localStorage.getItem('po_sig') || 'null'); if (o) sigStat = Object.assign(sigStat, o); } catch (e) {}
+  try { const o = JSON.parse(localStorage.getItem('po_sig2') || 'null'); if (o) sigStat = Object.assign(sigStat, o); } catch (e) {}
   function resolveSigs() {
-    const now = Date.now();
-    for (let i = sigPend.length - 1; i >= 0; i--) {
-      const q = sigPend[i];
-      if (now - q.t < 65000) continue;
-      const cur = lastPrice[q.asset];
-      if (cur !== undefined && cur !== q.p) { if ((cur > q.p) === (q.d > 0)) sigStat[q.src].w++; else sigStat[q.src].l++; }
-      sigPend.splice(i, 1);
-    }
-    try { localStorage.setItem('po_sig', JSON.stringify(sigStat)); } catch (e) {}
+    try { localStorage.setItem('po_sig2', JSON.stringify(sigStat)); } catch (e) {}
   }
   function outlook(arr) {
     const g = {};
@@ -323,7 +368,7 @@
       const b = buckets[asset] || (buckets[asset] = { buy: 0, sell: 0, n: 0 });
       b.n++;
       b[sd] += WEIGHT_BY_AMOUNT ? amt : 1;
-      deals.push({ asset, sd, t: Date.now() });
+      deals.push({ asset, sd, t: Date.now(), pp: Number(o.percentProfitable) || 0 });
       nDeals++;
     }
     Object.values(o).forEach(walk);

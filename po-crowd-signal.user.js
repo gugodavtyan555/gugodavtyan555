@@ -77,7 +77,9 @@
     VARS['trend' + W] = (t) => dev(t);
   }
   try { Object.assign(tstat, JSON.parse(localStorage.getItem('po_an60') || '{}').t || {}); Object.assign(cstat, JSON.parse(localStorage.getItem('po_an60') || '{}').c || {}); } catch (e) {}
+  const WIN = 3000, DECAY = 1 - 1 / WIN;
   for (const k in VARS) if (!tstat[k]) tstat[k] = { w: 0, l: 0 };
+  for (const k in tstat) { const v = tstat[k], t = v.w + v.l; if (t > WIN) { v.w *= WIN / t; v.l *= WIN / t; } }
   function onTick(asset, ts, price) {
     const arr = ticks[asset] || (ticks[asset] = []);
     if (!selAsset) curAsset = asset;
@@ -87,7 +89,11 @@
     while (q.length && ts >= q[0].ts + HZ) {
       const e = q.shift();
       if (e.k === bestName && price !== e.p) { const r = rec[asset] || (rec[asset] = []); r.push({ ts, ok: (price > e.p) === (e.dir > 0) }); if (r.length > 400) r.shift(); }
-      if (price !== e.p) { if ((price > e.p) === (e.dir > 0)) tstat[e.k].w++; else tstat[e.k].l++; }
+      if (price !== e.p) {
+        const v = tstat[e.k];
+        v.w *= DECAY; v.l *= DECAY; // շարժվող պատուհան՝ տոկոսը արձագանքում է վերջին շուկային
+        if ((price > e.p) === (e.dir > 0)) v.w++; else v.l++;
+      }
     }
     for (const k in VARS) {
       const d = VARS[k](arr);
@@ -96,7 +102,7 @@
   }
   const TSEND = true;
   const CSEND = false;
-  const MIN_RATE = 0, MIN_TRIALS = 2400, GAP_MS = 60000;
+  const MIN_RATE = 0.52, MIN_TRIALS = 2400, GAP_MS = 60000;
   let lastSent = 0;
   function tsignal(asset, k, d) {
     let best = null, bz = 0;
@@ -201,7 +207,7 @@
     return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig + fc + sl;
   }
   function tickText() {
-    return rows().slice(0, 3).map((x) => x.k + ' ' + (x.r * 100).toFixed(1) + '% n' + x.n).join(' | ');
+    return rows().slice(0, 3).map((x) => x.k + ' ' + (x.r * 100).toFixed(1) + '% n' + Math.round(x.n)).join(' | ');
   }
   function report() {
     return 'VARIANTS (sorted by |z|, 60s horizon, z corrected for overlap):\n' +

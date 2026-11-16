@@ -165,12 +165,34 @@ def k_tl(ov, d, p, u):
 def k_sub(ov, d, p, u):
     a = ease(u / .2); sc = .7 + .3 * back(u / .35); bw, bh = int(760 * sc), int(170 * sc); d.rounded_rectangle((W / 2 - bw / 2, 760 - bh / 2, W / 2 + bw / 2, 760 + bh / 2), radius=int(84 * sc), fill=al(RED, a))
     d.text((W / 2, 760), 'ПОДПИСАТЬСЯ', font=BK(int(84 * sc)), fill=al(WHITE, a), anchor='mm'); text_c(d, W / 2, 1010, [(p.get('l2', ''), WHITE, a)], fit(p.get('l2', ' '), 80), sw=12)
-KIND = dict(big=k_big, count=k_count, date=k_date, forum=k_forum, stmt=k_stmt, chat=k_chat, hotel=k_hotel, shot=k_shot, tl=k_tl, sub=k_sub)
+_rd = dict(key=None, proc=None, last=None)
+g_ = Image.new('L', (1, H))
+for y in range(H): g_.putpixel((0, y), int(255 * min(1, 0.55 * max(0, 1 - y / 520) ** 1.3 + 0.5 * max(0, 1 - abs(y - 1500) / 330) + 0.5 * max(0, (y - 1650) / 270))))
+SHADE = Image.new('RGBA', (W, H), NAVY + (0,)); SHADE.putalpha(g_.resize((W, H)))
+def media(b, u):
+    p = b['p']
+    if b['kind'] == 'photo':
+        if p['img'] not in _img:
+            im = Image.open(p['img']).convert('RGB'); _img[p['img']] = im.resize((int(im.width * 2304 / im.height), 2304), Image.LANCZOS)
+        im = _img[p['img']]; dur = max(.1, b['end'] - b['t']); q = min(1, u / dur); span = min(700, im.width - 1340); cx = im.width * p.get('cx', .5) - span / 2 + span * q; z = 1 + .06 * q; cw, ch = 1296 / z, 2304 / z
+        return im.transform((W, H), Image.EXTENT, (cx - cw / 2, (2304 - ch) / 2, cx + cw / 2, (2304 + ch) / 2), Image.BICUBIC)
+    if _rd['key'] != id(b):
+        if _rd['proc']: _rd['proc'].kill()
+        dur = b['end'] - b['t']; vf = p.get('vf', 'scale=1080:1920'); slow = max(1.0, dur / p.get('len', 6.0))
+        _rd['proc'] = subprocess.Popen(['ffmpeg', '-v', 'error', '-ss', f"{p.get('ss', 0) + max(0, u) / slow:.3f}", '-i', p['src'], '-vf', f'{vf},setpts={slow:.3f}*PTS,fps={FPS}', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdout=subprocess.PIPE); _rd['key'] = id(b)
+    buf = _rd['proc'].stdout.read(W * H * 3)
+    if len(buf) == W * H * 3: _rd['last'] = Image.frombuffer('RGB', (W, H), buf, 'raw', 'RGB', 0, 1).copy()
+    return _rd['last'] if _rd['last'] is not None else Image.new('RGB', (W, H), NAVY)
+def k_media(ov, d, p, u):
+    if p.get('l1'): k_big(ov, d, p, u)
+KIND = dict(clip=k_media, photo=k_media, big=k_big, count=k_count, date=k_date, forum=k_forum, stmt=k_stmt, chat=k_chat, hotel=k_hotel, shot=k_shot, tl=k_tl, sub=k_sub)
 
 def frame(tt, cover=True):
     if cover and COVER is not None and tt < COVER_T: return COVER
-    base = Image.fromarray(BG[int(tt * 12) % len(BG)]).resize((W, H), Image.BILINEAR).convert('RGBA'); ov = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(ov)
-    b = next((x for x in beats if x['t'] <= tt < x['end']), beats[-1]); u = tt - b['t']; KIND[b['kind']](ov, d, b['p'], u); d = ImageDraw.Draw(ov)
+    b = next((x for x in beats if x['t'] <= tt < x['end']), beats[-1]); u = tt - b['t']; ov = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(ov)
+    if b['kind'] in ('clip', 'photo'): base = media(b, u).convert('RGBA'); base.alpha_composite(SHADE)
+    else: base = Image.fromarray(BG[int(tt * 12) % len(BG)]).resize((W, H), Image.BILINEAR).convert('RGBA')
+    KIND[b['kind']](ov, d, b['p'], u); d = ImageDraw.Draw(ov)
     ov.alpha_composite(LOGO, (48, 250)); f = BK(40); tx = PART; tw = d.textlength(tx, font=f); d.rounded_rectangle((W - 48 - tw - 52, 274, W - 48, 354), radius=22, fill=YELLOW + (255,)); d.text((W - 74 - tw, 314), tx, font=f, fill=NAVY + (255,), anchor='lm')
     d.text((W - 48, 384), SERIES, font=XB(30), fill=WHITE + (220,), anchor='rm')
     for i, c in enumerate(caps):

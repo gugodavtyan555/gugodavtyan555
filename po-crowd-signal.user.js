@@ -65,6 +65,9 @@
   const TF = 60; // մոմի տևողություն՝ 60 (1 րոպե) կամ 300 (5 րոպե)
   const HZ = TF, OVL = HZ * 2, BUF = TF === 60 ? 1300 : 2600;
   const K = { an: TF === 60 ? 'po_an60' : 'po_an' + TF, cond: TF === 60 ? 'po_cond2' : 'po_cond' + TF, sig: TF === 60 ? 'po_sig2' : 'po_sig' + TF };
+  let market = 'otc'; // 'otc' կամ 'real'՝ վիճակագրությունը առանձին է
+  const marketOf = (a) => (/_otc$/i.test(a || '') ? 'otc' : 'real');
+  const KM = (n) => K[n] + (market === 'real' ? '_real' : '');
   const ticks = {}, tq = {}, tstat = {}, cstat = {}, rec = {};
   let curAsset = '', selAsset = '', bestName = '', lastSig = null, sentMin = -1;
   const sg = (x) => (x > 0 ? 1 : x < 0 ? -1 : 0);
@@ -88,11 +91,12 @@
     VARS['rngRev' + W] = (t) => -pos(t); // վերևում՝ կիջնի, ներքևում՝ կբարձրանա
     VARS['rngBrk' + W] = (t) => pos(t);  // շարունակում է
   }
-  try { Object.assign(tstat, JSON.parse(localStorage.getItem(K.an) || '{}').t || {}); Object.assign(cstat, JSON.parse(localStorage.getItem(K.an) || '{}').c || {}); } catch (e) {}
+  try { Object.assign(tstat, JSON.parse(localStorage.getItem(KM('an')) || '{}').t || {}); Object.assign(cstat, JSON.parse(localStorage.getItem(KM('an')) || '{}').c || {}); } catch (e) {}
   const WIN = 600, DECAY = 1 - 1 / WIN;
   for (const k in VARS) if (!tstat[k]) tstat[k] = { w: 0, l: 0 };
   for (const k in tstat) { const v = tstat[k], t = v.w + v.l; if (t > WIN) { v.w *= WIN / t; v.l *= WIN / t; } }
   function onTick(asset, ts, price) {
+    if (marketOf(asset) !== market) return; // մյուս շուկայի տիկերը չեն խառնվում
     const arr = ticks[asset] || (ticks[asset] = []);
     if (!selAsset) curAsset = asset;
     if (arr.length) {
@@ -132,7 +136,7 @@
   // ---- պայմանային վիճակագրություն ----
   const COND_N = 50, COND_RATE = 0.60;
   let cond = {};
-  try { cond = JSON.parse(localStorage.getItem(K.cond) || '{}'); } catch (e) {}
+  try { cond = JSON.parse(localStorage.getItem(KM('cond')) || '{}'); } catch (e) {}
   const vsig = [];
   let lastCand = null;
   const sgn = (x) => (x > 0 ? 1 : x < 0 ? -1 : 0);
@@ -244,7 +248,7 @@
     }
   }
   function resolveCond() {
-    try { localStorage.setItem(K.cond, JSON.stringify(cond)); } catch (e) {}
+    try { localStorage.setItem(KM('cond'), JSON.stringify(cond)); } catch (e) {}
   }
   function condText() {
     const top = Object.entries(cond).filter(([k, v]) => k.includes('|') && !k.startsWith('v:') && v.w + v.l >= 20)
@@ -303,7 +307,7 @@
   const sigPend = [];
   let sigStat = { global: { w: 0, l: 0 }, recent: { w: 0, l: 0 }, cond: { w: 0, l: 0 }, old: { w: 0, l: 0 } };
   const oldPend = [];
-  try { const o = JSON.parse(localStorage.getItem(K.sig) || 'null'); if (o) sigStat = Object.assign(sigStat, o); } catch (e) {}
+  try { const o = JSON.parse(localStorage.getItem(KM('sig')) || 'null'); if (o) sigStat = Object.assign(sigStat, o); } catch (e) {}
   function resolveSigs() {
     const nowo = Date.now();
     for (let i = oldPend.length - 1; i >= 0; i--) {
@@ -313,7 +317,32 @@
       if (cur !== undefined && cur !== q.p) { if ((cur > q.p) === (q.dir > 0)) sigStat.old.w++; else sigStat.old.l++; }
       oldPend.splice(i, 1);
     }
-    try { localStorage.setItem(K.sig, JSON.stringify(sigStat)); } catch (e) {}
+    try { localStorage.setItem(KM('sig'), JSON.stringify(sigStat)); } catch (e) {}
+  }
+  function saveAll() {
+    try {
+      localStorage.setItem(KM('an'), JSON.stringify({ t: tstat, c: cstat }));
+      localStorage.setItem(KM('cond'), JSON.stringify(cond));
+      localStorage.setItem(KM('sig'), JSON.stringify(sigStat));
+    } catch (e) {}
+  }
+  function setMarket(m) {
+    if (m === market) return;
+    saveAll();
+    market = m;
+    for (const k in tstat) delete tstat[k];
+    for (const k in cstat) delete cstat[k];
+    let an = {};
+    try { an = JSON.parse(localStorage.getItem(KM('an')) || '{}'); } catch (e) {}
+    Object.assign(tstat, an.t || {}); Object.assign(cstat, an.c || {});
+    for (const k in VARS) if (!tstat[k]) tstat[k] = { w: 0, l: 0 };
+    for (const k in tstat) { const v = tstat[k], t = v.w + v.l; if (t > WIN) { v.w *= WIN / t; v.l *= WIN / t; } }
+    try { cond = JSON.parse(localStorage.getItem(KM('cond')) || '{}'); } catch (e) { cond = {}; }
+    sigStat = { global: { w: 0, l: 0 }, recent: { w: 0, l: 0 }, cond: { w: 0, l: 0 }, old: { w: 0, l: 0 } };
+    try { const o = JSON.parse(localStorage.getItem(KM('sig')) || 'null'); if (o) sigStat = Object.assign(sigStat, o); } catch (e) {}
+    lastCand = null; vsig.length = 0; sigPend.length = 0; oldPend.length = 0;
+    for (const a in tq) tq[a] = [];
+    for (const a in rec) delete rec[a];
   }
   function outlook(arr) {
     const g = {};
@@ -476,9 +505,9 @@
       }
       delete buckets[asset];
     }
-    info.firstChild.textContent = (TF === 60 ? '1ր ' : '5ր ') + 'WS:' + nWs + ' deals:' + nDeals + ' crowd ' + stat() + ' ';
+    info.firstChild.textContent = (TF === 60 ? '1ր ' : '5ր ') + (market === 'real' ? 'REAL ' : 'OTC ') + 'WS:' + nWs + ' deals:' + nDeals + ' crowd ' + stat() + ' ';
     box2.textContent = statusText() + '\n' + tickText();
-    try { localStorage.setItem(K.an, JSON.stringify({ t: tstat, c: cstat })); } catch (e) {}
+    try { localStorage.setItem(KM('an'), JSON.stringify({ t: tstat, c: cstat })); } catch (e) {}
   }, WINDOW_MS);
 
   // ---- ամեն րոպե՝ ամենաուժեղ ամբոխի դեմ սիգնալ ----
@@ -524,7 +553,7 @@
       try {
         if (typeof m === 'string' && m.includes('changeSymbol')) {
           const o = JSON.parse(m.slice(m.indexOf('{')));
-          if (o.asset) { selAsset = o.asset; curAsset = o.asset; }
+          if (o.asset) { selAsset = o.asset; curAsset = o.asset; setMarket(marketOf(o.asset)); }
         }
       } catch (e) {}
       return origSend(m);
@@ -552,6 +581,7 @@
               if (!old || old.length < 100 || old[old.length - 1].ts < arr[0].ts) ticks[h.asset] = arr; // գոյություն ունեցող տվյալները և սպասվող կանխատեսումները չենք ջնջում
               curAsset = h.asset;
               selAsset = h.asset;
+              setMarket(marketOf(h.asset));
               lastPrice[h.asset] = arr[arr.length - 1].p;
             }
           } catch (e) {}

@@ -62,6 +62,9 @@
   const EXPIRY_MS = 60000;
   // ---- 5s tick analysis: many variants, every tick, persisted ----
   const HZ = 60, OVL = HZ * 2; // 1 րոպե, ~2 տիկ/վրկ
+  let market = 'otc'; // 'otc' կամ 'real'՝ վիճակագրությունը առանձին է
+  const marketOf = (a) => (/_otc$/i.test(a || '') ? 'otc' : 'real');
+  const KM = (b) => b + (market === 'real' ? '_real' : '');
   const ticks = {}, tq = {}, tstat = {}, cstat = {};
   const sg = (x) => (x > 0 ? 1 : x < 0 ? -1 : 0);
   const VARS = {};
@@ -74,12 +77,13 @@
     VARS['meanrev' + W] = (t) => -dev(t);
     VARS['trend' + W] = (t) => dev(t);
   }
-  try { Object.assign(tstat, JSON.parse(localStorage.getItem('po_an_classic') || '{}').t || {}); Object.assign(cstat, JSON.parse(localStorage.getItem('po_an_classic') || '{}').c || {}); } catch (e) {}
+  try { Object.assign(tstat, JSON.parse(localStorage.getItem(KM('po_an_classic')) || '{}').t || {}); Object.assign(cstat, JSON.parse(localStorage.getItem(KM('po_an_classic')) || '{}').c || {}); } catch (e) {}
   for (const k in VARS) if (!tstat[k]) tstat[k] = { w: 0, l: 0 };
   let lastAssetSeen = '';
   const WIN = 800, DECAY = 1 - 1 / WIN;
   for (const k in tstat) { const v = tstat[k], t = v.w + v.l; if (t > WIN) { v.w *= WIN / t; v.l *= WIN / t; } }
   function onTick(asset, ts, price) {
+    if (marketOf(asset) !== market) return; // մյուս շուկայի տիկերը չեն խառնվում
     const arr = ticks[asset] || (ticks[asset] = []);
     arr.push({ ts, p: price });
     lastAssetSeen = asset;
@@ -107,7 +111,27 @@
   const AGREE_MIN = 5; // 5 լավագույն կանոններից քանիսը պետք է համաձայն լինեն (5՝ առավելագույն վստահություն)
   const sigPend = [];
   let sigStat = { w: 0, l: 0 };
-  try { const o = JSON.parse(localStorage.getItem('po_sig_classic') || 'null'); if (o) sigStat = o; } catch (e) {}
+  try { const o = JSON.parse(localStorage.getItem(KM('po_sig_classic')) || 'null'); if (o) sigStat = o; } catch (e) {}
+  function setMarket(m) {
+    if (m === market) return;
+    try {
+      localStorage.setItem(KM('po_an_classic'), JSON.stringify({ t: tstat, c: cstat }));
+      localStorage.setItem(KM('po_sig_classic'), JSON.stringify(sigStat));
+    } catch (e) {}
+    market = m;
+    for (const k in tstat) delete tstat[k];
+    for (const k in cstat) delete cstat[k];
+    let an = {};
+    try { an = JSON.parse(localStorage.getItem(KM('po_an_classic')) || '{}'); } catch (e) {}
+    Object.assign(tstat, an.t || {}); Object.assign(cstat, an.c || {});
+    for (const k in VARS) if (!tstat[k]) tstat[k] = { w: 0, l: 0 };
+    for (const k in tstat) { const v = tstat[k], t = v.w + v.l; if (t > WIN) { v.w *= WIN / t; v.l *= WIN / t; } }
+    sigStat = { w: 0, l: 0 };
+    try { const o = JSON.parse(localStorage.getItem(KM('po_sig_classic')) || 'null'); if (o) sigStat = o; } catch (e) {}
+    sigPend.length = 0;
+    for (const a in tq) tq[a] = [];
+    for (const a in hold) delete hold[a];
+  }
   let lastSent = 0, selAsset = '';
   function tsignal(asset, k, d) {
     if (selAsset && asset !== selAsset) return; // միայն ընտրված զույգի համար
@@ -241,7 +265,7 @@
       }
       delete buckets[asset];
     }
-    info.firstChild.textContent = 'WS:' + nWs + ' deals:' + nDeals + ' crowd ' + stat() + ' ';
+    info.firstChild.textContent = (market === 'real' ? 'REAL ' : 'OTC ') + 'WS:' + nWs + ' deals:' + nDeals + ' crowd ' + stat() + ' ';
     for (let i = sigPend.length - 1; i >= 0; i--) {
       const q = sigPend[i];
       if (Date.now() - q.t < 62000) continue;
@@ -249,9 +273,9 @@
       if (cur !== undefined && cur !== q.p) { if ((cur > q.p) === (q.dir > 0)) sigStat.w++; else sigStat.l++; }
       sigPend.splice(i, 1);
     }
-    try { localStorage.setItem('po_sig_classic', JSON.stringify(sigStat)); } catch (e) {}
+    try { localStorage.setItem(KM('po_sig_classic'), JSON.stringify(sigStat)); } catch (e) {}
     box2.textContent = tickText() + '\n📊 սիգնալներ ' + sigStat.w + '/' + sigStat.l + '\nℹ️ ' + whyNo();
-    try { localStorage.setItem('po_an_classic', JSON.stringify({ t: tstat, c: cstat })); } catch (e) {}
+    try { localStorage.setItem(KM('po_an_classic'), JSON.stringify({ t: tstat, c: cstat })); } catch (e) {}
   }, WINDOW_MS);
 
   // ---- ամեն րոպե՝ ամենաուժեղ ամբոխի դեմ սիգնալ ----
@@ -293,7 +317,7 @@
     const ws = new Orig(...a);
     const origSend = ws.send.bind(ws);
     ws.send = function (m) {
-      try { if (typeof m === 'string' && m.includes('changeSymbol')) { const o = JSON.parse(m.slice(m.indexOf('{'))); if (o.asset) selAsset = o.asset; } } catch (e) {}
+      try { if (typeof m === 'string' && m.includes('changeSymbol')) { const o = JSON.parse(m.slice(m.indexOf('{'))); if (o.asset) { selAsset = o.asset; setMarket(marketOf(o.asset)); } } } catch (e) {}
       return origSend(m);
     };
     let last = '';
@@ -311,7 +335,7 @@
         if (last === 'updateStream' && d[0] === '[') {
           try { const a = JSON.parse(d); for (const r of a) if (r && r[0]) { lastPrice[r[0]] = r[2]; onTick(r[0], r[1], r[2]); } } catch (e) {}
         }
-        if (last === 'updateHistoryNewFast' && d[0] === '{') { try { const h = JSON.parse(d); if (h.asset) selAsset = h.asset; } catch (e) {} }
+        if (last === 'updateHistoryNewFast' && d[0] === '{') { try { const h = JSON.parse(d); if (h.asset) { selAsset = h.asset; setMarket(marketOf(h.asset)); } } catch (e) {} }
         if (/OpenedSocialDeals/.test(last)) parse(d);
       }).catch(() => {});
     });

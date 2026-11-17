@@ -43,7 +43,7 @@ MAX_CONSEC_LOSSES = int(env_f("MAX_CONSEC_LOSSES", 3))
 MAX_TRADES_PER_HOUR = int(env_f("MAX_TRADES_PER_HOUR", 6))
 # rsi_signal refreshes once per 5-min boundary, so a fresh signal can legitimately be up to ~280s old;
 # the old 5-min-expiry "best" signal needs a much tighter window. Default follows STRATEGY unless overridden.
-MAX_SIGNAL_AGE = env_f("MAX_SIGNAL_AGE", 280 if os.environ.get("STRATEGY", "rsi") == "rsi" else 20)
+MAX_SIGNAL_AGE = env_f("MAX_SIGNAL_AGE", 330 if os.environ.get("STRATEGY", "rsi") == "rsi" else 20)
 MIN_PAYOUT = env_f("MIN_PAYOUT", 75)              # % ; skip if the platform pays less
 POLL_SEC = env_f("POLL_SEC", 3)
 

@@ -24,3 +24,6 @@ Format: `YYYY-MM-DD · STATUS · title · hook · theme`
 2026-11-14 · SUGGESTED · GTA 6 в 30 FPS: что подтвердила Rockstar · «ГТА шесть выйдет в тридцати кадрах в секунду. Это провал — или нет?» · 30 FPS на PS5/PS5 Pro/Xbox Series на старте, режима 60 нет, PS5 Pro: PSSR + ray-traced shadows
 2026-11-14 · SUGGESTED · 212 ГБ: сколько места нужно GTA 6 и как подготовить консоль · «Освободи двести двенадцать гигабайт, пока не поздно» · размер установки по данным изданий, подготовка накопителя
 2026-11-14 · SUGGESTED · PS5 Pro против обычной PS5 в GTA 6 · «Стоит ли PS5 Pro ради GTA 6?» · что даёт Pro (PSSR, трассированные тени), общая цель 30 FPS
+
+## Top5 first-10-min Short (17 Nov)
+video-pipeline/top5: 63.7 s, 1440x2560. Music: Pixabay "Brazilian Phonk" by MondaMusic (user-downloaded, Pixabay licence). Footage: official Rockstar. Voice: ElevenLabs Callum.

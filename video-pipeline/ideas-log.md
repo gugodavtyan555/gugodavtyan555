@@ -27,3 +27,6 @@ Format: `YYYY-MM-DD · STATUS · title · hook · theme`
 
 ## Top5 first-10-min Short (17 Nov)
 video-pipeline/top5: 63.7 s, 1440x2560. Music: Pixabay "Brazilian Phonk" by MondaMusic (user-downloaded, Pixabay licence). Footage: official Rockstar. Voice: ElevenLabs Callum.
+
+## Vice City story (17 Nov)
+video-pipeline/doc: 175 s documentary Short, voice Callum, music Pixabay "The Mountain - synthwave" + "Kulakovka - dark synthwave" (user-downloaded), AI clips from Veo/Flow (user-made), Wikimedia photos (credits in assets/pack/CREDITS.md), official Rockstar images/footage. Facts verified: 17.5M sales (Take-Two figure), 125k Mariel, Guinness 90,421,491 views, delays 2 May 2025 / 6 Nov 2025.

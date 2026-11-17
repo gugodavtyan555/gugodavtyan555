@@ -350,6 +350,14 @@ async function rankAndSettle(env, boundary, infos) {
       await env.DB.prepare("UPDATE trades SET exit=?, result=? WHERE id=?").bind(p, res, t.id).run(); out.settled++;
     } else if (t.exit_at < boundary - 90) await env.DB.prepare("UPDATE trades SET result='error' WHERE id=?").bind(t.id).run();
   }
+  // Publish the single best RSI-extreme reversion candidate for /api/rsi_signal (independent of the "auto" virtual-trade toggle).
+  const rAll = infos.filter(i => i.r5 < 30 || i.r5 > 70).sort((a, b) => Math.abs(b.r5 - 50) - Math.abs(a.r5 - 50));
+  if (rAll.length) {
+    const i = rAll[0];
+    await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('rsignal', ?)").bind(JSON.stringify({
+      id: boundary, pair: i.pair, dir: i.r5 < 30 ? "UP" : "DOWN", expiry_sec: 3600, strength: "rsi_extreme", price: i.price, rsi5: i.r5, t: boundary
+    })).run();
+  }
   const auto = (await env.DB.prepare("SELECT v FROM kv WHERE k='auto'").first())?.v === "1";
   if (auto) {
     const ins = (i, dir, strat) => env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat, strat) VALUES (?,?,?,?,?,?,?,?)")
@@ -358,7 +366,7 @@ async function rankAndSettle(env, boundary, infos) {
     // R = RSI-extreme reversion, 60-minute expiry (RSI14 on M5 < 30 -> UP, > 70 -> DOWN). Test candidate from the strategy search.
     const { results: openR } = await env.DB.prepare("SELECT pair FROM trades WHERE strat='R' AND result IS NULL").all();
     const busy = new Set(openR.map(r => r.pair));
-    const cand = infos.filter(i => (i.r5 < 30 || i.r5 > 70) && !busy.has(i.pair)).sort((a, b) => Math.abs(b.r5 - 50) - Math.abs(a.r5 - 50)).slice(0, 2);
+    const cand = rAll.filter(i => !busy.has(i.pair)).slice(0, 2);
     for (const i of cand) {
       await env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat, strat) VALUES (?,?,?,?,?,?,?,?)")
         .bind(i.pair, i.r5 < 30 ? "UP" : "DOWN", boundary, boundary + 3600, i.price, Math.round(Math.abs(i.r5 - 50) * 100) / 100, JSON.stringify(i.feat), "R").run();
@@ -410,6 +418,10 @@ export default {
     }
     if (url.pathname === "/api/signal" && env.API_TOKEN && url.searchParams.get("key") === env.API_TOKEN) {
       const r = await env.DB.prepare("SELECT v FROM kv WHERE k='signal'").first();
+      return new Response(r ? r.v : "{}", { headers: { "content-type": "application/json", "cache-control": "no-store" } });
+    }
+    if (url.pathname === "/api/rsi_signal" && env.API_TOKEN && url.searchParams.get("key") === env.API_TOKEN) {
+      const r = await env.DB.prepare("SELECT v FROM kv WHERE k='rsignal'").first();
       return new Response(r ? r.v : "{}", { headers: { "content-type": "application/json", "cache-control": "no-store" } });
     }
     return new Response("FX analyzer bot");

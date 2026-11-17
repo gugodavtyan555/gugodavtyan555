@@ -48,11 +48,12 @@ def put(x, t, g=1.0):
     i = int(t * SR)
     if i < 0 or i >= N: return
     x = x[:N - i]; sfx[i:i + len(x)] += x * g
-whs = [whoosh(0.45), whoosh(0.35, True), whoosh(0.55)]
+def smp(n):
+    x = load(f'{HERE}/sfx/{n}.mp3', 1); return (x / max(1e-6, np.abs(x).max()) * 0.9).astype(np.float32)
+whs = [smp('w1'), smp('w2'), smp('w3')]; boom = smp('b1')
 ev = json.load(open(HERE + '/events.json'))
-for k, e in enumerate(ev['whoosh']): put(whs[k % 3], e - 0.2, 0.5)
-for e in ev['impact']: put(impact(), e, 0.75)
-put(riser(1.6), doc.START['d7'] - 1.6, 0.6)
+for k, e in enumerate(ev['whoosh']): put(whs[k % 3], e - 0.25, 0.30)
+for e in ev['impact']: put(boom, e, 0.45)
 out = mus * gain[:, None] + voice[:, None] + sfx[:, None] * 0.6
 out = np.tanh(out * 1.1) * 0.95; o16 = (np.clip(out, -1, 1) * 32767).astype(np.int16)
 wf = wave.open(HERE + '/mix.wav', 'wb'); wf.setnchannels(2); wf.setsampwidth(2); wf.setframerate(SR); wf.writeframes(o16.tobytes()); wf.close(); print('mix', round(N / SR, 1))

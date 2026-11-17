@@ -12,8 +12,9 @@ Local auto-trader: reads the bot's strongest signal and opens ONE trade on YOUR 
 Setup:
     pip install binaryoptionstoolsv2
     export PO_SSID='...'            # your own session string (demo session first!)
-    export SIGNAL_URL='https://fx-analyzer-bot.gugodavtyan555.workers.dev/api/signal'
+    export SIGNAL_URL='https://fx-analyzer-bot.gugodavtyan555.workers.dev'   # base URL, no path
     export SIGNAL_KEY='...'         # the API key you were given for the signal endpoint
+    export STRATEGY='rsi'           # 'rsi' (default, 60-min expiry, best backtest) or 'best' (5-min, trend/fade)
 
 Run:
     python po_autotrader.py --dry-run          # only prints what it WOULD do (needs no SSID)
@@ -40,7 +41,9 @@ MAX_STAKE = env_f("MAX_STAKE", 2.0)               # hard cap, STAKE can never ex
 MAX_DAILY_LOSS = env_f("MAX_DAILY_LOSS", 3.0)     # stop for the day when net loss reaches this
 MAX_CONSEC_LOSSES = int(env_f("MAX_CONSEC_LOSSES", 3))
 MAX_TRADES_PER_HOUR = int(env_f("MAX_TRADES_PER_HOUR", 6))
-MAX_SIGNAL_AGE = env_f("MAX_SIGNAL_AGE", 20)      # seconds; older signals are ignored
+# rsi_signal refreshes once per 5-min boundary, so a fresh signal can legitimately be up to ~280s old;
+# the old 5-min-expiry "best" signal needs a much tighter window. Default follows STRATEGY unless overridden.
+MAX_SIGNAL_AGE = env_f("MAX_SIGNAL_AGE", 280 if os.environ.get("STRATEGY", "rsi") == "rsi" else 20)
 MIN_PAYOUT = env_f("MIN_PAYOUT", 75)              # % ; skip if the platform pays less
 POLL_SEC = env_f("POLL_SEC", 3)
 
@@ -57,8 +60,16 @@ def log(row):
         w.writerow(row)
 def say(msg): print(f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] {msg}", flush=True)
 
+# Strategy endpoints on the bot worker. "rsi" (default) = RSI-extreme reversion, 60-min expiry — the one that
+# backtested and forward-tested best. "best" = older trend/fade "strongest signal", 5-min expiry.
+# Pick with STRATEGY env var. SIGNAL_URL is the worker's base URL, e.g. https://fx-analyzer-bot.gugodavtyan555.workers.dev
+ENDPOINT_PATH = {"rsi": "/api/rsi_signal", "best": "/api/signal"}
+STRATEGY = os.environ.get("STRATEGY", "rsi")
+
 def fetch_signal():
-    url = os.environ["SIGNAL_URL"] + "?key=" + os.environ["SIGNAL_KEY"]
+    base = os.environ["SIGNAL_URL"].rstrip("/")
+    path = ENDPOINT_PATH.get(STRATEGY, ENDPOINT_PATH["rsi"])
+    url = base + path + "?key=" + os.environ["SIGNAL_KEY"]
     req = urllib.request.Request(url, headers={"User-Agent": "po-autotrader"})
     with urllib.request.urlopen(req, timeout=10) as r: return json.loads(r.read().decode())
 

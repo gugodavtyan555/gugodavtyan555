@@ -398,7 +398,7 @@ async function maybeAlertRSI(env, i, dir, boundary) {
   const on = (await env.DB.prepare("SELECT v FROM kv WHERE k='alerts'").first())?.v;
   if (on === "0" || !env.ALLOWED_CHAT) return false;
   let last = null; try { const r = await env.DB.prepare("SELECT v FROM kv WHERE k='lastalertrsi'").first(); if (r) last = JSON.parse(r.v); } catch (e) {}
-  if (last && last.pair === i.pair && last.dir === dir && boundary - last.t < 1200) return false;
+  if (last && last.pair === i.pair && last.dir === dir && boundary - last.t < 3600) return false;   // don't repeat within the 60-min expiry window
   const hh = new Date(boundary * 1000).toISOString().slice(11, 19);
   const text = [`🔔 *Ավտոմատ RSI սիգնալ*`, "",
     `🔁 ${ico[dir]} *${dir} · 60 րոպե* — ${pairName(i.pair)} (RSI գերծայրահեղ → վերադարձ)`,

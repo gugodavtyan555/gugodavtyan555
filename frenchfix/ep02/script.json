@@ -1,0 +1,168 @@
+{
+ "lead": 1.05,
+ "tail": 1.2,
+ "segments": [
+  {
+   "id": "hook",
+   "lang": "fr",
+   "text": "Cinq erreurs au restaurant qui te font passer pour un touriste... et le serveur l'a déjà remarqué.",
+   "pause": 0.35
+  },
+  {
+   "id": "1a",
+   "lang": "fr",
+   "text": "Numéro un. Tu veux payer, alors tu dis :",
+   "pause": 0.2
+  },
+  {
+   "id": "1b",
+   "lang": "frf",
+   "text": "Le chèque, s'il vous plaît.",
+   "pause": 0.3
+  },
+  {
+   "id": "1c",
+   "lang": "fr",
+   "text": "Le serveur se demande si tu as voyagé dans le temps.",
+   "pause": 0.3
+  },
+  {
+   "id": "1d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "1e",
+   "lang": "frf",
+   "text": "L'addition, s'il vous plaît.",
+   "pause": 0.45
+  },
+  {
+   "id": "2a",
+   "lang": "fr",
+   "text": "Numéro deux. Tu as soif, alors tu dis :",
+   "pause": 0.2
+  },
+  {
+   "id": "2b",
+   "lang": "frf",
+   "text": "De l'eau, s'il vous plaît.",
+   "pause": 0.3
+  },
+  {
+   "id": "2c",
+   "lang": "fr",
+   "text": "Félicitations. Tu viens de commander une bouteille d'eau payante.",
+   "pause": 0.3
+  },
+  {
+   "id": "2d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "2e",
+   "lang": "frf",
+   "text": "Une carafe d'eau, s'il vous plaît.",
+   "pause": 0.45
+  },
+  {
+   "id": "3a",
+   "lang": "fr",
+   "text": "Numéro trois. Tu appelles le serveur, alors tu cries :",
+   "pause": 0.2
+  },
+  {
+   "id": "3b",
+   "lang": "frf",
+   "text": "Garçon !",
+   "pause": 0.3
+  },
+  {
+   "id": "3c",
+   "lang": "fr",
+   "text": "Ça fait vieux, et un peu insultant. Il ne viendra pas vite.",
+   "pause": 0.3
+  },
+  {
+   "id": "3d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "3e",
+   "lang": "frf",
+   "text": "Excusez-moi, monsieur.",
+   "pause": 0.45
+  },
+  {
+   "id": "4a",
+   "lang": "fr",
+   "text": "Numéro quatre. Tu aimes ton steak très cuit, alors tu dis :",
+   "pause": 0.2
+  },
+  {
+   "id": "4b",
+   "lang": "frf",
+   "text": "Bien cuit, s'il vous plaît.",
+   "pause": 0.3
+  },
+  {
+   "id": "4c",
+   "lang": "fr",
+   "text": "Le chef pleure en cuisine. Un peu.",
+   "pause": 0.3
+  },
+  {
+   "id": "4d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "4e",
+   "lang": "frf",
+   "text": "À point, s'il vous plaît.",
+   "pause": 0.45
+  },
+  {
+   "id": "5a",
+   "lang": "fr",
+   "text": "Numéro cinq. Le serveur dit bon appétit, alors tu réponds :",
+   "pause": 0.2
+  },
+  {
+   "id": "5b",
+   "lang": "frf",
+   "text": "Toi aussi !",
+   "pause": 0.3
+  },
+  {
+   "id": "5c",
+   "lang": "fr",
+   "text": "Tu tutoies un inconnu. Il note ça dans sa tête.",
+   "pause": 0.3
+  },
+  {
+   "id": "5d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "5e",
+   "lang": "frf",
+   "text": "Merci, vous aussi !",
+   "pause": 0.5
+  },
+  {
+   "id": "out",
+   "lang": "fr",
+   "text": "Laquelle as-tu déjà faite ? Dis-le-moi en commentaire, et abonne-toi pour la partie deux.",
+   "pause": 0
+  }
+ ]
+}

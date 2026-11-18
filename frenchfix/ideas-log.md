@@ -11,3 +11,4 @@ Format: date · status · title · hook · formula/theme
 
 ## Suggested by the daily task
 (append below: `YYYY-MM-DD · SUGGESTED · title · hook · theme`)
+2026-11-18 · PRODUCED (ep02) · «5 erreurs au restaurant qui te font passer pour un touriste» · hook: « Cinq erreurs au restaurant qui te font passer pour un touriste » · restaurant: le chèque→l'addition, de l'eau→une carafe d'eau, garçon→excusez-moi monsieur, bien cuit→à point, toi aussi→vous aussi

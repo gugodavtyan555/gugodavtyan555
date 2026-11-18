@@ -1,0 +1,58 @@
+{
+ "hook": [
+  "5 ERREURS",
+  "AU RESTAURANT"
+ ],
+ "hookNote": "<b>5</b> erreurs de touriste 🥖",
+ "cover": {
+  "pill": "🥖 5 ERREURS DE TOURISTE",
+  "a": "Tu es un",
+  "b": "touriste",
+  "c": "au restaurant 🇫🇷",
+  "bub": "« Le chèque ! »",
+  "stamp": "ERREUR",
+  "e1": "🤨",
+  "e2": "😬"
+ },
+ "items": [
+  {
+   "intent": "Je veux payer",
+   "emoji": "🧾",
+   "hear": "« Tu viens d'un autre siècle »",
+   "hearEmoji": "🕰️",
+   "punch": 4
+  },
+  {
+   "intent": "Je veux de l'eau",
+   "emoji": "💧",
+   "hear": "« Une bouteille payante »",
+   "hearEmoji": "💸",
+   "punch": 4
+  },
+  {
+   "intent": "J'appelle le serveur",
+   "emoji": "🙋",
+   "hear": "« Je ne suis pas un enfant ! »",
+   "hearEmoji": "😤",
+   "punch": 6
+  },
+  {
+   "intent": "Mon steak très cuit",
+   "emoji": "🥩",
+   "hear": "Le chef pleure en cuisine",
+   "hearEmoji": "😭",
+   "punch": 5
+  },
+  {
+   "intent": "Réponse à « Bon appétit »",
+   "emoji": "🍽️",
+   "hear": "« Je ne vous connais pas… »",
+   "hearEmoji": "😬",
+   "punch": 7
+  }
+ ],
+ "outro": {
+  "q": "Laquelle as-tu déjà faite ?",
+  "cta": "ABONNE-TOI pour la partie 2"
+ }
+}

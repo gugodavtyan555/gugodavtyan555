@@ -357,7 +357,6 @@ async function rankAndSettle(env, boundary, infos) {
     await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('rsignal', ?)").bind(JSON.stringify({
       id: boundary, pair: i.pair, dir, expiry_sec: 3600, strength: "rsi_extreme", price: i.price, rsi5: i.r5, t: boundary
     })).run();
-    await maybeAlertRSI(env, i, dir, boundary).catch(() => {});
   }
   const auto = (await env.DB.prepare("SELECT v FROM kv WHERE k='auto'").first())?.v === "1";
   if (auto) {
@@ -414,8 +413,10 @@ async function cronTick(env, scheduledSec) {
   if (!marketOpen(scheduledSec)) return { closed: true };
   const infos = await cronScan(env, scheduledSec);
   const alerted = await maybeAlert(env, infos, scheduledSec).catch(() => false);
+  const rAll = infos.filter(i => i.r5 < 30 || i.r5 > 70).sort((a, b) => Math.abs(b.r5 - 50) - Math.abs(a.r5 - 50));
+  const alertedRSI = rAll.length ? await maybeAlertRSI(env, rAll[0], rAll[0].r5 < 30 ? "UP" : "DOWN", scheduledSec).catch(() => false) : false;
   const onBoundary = Math.floor(scheduledSec / 60) % 5 === 0;
-  return { scanned: infos.length, alerted, ...(onBoundary ? await rankAndSettle(env, Math.floor(scheduledSec / 300) * 300, infos) : {}) };
+  return { scanned: infos.length, alerted, alertedRSI, ...(onBoundary ? await rankAndSettle(env, Math.floor(scheduledSec / 300) * 300, infos) : {}) };
 }
 
 export default {

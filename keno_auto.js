@@ -2,17 +2,19 @@
 if(window.__kenoAuto){window.__kenoAuto.panel.style.display='block';return}
 const N=10, SETTLE=2500;
 // --- 40 թվերի վանդակներ
+function docs(d=document,out=[]){out.push(d);d.querySelectorAll('iframe').forEach(f=>{try{if(f.contentDocument)docs(f.contentDocument,out)}catch(e){}});return out}
+function iframeInfo(){return [...document.querySelectorAll('iframe')].map(f=>{let ok=false;try{ok=!!f.contentDocument}catch(e){}return (ok?'OK ':'BLOCKED ')+(f.src||'').slice(0,200)}).join(' | ')}
 function findCells(){
   const m={};
-  document.querySelectorAll('div,button,span,li,td').forEach(e=>{
+  docs().forEach(D=>D.querySelectorAll('div,button,span,li,td').forEach(e=>{
     if(e.children.length>0&&!(e.children.length===1&&/^\d+$/.test(e.textContent.trim())))return;
     const t=e.textContent.trim();
     if(/^\d{1,2}$/.test(t)){const n=+t;if(n>=1&&n<=40&&!m[n]&&e.offsetWidth>20)m[n]=e}
-  });
+  }));
   return m;
 }
 let cells=findCells();
-const sigOf=e=>{const s=getComputedStyle(e);return e.className+'|'+s.backgroundColor+'|'+s.borderColor+'|'+s.color+'|'+s.boxShadow};
+const sigOf=e=>{const s=e.ownerDocument.defaultView.getComputedStyle(e);return e.className+'|'+s.backgroundColor+'|'+s.borderColor+'|'+s.color+'|'+s.boxShadow};
 const snap=()=>{const o={};for(let n=1;n<=40;n++)o[n]=cells[n]?sigOf(cells[n]):'';return o};
 const snapKey=s=>Object.values(s).join('#');
 // --- վահանակ
@@ -48,18 +50,18 @@ function show(){
 // --- Bet կոճակ
 function betBtn(){
   let best=null,area=0;
-  document.querySelectorAll('button,div,span').forEach(e=>{
+  docs().forEach(D=>D.querySelectorAll('button,div,span').forEach(e=>{
     if(e.children.length>1||e.textContent.trim().toLowerCase()!=='bet')return;
     let t=e;while(t.parentElement&&t.offsetWidth<e.parentElement.offsetWidth&&false)t=t.parentElement;
     const r=e.getBoundingClientRect(),a=r.width*r.height;if(a>area){area=a;best=e}
-  });
+  }));
   return best;
 }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 // --- ստուգում (polling)
 setInterval(()=>{
   if(!Object.keys(cells).length||Object.keys(cells).length<40||!document.contains(cells[1]))cells=findCells();
-  if(Object.keys(cells).length<40){st('Թվերի վանդակները չեն գտնվել ('+Object.keys(cells).length+'/40)');return}
+  if(Object.keys(cells).length<40){st('Վանդակներ '+Object.keys(cells).length+'/40. iframe: '+(iframeInfo()||'չկա'));return}
   const cur=snap(),key=snapKey(cur);
   if(!base){base=cur;lastKey=key;st('Պատրաստ է. ընտրիր թվերը և սեղմիր ▶');return}
   if(key!==lastKey){lastKey=key;lastChange=Date.now();sawChange=true;return}

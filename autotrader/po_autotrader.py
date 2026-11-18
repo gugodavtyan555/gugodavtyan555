@@ -111,6 +111,7 @@ async def main():
         say("DRY RUN: no orders will be placed")
 
     st = load_state()
+    last_logged = None   # (sid, reason) - throttles repeated payout/closed-market skip prints
     try:
         while True:
             if os.path.exists(STOP_FILE): say("STOP file found, exiting"); break
@@ -118,21 +119,35 @@ async def main():
             except Exception as e: say(f"signal fetch failed: {e}"); await asyncio.sleep(POLL_SEC * 2); continue
             sid = int(sig.get("id") or 0)
             if sid and sid != st["last_id"]:
-                st["last_id"] = sid; save_state(st)          # mark as seen BEFORE acting (no double trades)
                 pair, d = sig.get("pair"), sig.get("dir")
                 age = now() - float(sig.get("t", 0))
-                if age > MAX_SIGNAL_AGE: say(f"skip {pair} {d}: signal is {age:.0f}s old")
-                elif (why := risk_block(st)): say(f"STOP/SKIP: {why}"); log([datetime.utcnow().isoformat(), pair, d, STAKE, "", "skipped", "", why]); save_state(st)
+                if age > MAX_SIGNAL_AGE:
+                    say(f"skip {pair} {d}: signal is {age:.0f}s old")
+                    st["last_id"] = sid; save_state(st)          # too old already: stop looking at this id
+                elif (why := risk_block(st)):
+                    say(f"STOP/SKIP: {why}"); log([datetime.utcnow().isoformat(), pair, d, STAKE, "", "skipped", "", why])
+                    st["last_id"] = sid; save_state(st)
+                elif args.dry_run:
+                    say(f"signal {pair} {d} (age {age:.0f}s)"); say("dry-run: would trade now")
+                    st["last_id"] = sid; save_state(st)
                 else:
-                    say(f"signal {pair} {d} (age {age:.0f}s)")
-                    if args.dry_run: say("dry-run: would trade now"); continue
                     try:
                         pay = await client.payout(pair)
-                        if pay is not None and pay < MIN_PAYOUT: say(f"skip: payout {pay}% < {MIN_PAYOUT}%"); continue
-                        if not asset_active(await client.active_assets(), pair): say(f"skip: {pair} market closed"); continue
+                        if pay is not None and pay < MIN_PAYOUT:
+                            if last_logged != (sid, "payout"):
+                                say(f"signal {pair} {d} (age {age:.0f}s)")
+                                say(f"skip: payout {pay}% < {MIN_PAYOUT}% (will keep checking while this signal is fresh)")
+                                last_logged = (sid, "payout")
+                            continue   # don't mark last_id - payout may improve before the signal ages out
+                        if not asset_active(await client.active_assets(), pair):
+                            if last_logged != (sid, "closed"):
+                                say(f"signal {pair} {d} (age {age:.0f}s)"); say(f"skip: {pair} market closed (will keep checking)")
+                                last_logged = (sid, "closed")
+                            continue   # market may open again before the signal ages out
+                        say(f"signal {pair} {d} (age {age:.0f}s)")
                         fn = client.buy if d == "UP" else client.sell
                         trade_id, _ = await fn(pair, STAKE, int(sig.get("expiry_sec", 300)))   # (asset, amount, time_seconds)
-                        st["trade_times"].append(now()); save_state(st)
+                        st["last_id"] = sid; st["trade_times"].append(now()); save_state(st)
                         say(f"opened {d} {pair} stake={STAKE} id={trade_id}; waiting for result...")
                         res = await client.check_win(trade_id)
                         profit = float(res.profit)
@@ -144,6 +159,7 @@ async def main():
                         log([datetime.utcnow().isoformat(), pair, d, STAKE, pay, word, f"{profit:.2f}", ""])
                     except Exception as e:
                         say(f"trade failed: {e}"); log([datetime.utcnow().isoformat(), pair, d, STAKE, "", "error", "", str(e)[:120]])
+                        st["last_id"] = sid; save_state(st)   # hard error (e.g. unknown symbol): stop retrying this id
             await asyncio.sleep(POLL_SEC)
     except KeyboardInterrupt:
         say("stopped by user")

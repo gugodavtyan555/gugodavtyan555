@@ -412,7 +412,7 @@ async function maybeAlertRSI(env, i, dir, boundary) {
 async function cronTick(env, scheduledSec) {
   if (!marketOpen(scheduledSec)) return { closed: true };
   const infos = await cronScan(env, scheduledSec);
-  const alerted = await maybeAlert(env, infos, scheduledSec).catch(() => false);
+  const alerted = false; // trend/fade "strongest" alert disabled at the user's request (only RSI alert stays on)
   const rAll = infos.filter(i => i.r5 < 30 || i.r5 > 70).sort((a, b) => Math.abs(b.r5 - 50) - Math.abs(a.r5 - 50));
   const alertedRSI = rAll.length ? await maybeAlertRSI(env, rAll[0], rAll[0].r5 < 30 ? "UP" : "DOWN", scheduledSec).catch(() => false) : false;
   const onBoundary = Math.floor(scheduledSec / 60) % 5 === 0;

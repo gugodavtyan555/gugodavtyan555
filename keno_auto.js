@@ -61,7 +61,10 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 // --- ստուգում (polling)
 setInterval(()=>{
   if(!Object.keys(cells).length||Object.keys(cells).length<40||!document.contains(cells[1]))cells=findCells();
-  if(Object.keys(cells).length<40){st('Վանդակներ '+Object.keys(cells).length+'/40. iframe: '+(iframeInfo()||'չկա'));return}
+  if(Object.keys(cells).length<40){st('Վանդակներ '+Object.keys(cells).length+'/40');
+    const fr=[...document.querySelectorAll('iframe')].find(f=>/launchdigi|Games\/Launch/i.test(f.src))||[...document.querySelectorAll('iframe')].find(f=>f.src&&f.offsetHeight>300);
+    if(fr&&!p.querySelector('#ka_open')){const bt=document.createElement('button');bt.id='ka_open';bt.textContent='Բացել խաղն առանձին';bt.style.cssText='display:block;margin-top:8px;padding:10px 14px;font-size:16px';bt.onclick=()=>{location.href=fr.src};p.appendChild(bt)}
+    return}
   const cur=snap(),key=snapKey(cur);
   if(!base){base=cur;lastKey=key;st('Պատրաստ է. ընտրիր թվերը և սեղմիր ▶');return}
   if(key!==lastKey){lastKey=key;lastChange=Date.now();sawChange=true;return}

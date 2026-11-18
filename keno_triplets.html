@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="hy"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Keno 40 եռյակներ</title>
+<style>
+body{font-family:sans-serif;background:#14103a;color:#fff;margin:0;padding:16px}
+textarea{width:100%;height:220px;background:#221c55;color:#fff;border:1px solid #6a5acd;border-radius:8px;padding:8px;font-size:16px;box-sizing:border-box}
+button{background:#c47a45;color:#fff;border:0;border-radius:8px;padding:12px 18px;font-size:16px;margin:8px 6px 8px 0}
+.t{background:#221c55;border-radius:8px;padding:10px;margin:6px 0;font-size:18px}
+.b{display:inline-block;background:#4b2f8a;border-radius:50%;width:34px;height:34px;line-height:34px;text-align:center;margin-right:4px}
+</style></head><body>
+<h3>Keno 40 — եռյակների վերլուծություն</h3>
+<p>Յուրաքանչյուր խաղափուլ՝ առանձին տողով (դուրս եկած թվերը բացատրով կամ ստորակետով)։ Խորհուրդ՝ 10 տող։</p>
+<textarea id="in" placeholder="3 7 12 18 25 31 ...&#10;1 5 12 18 22 40 ..."></textarea>
+<button onclick="run()">Հաշվել</button><button onclick="clr()">Մաքրել</button>
+<div id="out"></div>
+<script>
+const KEY='keno_rounds';
+document.getElementById('in').value=localStorage.getItem(KEY)||'';
+function clr(){document.getElementById('in').value='';localStorage.removeItem(KEY);out.innerHTML=''}
+function run(){
+  const txt=document.getElementById('in').value;localStorage.setItem(KEY,txt);
+  const rounds=txt.split('\n').map(l=>[...new Set((l.match(/\d+/g)||[]).map(Number).filter(n=>n>=1&&n<=40))].sort((a,b)=>a-b)).filter(r=>r.length>=3);
+  if(!rounds.length){out.innerHTML='<p>Տվյալներ չկան</p>';return}
+  const single={},tri={};
+  rounds.forEach((r,ri)=>{
+    r.forEach(n=>single[n]=(single[n]||0)+1);
+    for(let i=0;i<r.length;i++)for(let j=i+1;j<r.length;j++)for(let k=j+1;k<r.length;k++){
+      const key=r[i]+'-'+r[j]+'-'+r[k];
+      const o=tri[key]||(tri[key]={c:0,last:0});o.c++;o.last=ri;
+    }
+  });
+  const list=Object.entries(tri).map(([k,o])=>{
+    const s=k.split('-').map(Number).reduce((a,n)=>a+(single[n]||0),0);
+    return {k,c:o.c,s,last:o.last};
+  }).sort((a,b)=>b.c-a.c||b.s-a.s||b.last-a.last).slice(0,5);
+  const hot=Object.entries(single).sort((a,b)=>b[1]-a[1]).slice(0,10).map(e=>e[0]+'('+e[1]+')').join(', ');
+  out.innerHTML='<p>Խաղափուլեր՝ '+rounds.length+'</p><h4>Ամենահավանական եռյակ</h4>'+
+   list.map((x,i)=>'<div class="t">'+x.k.split('-').map(n=>'<span class="b">'+n+'</span>').join('')+
+   ' — '+x.c+' անգամ'+(i==0?' ⭐':'')+'</div>').join('')+
+   '<p>Ամենահաճախ թվեր՝ '+hot+'</p>';
+}
+</script></body></html>

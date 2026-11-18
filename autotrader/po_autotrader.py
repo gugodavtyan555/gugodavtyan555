@@ -39,8 +39,8 @@ def env_f(name, default): return float(os.environ.get(name, default))
 STAKE = env_f("STAKE", 1.0)                       # fixed stake per trade (USD)
 MAX_STAKE = env_f("MAX_STAKE", 2.0)               # hard cap, STAKE can never exceed it
 MAX_DAILY_LOSS = env_f("MAX_DAILY_LOSS", 0)       # 0/negative = disabled (no daily loss limit)
-MAX_CONSEC_LOSSES = int(env_f("MAX_CONSEC_LOSSES", 3))
-MAX_TRADES_PER_HOUR = int(env_f("MAX_TRADES_PER_HOUR", 6))
+MAX_CONSEC_LOSSES = int(env_f("MAX_CONSEC_LOSSES", 0))     # 0 = disabled (no consecutive-loss stop)
+MAX_TRADES_PER_HOUR = int(env_f("MAX_TRADES_PER_HOUR", 0)) # 0 = disabled (no hourly trade limit)
 # rsi_signal refreshes once per 5-min boundary, so a fresh signal can legitimately be up to ~280s old;
 # the old 5-min-expiry "best" signal needs a much tighter window. Default follows STRATEGY unless overridden.
 MAX_SIGNAL_AGE = env_f("MAX_SIGNAL_AGE", 330 if os.environ.get("STRATEGY", "rsi") == "rsi" else 20)
@@ -78,9 +78,9 @@ def risk_block(st):
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     if st["day"] != today: st.update(day=today, day_pnl=0.0, consec_losses=0)
     if MAX_DAILY_LOSS > 0 and -st["day_pnl"] >= MAX_DAILY_LOSS: return f"daily loss limit reached ({st['day_pnl']:.2f})"
-    if st["consec_losses"] >= MAX_CONSEC_LOSSES: return f"{st['consec_losses']} losses in a row"
+    if MAX_CONSEC_LOSSES > 0 and st["consec_losses"] >= MAX_CONSEC_LOSSES: return f"{st['consec_losses']} losses in a row"
     st["trade_times"] = [t for t in st["trade_times"] if now() - t < 3600]
-    if len(st["trade_times"]) >= MAX_TRADES_PER_HOUR: return "hourly trade limit reached"
+    if MAX_TRADES_PER_HOUR > 0 and len(st["trade_times"]) >= MAX_TRADES_PER_HOUR: return "hourly trade limit reached"
     return None
 
 def asset_active(assets, asset):

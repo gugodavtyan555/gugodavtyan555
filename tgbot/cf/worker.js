@@ -353,10 +353,11 @@ async function rankAndSettle(env, boundary, infos) {
   // Publish the single best RSI-extreme reversion candidate for /api/rsi_signal (independent of the "auto" virtual-trade toggle).
   const rAll = infos.filter(i => i.r5 < 30 || i.r5 > 70).sort((a, b) => Math.abs(b.r5 - 50) - Math.abs(a.r5 - 50));
   if (rAll.length) {
-    const i = rAll[0];
+    const i = rAll[0], dir = i.r5 < 30 ? "UP" : "DOWN";
     await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('rsignal', ?)").bind(JSON.stringify({
-      id: boundary, pair: i.pair, dir: i.r5 < 30 ? "UP" : "DOWN", expiry_sec: 3600, strength: "rsi_extreme", price: i.price, rsi5: i.r5, t: boundary
+      id: boundary, pair: i.pair, dir, expiry_sec: 3600, strength: "rsi_extreme", price: i.price, rsi5: i.r5, t: boundary
     })).run();
+    await maybeAlertRSI(env, i, dir, boundary).catch(() => {});
   }
   const auto = (await env.DB.prepare("SELECT v FROM kv WHERE k='auto'").first())?.v === "1";
   if (auto) {
@@ -389,6 +390,23 @@ async function maybeAlert(env, infos, now) {
   await send(env, env.ALLOWED_CHAT, `🔔 *Ավտոմատ սիգնալ*\n\n${renderClear(pick, now)}\n\n━━━━━━━━━━\n\n${renderFadeClear(pick, now)}`, oneKb(pick.pair));
   await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('signal', ?)").bind(JSON.stringify({ id: now, pair: pick.pair, dir: pick.dir, expiry_sec: 300, strength: "strongest", price: pick.price, t: now })).run();
   await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('lastalert', ?)").bind(JSON.stringify({ pair: pick.pair, dir: pick.dir, t: now })).run();
+  return true;
+}
+
+// Automatic push for the RSI-extreme reversion signal (60-min expiry). Same anti-spam rules as the trend alert,
+// using its own 'alerts' toggle check and its own last-alert memory so the two don't interfere.
+async function maybeAlertRSI(env, i, dir, boundary) {
+  const on = (await env.DB.prepare("SELECT v FROM kv WHERE k='alerts'").first())?.v;
+  if (on === "0" || !env.ALLOWED_CHAT) return false;
+  let last = null; try { const r = await env.DB.prepare("SELECT v FROM kv WHERE k='lastalertrsi'").first(); if (r) last = JSON.parse(r.v); } catch (e) {}
+  if (last && last.pair === i.pair && last.dir === dir && boundary - last.t < 1200) return false;
+  const hh = new Date(boundary * 1000).toISOString().slice(11, 19);
+  const text = [`🔔 *Ավտոմատ RSI սիգնալ*`, "",
+    `🔁 ${ico[dir]} *${dir} · 60 րոպե* — ${pairName(i.pair)} (RSI գերծայրահեղ → վերադարձ)`,
+    `M5 RSI ${i.r5.toFixed(0)} (${i.r5 < 30 ? "գերվաճառված" : "գերգնված"}) · M1 RSI ${i.r1.toFixed(0)} · EMA-ից ${i.feat.dist} ATR`,
+    `Գին ${i.price.toFixed(5)} · ${hh} UTC`, "✅ Մտիր հիմա · expiry՝ 60 րոպե"].join("\n");
+  await send(env, env.ALLOWED_CHAT, text, rsiKb(i.pair));
+  await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('lastalertrsi', ?)").bind(JSON.stringify({ pair: i.pair, dir, t: boundary })).run();
   return true;
 }
 

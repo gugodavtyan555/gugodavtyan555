@@ -12,3 +12,4 @@ Format: date · status · title · hook · formula/theme
 ## Suggested by the daily task
 (append below: `YYYY-MM-DD · SUGGESTED · title · hook · theme`)
 2026-11-18 · PRODUCED (ep02) · «5 erreurs au restaurant qui te font passer pour un touriste» · hook: « Cinq erreurs au restaurant qui te font passer pour un touriste » · restaurant: le chèque→l'addition, de l'eau→une carafe d'eau, garçon→excusez-moi monsieur, bien cuit→à point, toi aussi→vous aussi
+2026-11-19 · PRODUCED (ep03) · «5 erreurs quand tu trinques avec des Français» · hook: « Tu trinques avec des Français ? Voici cinq erreurs qui te trahissent » · bon appétit→santé, je veux plus de vin→je reprendrais un peu de vin, je suis bourré→j'ai assez bu, cul sec→à la vôtre, regarder son verre→regarder dans les yeux (Beaujolais nouveau, 3e jeudi de novembre)

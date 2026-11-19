@@ -1,0 +1,168 @@
+{
+ "lead": 1.05,
+ "tail": 1.2,
+ "segments": [
+  {
+   "id": "hook",
+   "lang": "fr",
+   "text": "Tu trinques avec des Français ? Voici cinq erreurs qui te trahissent tout de suite.",
+   "pause": 0.35
+  },
+  {
+   "id": "1a",
+   "lang": "fr",
+   "text": "Numéro un. Tu veux trinquer, alors tu dis :",
+   "pause": 0.2
+  },
+  {
+   "id": "1b",
+   "lang": "frf",
+   "text": "Bon appétit !",
+   "pause": 0.3
+  },
+  {
+   "id": "1c",
+   "lang": "fr",
+   "text": "Tu souhaites un bon repas à un verre vide.",
+   "pause": 0.3
+  },
+  {
+   "id": "1d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "1e",
+   "lang": "frf",
+   "text": "Santé !",
+   "pause": 0.45
+  },
+  {
+   "id": "2a",
+   "lang": "fr",
+   "text": "Numéro deux. Tu veux encore du vin, alors tu dis :",
+   "pause": 0.2
+  },
+  {
+   "id": "2b",
+   "lang": "frf",
+   "text": "Je veux plus de vin.",
+   "pause": 0.3
+  },
+  {
+   "id": "2c",
+   "lang": "fr",
+   "text": "C'est trop direct. Tu parles comme un robot.",
+   "pause": 0.3
+  },
+  {
+   "id": "2d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "2e",
+   "lang": "frf",
+   "text": "Je reprendrais un peu de vin, merci.",
+   "pause": 0.45
+  },
+  {
+   "id": "3a",
+   "lang": "fr",
+   "text": "Numéro trois. Tu as assez bu, alors tu dis :",
+   "pause": 0.2
+  },
+  {
+   "id": "3b",
+   "lang": "frf",
+   "text": "Je suis bourré.",
+   "pause": 0.3
+  },
+  {
+   "id": "3c",
+   "lang": "fr",
+   "text": "Tu viens d'avouer ça devant le patron.",
+   "pause": 0.3
+  },
+  {
+   "id": "3d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "3e",
+   "lang": "frf",
+   "text": "J'ai assez bu, merci.",
+   "pause": 0.45
+  },
+  {
+   "id": "4a",
+   "lang": "fr",
+   "text": "Numéro quatre. Tu veux trinquer avec tout le monde, alors tu cries :",
+   "pause": 0.2
+  },
+  {
+   "id": "4b",
+   "lang": "frf",
+   "text": "Cul sec !",
+   "pause": 0.3
+  },
+  {
+   "id": "4c",
+   "lang": "fr",
+   "text": "Tout le monde doit boire d'un coup. Même ta belle-mère.",
+   "pause": 0.3
+  },
+  {
+   "id": "4d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "4e",
+   "lang": "frf",
+   "text": "À la vôtre !",
+   "pause": 0.45
+  },
+  {
+   "id": "5a",
+   "lang": "fr",
+   "text": "Numéro cinq. Tu trinques, et tu fais ça :",
+   "pause": 0.2
+  },
+  {
+   "id": "5b",
+   "lang": "frf",
+   "text": "Tu regardes ton verre.",
+   "pause": 0.3
+  },
+  {
+   "id": "5c",
+   "lang": "fr",
+   "text": "Selon la légende, ça porte malheur.",
+   "pause": 0.3
+  },
+  {
+   "id": "5d",
+   "lang": "fr",
+   "text": "Fais plutôt ça :",
+   "pause": 0.15
+  },
+  {
+   "id": "5e",
+   "lang": "frf",
+   "text": "Regarde-les dans les yeux !",
+   "pause": 0.5
+  },
+  {
+   "id": "out",
+   "lang": "fr",
+   "text": "Laquelle as-tu déjà faite ? Dis-le-moi en commentaire, et abonne-toi pour la partie trois.",
+   "pause": 0
+  }
+ ]
+}

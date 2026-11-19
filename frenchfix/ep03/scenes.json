@@ -1,0 +1,58 @@
+{
+ "hook": [
+  "5 ERREURS",
+  "EN TRINQUANT"
+ ],
+ "hookNote": "<b>5</b> erreurs en trinquant 🍷",
+ "cover": {
+  "pill": "🍷 5 ERREURS EN TRINQUANT",
+  "a": "Tu trinques",
+  "b": "tout faux",
+  "c": "en France 🇫🇷",
+  "bub": "« Cul sec ! »",
+  "stamp": "ERREUR",
+  "e1": "🥂",
+  "e2": "😅"
+ },
+ "items": [
+  {
+   "intent": "Tu veux trinquer",
+   "emoji": "🥂",
+   "hear": "Un « bon appétit » à un verre vide",
+   "hearEmoji": "🍽️",
+   "punch": 3
+  },
+  {
+   "intent": "Encore du vin",
+   "emoji": "🍷",
+   "hear": "« Tu parles comme un robot »",
+   "hearEmoji": "🤖",
+   "punch": 3
+  },
+  {
+   "intent": "Tu as assez bu",
+   "emoji": "🥴",
+   "hear": "« Je suis bourré » devant le patron",
+   "hearEmoji": "😳",
+   "punch": 3
+  },
+  {
+   "intent": "Trinquer avec tous",
+   "emoji": "🍻",
+   "hear": "Tout le monde boit d'un coup !",
+   "hearEmoji": "🤯",
+   "punch": 3
+  },
+  {
+   "intent": "Tu trinques",
+   "emoji": "👀",
+   "hear": "« Ça porte malheur… »",
+   "hearEmoji": "😱",
+   "punch": 3
+  }
+ ],
+ "outro": {
+  "q": "Laquelle as-tu déjà faite ?",
+  "cta": "ABONNE-TOI pour la partie 3"
+ }
+}

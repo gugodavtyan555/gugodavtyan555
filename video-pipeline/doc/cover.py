@@ -1,5 +1,5 @@
 """Shorts cover (1080x1920); all content kept inside y 250-1670 (TikTok/grid 3:4 safe area) in the bright '3D text' style. usage: cover.py OUT 'LINE1' 'LINE2' [chip]"""
-import sys, glob
+import sys, glob, os
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageChops
 IMG='../dl/img/'; FD='/usr/share/fonts/opentype/inter/'; W,H=1080,1920
 BI=lambda s: ImageFont.truetype(FD+'InterDisplay-BlackItalic.otf',s); BK=lambda s: ImageFont.truetype(FD+'InterDisplay-Black.otf',s)
@@ -33,7 +33,7 @@ def box(im, name, cx, cy, h, ang, label, col):
 def make(out,l1,l2,chip=None):
     bgs=sorted(glob.glob(IMG+'Hero_BG.*.jpg')); bg=Image.open(bgs[4]).convert('RGB'); s=H/bg.height; bg=bg.resize((int(bg.width*s),H),Image.LANCZOS); x0=(bg.width-W)//2
     bg=ImageEnhance.Color(bg.crop((x0,0,x0+W,H))).enhance(1.7); im=Image.blend(bg,vgrad((W,H),[(120,60,230),(255,90,190),(60,10,110)]),0.42).convert('RGBA')
-    lg=Image.open('../full/logo.png').convert('RGBA'); lg=lg.resize((int(lg.width*250/lg.height),250),Image.LANCZOS)
+    lg=Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','assets','logo.png')).convert('RGBA'); lg=lg.resize((int(lg.width*250/lg.height),250),Image.LANCZOS)
     sh=Image.new('RGBA',(lg.width+80,lg.height+80),(0,0,0,0)); sh.paste((0,0,0,170),(40,40),lg.split()[3]); im.alpha_composite(sh.filter(ImageFilter.GaussianBlur(18)),((W-lg.width)//2-40,240)); im.alpha_composite(lg,((W-lg.width)//2,280))
     box(im,'GTAVI_FOB_StandardEdition_Desktop',300,860,500,7,'STANDARD',(255,62,150)); box(im,'GTAVI_FOB_UltimateEdition_Desktop_en_us',780,885,530,-6,'ULTIMATE',(240,170,20))
     dk=Image.new('RGBA',(W,H),NAVY+(0,)); g=Image.new('L',(1,H)); [g.putpixel((0,y),int(200*max(0,(y-1150)/770)**0.9)) for y in range(H)]; dk.putalpha(g.resize((W,H))); im.alpha_composite(dk)
@@ -47,7 +47,7 @@ def make2(out,l1,l2,chip,frames):
     """frames: [(jpg name in IMG dir, cx, cy, h, angle, label, colour)]"""
     bgs=sorted(glob.glob(IMG+'Hero_BG.*.jpg')); bg=Image.open(bgs[4]).convert('RGB'); s=H/bg.height; bg=bg.resize((int(bg.width*s),H),Image.LANCZOS); x0=(bg.width-W)//2
     bg=ImageEnhance.Color(bg.crop((x0,0,x0+W,H))).enhance(1.7); im=Image.blend(bg,vgrad((W,H),[(120,60,230),(255,90,190),(60,10,110)]),0.42).convert('RGBA')
-    lg=Image.open('../full/logo.png').convert('RGBA'); lg=lg.resize((int(lg.width*250/lg.height),250),Image.LANCZOS)
+    lg=Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','assets','logo.png')).convert('RGBA'); lg=lg.resize((int(lg.width*250/lg.height),250),Image.LANCZOS)
     sh=Image.new('RGBA',(lg.width+80,lg.height+80),(0,0,0,0)); sh.paste((0,0,0,170),(40,40),lg.split()[3]); im.alpha_composite(sh.filter(ImageFilter.GaussianBlur(18)),((W-lg.width)//2-40,240)); im.alpha_composite(lg,((W-lg.width)//2,280))
     for fr in frames: box(im,*fr)
     dk=Image.new('RGBA',(W,H),NAVY+(0,)); g=Image.new('L',(1,H)); [g.putpixel((0,y),int(200*max(0,(y-1150)/770)**0.9)) for y in range(H)]; dk.putalpha(g.resize((W,H))); im.alpha_composite(dk)
@@ -60,7 +60,7 @@ def make3(out,frame,l1,l2,chip,arrow=None):
     bg=Image.open(frame).convert('RGB').resize((W,H),Image.LANCZOS); bg=ImageEnhance.Contrast(ImageEnhance.Color(bg).enhance(1.45)).enhance(1.12)
     im=Image.blend(bg,vgrad((W,H),[(150,80,255),(255,110,200),(70,10,120)]),0.16).convert('RGBA')
     dk=Image.new('RGBA',(W,H),NAVY+(0,)); g=Image.new('L',(1,H)); [g.putpixel((0,y),int(120*max(0,1-y/520)**1.2+225*max(0,(y-1020)/900)**0.8)) for y in range(H)]; dk.putalpha(g.resize((W,H))); im.alpha_composite(dk)
-    lg=Image.open('../full/logo.png').convert('RGBA'); lg=lg.resize((int(lg.width*230/lg.height),230),Image.LANCZOS)
+    lg=Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','assets','logo.png')).convert('RGBA'); lg=lg.resize((int(lg.width*230/lg.height),230),Image.LANCZOS)
     sh=Image.new('RGBA',(lg.width+80,lg.height+80),(0,0,0,0)); sh.paste((0,0,0,190),(40,40),lg.split()[3]); im.alpha_composite(sh.filter(ImageFilter.GaussianBlur(18)),((W-lg.width)//2-40,235)); im.alpha_composite(lg,((W-lg.width)//2,275))
     if arrow:
         d=ImageDraw.Draw(im); x1,y1=arrow; x0,y0=x1-230,y1-230

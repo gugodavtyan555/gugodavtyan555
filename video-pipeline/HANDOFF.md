@@ -10,6 +10,8 @@
 4. Save scripts to `video-pipeline/<name>/`, commit + push to branch `claude/youthful-goodall-pk1qmc` (`git push origin HEAD:claude/youthful-goodall-pk1qmc`). No PRs unless asked. Never commit `dl/` (gitignored) or large media.
 
 ## Standing rules (from the user)
+- **ALWAYS add music to every video** (user complained when missing). Ask for the Pixabay mp3 BEFORE final render; `five/build.py OUT.mp4 music.mp3` does ducked mix. Never deliver a video without music unless the user says so.
+- **Cover = channel style**: `doc/cover.py make3(out, frame_1080x1920, 'LINE1', 'LINE2', 'GTA 6 • CHIP')` (GTA VI logo on top from `assets/logo.png`, 3D 2-line text, pink chip). Use it as the first 0.4 s frame AND send as separate image. Never invent another style.
 - Save limits: don't view images unless needed (verify programmatically, ONE contact sheet), read each file once, reuse code, no code in chat, re-render only changed parts, no web search unless needed. Quality matters more than saving — use tools when needed.
 - Videos > 1 min (user later allowed 2–3 min for narrated ones). No repeated footage between videos where possible (fresh official footage is nearly exhausted → say so honestly in one sentence).
 - Shorts start with a bright 3D-text cover frame (first 0.4 s), content in safe area y≈250–1670 (of 1920). Text must not cover the main picture; no frozen clips; no wrong/mismatched scenes («այլևս սխալներ չանես»).

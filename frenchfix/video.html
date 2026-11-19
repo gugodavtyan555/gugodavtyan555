@@ -62,6 +62,17 @@ body{width:1080px;height:1920px;overflow:hidden;background:#0b1030;font-family:'
 #bub .w{display:inline-block;margin:0 .16em;transition:none}#bub .bad{color:#d62828;text-decoration:underline wavy #d62828}#bub .good{color:#0a9b57}
 .dcard{position:absolute;left:70px;width:940px;border-radius:36px;padding:24px 30px;font-weight:900;font-size:60px;text-align:center;z-index:7;box-shadow:0 18px 44px rgba(0,0,0,.45)}
 #card-r{top:1565px;background:#fff;color:#c81e1e;border:8px solid #ef4135}#card-g{top:1705px;background:#12b76a;color:#fff}
+
+#cover.dc{background:radial-gradient(900px 700px at 50% 62%,#e8791c 0%,transparent 70%),linear-gradient(180deg,#3a1a0a 0%,#6b2a10 45%,#2b1409 100%)}
+.dc .awn{position:absolute;top:90px;left:0}.dc .pill{position:absolute;top:240px;left:0;width:1080px;text-align:center}
+.dc .pill span{display:inline-block;background:#e63946;font-weight:900;font-size:44px;letter-spacing:5px;padding:14px 40px;border-radius:50px;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.dc .ta{position:absolute;top:330px;left:0;width:1080px;text-align:center;font-family:Anton;font-size:178px;line-height:1.05;text-transform:uppercase;text-shadow:0 10px 0 rgba(0,0,0,.4)}
+.dc .tb{position:absolute;top:540px;left:0;width:1080px;text-align:center;font-family:Anton;text-transform:uppercase}
+.dc .tb span{display:inline-block;font-size:142px;line-height:1.1;background:#ffd43b;color:#2b1409;padding:6px 40px 14px;transform:rotate(-2.5deg);box-shadow:0 14px 0 #e63946,0 30px 50px rgba(0,0,0,.5)}
+.dc .stp{position:absolute;top:770px;right:40px;font-family:Anton;font-size:90px;color:#e63946;border:12px solid #e63946;border-radius:22px;padding:0 28px;transform:rotate(9deg);background:rgba(255,255,255,.95);letter-spacing:4px;z-index:3;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.dc .cav{position:absolute;top:900px;width:640px}.dc .cav svg{width:640px;height:726px}
+.dc .ctr{position:absolute;left:0;top:1560px;width:1080px;height:360px;background:linear-gradient(180deg,#9a5a2b 0,#9a5a2b 22px,#6e3a18 22px,#4a230d 100%);box-shadow:0 -10px 30px rgba(0,0,0,.4);z-index:2}
+.dc .pas{position:absolute;top:1400px;font-size:170px;z-index:3;filter:drop-shadow(0 14px 18px rgba(0,0,0,.5))}
 </style>
 <div id="cover"><svg viewBox="0 0 1080 1920"><defs>
 <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset=".5" stop-color="#ffc94d"/><stop offset="1" stop-color="#ff8a2a"/></linearGradient>
@@ -161,6 +172,13 @@ if(SC.mode==='dialogue'){
  $('#dav-m').innerHTML=AVM;$('#dav-f').innerHTML=AVF;
  $('#awn').innerHTML=[...Array(12)].map((_,i)=>`<rect x="${i*90}" y="0" width="90" height="78" fill="${i%2?'#fff':'#e63946'}"/><circle cx="${i*90+45}" cy="78" r="45" fill="${i%2?'#fff':'#e63946'}"/>`).join('')+'<rect x="0" y="0" width="1080" height="10" fill="#8d1f2c"/>';
  const segs=TL.segments;
+
+ {const C=SC.cover||{},cv=$('#cover');cv.className='dc';
+  cv.innerHTML=`<svg class="awn" width="1080" height="130">${[...Array(12)].map((_,i)=>`<rect x="${i*90}" y="0" width="90" height="82" fill="${i%2?'#fff':'#e63946'}"/><circle cx="${i*90+45}" cy="82" r="45" fill="${i%2?'#fff':'#e63946'}"/>`).join('')}<rect width="1080" height="10" fill="#8d1f2c"/></svg>
+  <div class="pill"><span>${C.pill}</span></div><div class="ta">${C.a}</div><div class="tb"><span>${C.b}</span></div><div class="stp">❌ ${C.stamp}</div>
+  <div class="cav" id="cvm" style="left:-70px">${AVM}</div><div class="cav" id="cvf" style="right:-70px">${AVF}</div><div class="ctr"></div>
+  <div class="pas" style="left:70px">🥐</div><div class="pas" style="left:430px;font-size:190px">🥖</div><div class="pas" style="right:80px">🧁</div>`;
+  anim($('#cvm'),'cm',.95,1,true,0);anim($('#cvf'),'cf',.3,1,true,1.7);}
  segs.forEach(s=>{let w=0,r=0;const toks=((SC.disp&&SC.disp[s.id])||s.text).split(/\s+/);s.tk=toks.map(tok=>{if(tok.includes('[['))w=1;if(tok.includes('{{'))r=1;const o={w,r,t:tok.replace(/\[\[|\]\]|\{\{|\}\}/g,'')};if(tok.includes(']]'))w=0;if(tok.includes('}}'))r=0;return o});if(s.tk.length!==s.words.length)s.tk=s.words.map(x=>({w:0,r:0,t:x[0]}))});
  const K=SC.dlg.length,gt={};for(let k=1;k<=K;k++){const c=S[k+'c'],i=c.tk.findIndex(o=>o.r);gt[k]=c.words[Math.max(0,i)][1]}
  $('#prog').innerHTML='<div><i></i></div>'.repeat(K);

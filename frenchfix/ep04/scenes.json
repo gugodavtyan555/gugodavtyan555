@@ -1,0 +1,58 @@
+{
+ "hook": [
+  "5 ERREURS",
+  "AU MAGASIN"
+ ],
+ "hookNote": "<b>5</b> erreurs de shopping 🛍️",
+ "cover": {
+  "pill": "🛍️ BLACK FRIDAY",
+  "a": "5 erreurs",
+  "b": "à éviter",
+  "c": "au magasin 🇫🇷",
+  "bub": "« Je suis cassé ! »",
+  "stamp": "ERREUR",
+  "e1": "🛍️",
+  "e2": "😬"
+ },
+ "items": [
+  {
+   "intent": "Tu veux acheter ça",
+   "emoji": "🛍️",
+   "hear": "« Tu parles comme un roi »",
+   "hearEmoji": "👑",
+   "punch": 6
+  },
+  {
+   "intent": "Une promotion ?",
+   "emoji": "🏷️",
+   "hear": "Tu te vends à moitié prix",
+   "hearEmoji": "🤡",
+   "punch": 3
+  },
+  {
+   "intent": "Tu veux être remboursé",
+   "emoji": "🧾",
+   "hear": "Tu veux payer le magasin",
+   "hearEmoji": "💸",
+   "punch": 6
+  },
+  {
+   "intent": "Tu n'as plus d'argent",
+   "emoji": "🪙",
+   "hear": "« Tu es en morceaux »",
+   "hearEmoji": "🔨",
+   "punch": 3
+  },
+  {
+   "intent": "Tu entres dans le magasin",
+   "emoji": "🚪",
+   "hear": "« Quelle impolitesse ! »",
+   "hearEmoji": "😤",
+   "punch": 2
+  }
+ ],
+ "outro": {
+  "q": "Laquelle as-tu déjà faite ?",
+  "cta": "ABONNE-TOI pour la partie 4"
+ }
+}

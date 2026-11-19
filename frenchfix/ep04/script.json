@@ -1,0 +1,168 @@
+{
+ "lead": 1.05,
+ "tail": 1.2,
+ "segments": [
+  {
+   "id": "hook",
+   "lang": "fr",
+   "text": "Le Black Friday arrive. Voici cinq erreurs en français qui te font passer pour un touriste au magasin.",
+   "pause": 0.35
+  },
+  {
+   "id": "1a",
+   "lang": "fr",
+   "text": "Numéro un. Tu veux acheter un pull, alors tu dis :",
+   "pause": 0.2
+  },
+  {
+   "id": "1b",
+   "lang": "frf",
+   "text": "Je veux ça.",
+   "pause": 0.3
+  },
+  {
+   "id": "1c",
+   "lang": "fr",
+   "text": "Tu parles comme un roi qui commande. Pas très poli.",
+   "pause": 0.3
+  },
+  {
+   "id": "1d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "1e",
+   "lang": "frf",
+   "text": "Je voudrais ceci, s'il vous plaît.",
+   "pause": 0.45
+  },
+  {
+   "id": "2a",
+   "lang": "fr",
+   "text": "Numéro deux. Tu veux savoir si le manteau est en promotion, alors tu demandes :",
+   "pause": 0.2
+  },
+  {
+   "id": "2b",
+   "lang": "frf",
+   "text": "Tu es en solde ?",
+   "pause": 0.3
+  },
+  {
+   "id": "2c",
+   "lang": "fr",
+   "text": "Tu demandes si c'est toi qui es à moitié prix.",
+   "pause": 0.3
+  },
+  {
+   "id": "2d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "2e",
+   "lang": "frf",
+   "text": "C'est en solde ?",
+   "pause": 0.45
+  },
+  {
+   "id": "3a",
+   "lang": "fr",
+   "text": "Numéro trois. Ton pull est trop petit, alors tu dis :",
+   "pause": 0.2
+  },
+  {
+   "id": "3b",
+   "lang": "frf",
+   "text": "Je veux rembourser ce pull.",
+   "pause": 0.3
+  },
+  {
+   "id": "3c",
+   "lang": "fr",
+   "text": "Tu veux payer le magasin une deuxième fois.",
+   "pause": 0.3
+  },
+  {
+   "id": "3d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "3e",
+   "lang": "frf",
+   "text": "Je voudrais être remboursé.",
+   "pause": 0.45
+  },
+  {
+   "id": "4a",
+   "lang": "fr",
+   "text": "Numéro quatre. Tu n'as plus d'argent, alors tu dis :",
+   "pause": 0.2
+  },
+  {
+   "id": "4b",
+   "lang": "frf",
+   "text": "Je suis cassé.",
+   "pause": 0.3
+  },
+  {
+   "id": "4c",
+   "lang": "fr",
+   "text": "Pour les Français, tu es en morceaux.",
+   "pause": 0.3
+  },
+  {
+   "id": "4d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "4e",
+   "lang": "frf",
+   "text": "Je suis fauché.",
+   "pause": 0.45
+  },
+  {
+   "id": "5a",
+   "lang": "fr",
+   "text": "Numéro cinq. Tu entres dans le magasin, et tu fais ça :",
+   "pause": 0.2
+  },
+  {
+   "id": "5b",
+   "lang": "frf",
+   "text": "Tu entres sans dire bonjour.",
+   "pause": 0.3
+  },
+  {
+   "id": "5c",
+   "lang": "fr",
+   "text": "Pour les Français, c'est très impoli.",
+   "pause": 0.3
+  },
+  {
+   "id": "5d",
+   "lang": "fr",
+   "text": "Dis plutôt :",
+   "pause": 0.15
+  },
+  {
+   "id": "5e",
+   "lang": "frf",
+   "text": "Bonjour !",
+   "pause": 0.5
+  },
+  {
+   "id": "out",
+   "lang": "fr",
+   "text": "Laquelle as-tu déjà faite ? Dis-le-moi en commentaire, et abonne-toi pour la partie quatre.",
+   "pause": 0
+  }
+ ]
+}

@@ -1,14 +1,16 @@
-# Queue Short — Veo 3 / Flow prompts (vertical 9:16, 8 s each, no on-screen text/logos requested)
+# Queue Short v2 — Veo 3 / Flow prompts (9:16, 8 s). Logos/text ARE requested now.
 
-Concept: two ticket booths side by side. Left: old, rusty, empty, bored clerk. Right: neon purple-pink booth with a huge queue. No date. End card: "GTA 6".
+Use the same prompt for all 3 clips, change only the "Shot" line. If Veo garbles the logos, upload the official logo PNGs as "Ingredients" (I will supply them).
 
-## Clip 1 (main, 8 s)
-Vertical 9:16 photoreal cinematic shot, high-angle on a sunny big-city street. Two small street kiosks stand side by side. Left kiosk: old, rusty, covered in graffiti, shutter half closed, a bored clerk leaning on the counter, nobody in front. Right kiosk: glossy neon purple and pink, glowing sign, smiling clerk, and a very long excited queue of diverse people along a purple carpet with velvet ropes, phones out, cheering. Slow push-in camera, ambient crowd murmur, no text, no logos.
+## Base scene
+Vertical 9:16 photoreal cinematic high-angle shot of a sunny New York-style street with skyscrapers. Two street kiosks side by side.
+LEFT kiosk: old, rusty, covered in graffiti, shutter half closed; on its roof a weathered sign reads "GRAND THEFT AUTO V" in the classic white GTA V logo style; a bored clerk leans on the counter, nobody queues.
+RIGHT kiosk: glossy purple-pink neon, glowing sign with the "GRAND THEFT AUTO VI" logo (purple-to-orange gradient V-shaped badge with white text); a happy clerk; a very long excited queue of diverse people along a purple carpet with velvet ropes, phones up, cheering.
+Large "GRAND THEFT AUTO V" and "GRAND THEFT AUTO VI" logos also float in the air above each kiosk. Crowd murmur ambience. Only these two logos as text, no date, no watermarks.
 
-## Clip 2 (close-up, 6–8 s)
-Vertical 9:16, close-up of the excited queue at the neon purple kiosk: people bouncing, checking watches, a kid on a dad's shoulders, camera slowly tracking along the line. Golden-hour light, shallow depth of field, crowd noise, no text, no logos.
+## Shot
+1. Slow push-in from above, whole scene.
+2. Close-up tracking along the excited queue at the purple VI kiosk, golden hour.
+3. Static on the empty rusty V kiosk, clerk looks sadly at the huge queue next door.
 
-## Clip 3 (contrast, 6–8 s)
-Vertical 9:16, static shot of the old rusty empty kiosk: dust blowing, a pigeon walks by, the clerk stares at the huge neon queue next door with a sad face. Cinematic, shallow focus, quiet street ambience, no text, no logos.
-
-Settings: 720×1280, 24 fps, Veo 3 (audio on; I strip it).
+Settings: 720×1280, 24 fps, Veo 3.

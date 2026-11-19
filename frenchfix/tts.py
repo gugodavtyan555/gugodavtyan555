@@ -34,7 +34,11 @@ t, tl, inputs, filt = S.get("lead", 0.3), [], [], []
 for i, seg in enumerate(S["segments"]):
     mp3, al = tts(seg["text"], seg["lang"])
     dur = float(subprocess.check_output(["ffprobe", "-v", "0", "-show_entries", "format=duration", "-of", "csv=p=0", mp3]))
-    tl.append({**seg, "start": round(t, 3), "end": round(t + dur, 3),
+    import numpy as np
+    pcm = np.frombuffer(subprocess.check_output(["ffmpeg", "-v", "error", "-i", mp3, "-f", "s16le", "-ac", "1", "-ar", "8000", "-"]), dtype="<i2").astype(float)
+    n30 = int(dur * 30) + 1; fr = [float(np.sqrt(np.mean(pcm[int(k / 30 * 8000):int((k + 1) / 30 * 8000)] ** 2))) if int(k / 30 * 8000) < len(pcm) else 0.0 for k in range(n30)]
+    ref = max(float(np.percentile(fr, 92)), 1.0); env = [round(min(1.0, v / ref), 2) for v in fr]
+    tl.append({**seg, "env": env, "start": round(t, 3), "end": round(t + dur, 3),
                "words": [[w, round(t + a, 3), round(t + b, 3)] for w, a, b in words(al)]})
     inputs += ["-i", mp3]; filt.append(f"[{i}]adelay={int(t*1000)}:all=1[a{i}]")
     t += dur + seg.get("pause", 0.25)

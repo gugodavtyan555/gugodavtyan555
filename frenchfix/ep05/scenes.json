@@ -1,0 +1,56 @@
+{
+ "mode": "dialogue",
+ "hook": [
+  "",
+  ""
+ ],
+ "items": [],
+ "outro": {
+  "q": "",
+  "cta": "ABONNE-TOI pour la suite"
+ },
+ "cover": {
+  "pill": "🥖 À LA BOULANGERIE",
+  "a": "Léa a dit",
+  "b": "ça ?!",
+  "c": "au boulanger 😳",
+  "bub": "« Je suis bonne ! »",
+  "stamp": "ERREUR",
+  "e1": "🥐",
+  "e2": "😳"
+ },
+ "disp": {
+  "1b": "Je [[suis bonne,]] merci !",
+  "1c": "Euh... merci, madame. Mais en français, on dit : {{je vais bien.}}",
+  "2b": "C'est pour moi ! [[Je suis vingt-cinq ans !]]",
+  "2c": "Vous êtes... vingt-cinq ans ? Non, madame. En français, on a un âge. On dit : {{j'ai vingt-cinq ans.}}",
+  "3b": "Oui, [[je suis très fatigante]] aujourd'hui !",
+  "3c": "Fatigante ? Pour les autres, peut-être ! Pour vous, on dit : {{je suis fatiguée.}}",
+  "4b": "Pas de problème, [[je suis ennuyeuse.]]",
+  "4c": "Ennuyeuse ? Jamais, madame ! Pour dire que vous vous ennuyez, on dit : {{je m'ennuie.}}",
+  "5b": "Pardon, [[je suis confuse.]]",
+  "5c": "Confuse ? Vous n'avez pas à avoir honte ! Pour dire que vous ne comprenez pas, on dit : {{je ne comprends pas.}}"
+ },
+ "dlg": [
+  {
+   "wrong": "Je suis bonne",
+   "right": "Je vais bien"
+  },
+  {
+   "wrong": "Je suis 25 ans",
+   "right": "J'ai 25 ans"
+  },
+  {
+   "wrong": "Je suis fatigante",
+   "right": "Je suis fatiguée"
+  },
+  {
+   "wrong": "Je suis ennuyeuse",
+   "right": "Je m'ennuie"
+  },
+  {
+   "wrong": "Je suis confuse",
+   "right": "Je ne comprends pas"
+  }
+ ]
+}

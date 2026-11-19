@@ -1,0 +1,108 @@
+{
+ "lead": 1.05,
+ "tail": 1.3,
+ "segments": [
+  {
+   "id": "h",
+   "lang": "fr",
+   "text": "Cette cliente pense parler un français parfait. Écoutez bien ce qu'elle me dit.",
+   "pause": 0.3
+  },
+  {
+   "id": "1a",
+   "lang": "fr",
+   "text": "Bonjour madame ! Comment allez-vous aujourd'hui ?",
+   "pause": 0.3
+  },
+  {
+   "id": "1b",
+   "lang": "frf",
+   "text": "Je suis bonne, merci !",
+   "pause": 0.3
+  },
+  {
+   "id": "1c",
+   "lang": "fr",
+   "text": "Euh... merci, madame. Mais en français, on dit : je vais bien.",
+   "pause": 0.45
+  },
+  {
+   "id": "2a",
+   "lang": "fr",
+   "text": "Très bien ! C'est pour l'anniversaire de qui, ce gâteau ?",
+   "pause": 0.3
+  },
+  {
+   "id": "2b",
+   "lang": "frf",
+   "text": "C'est pour moi ! Je suis vingt-cinq ans !",
+   "pause": 0.3
+  },
+  {
+   "id": "2c",
+   "lang": "fr",
+   "text": "Vous êtes... vingt-cinq ans ? Non, madame. En français, on a un âge. On dit : j'ai vingt-cinq ans.",
+   "pause": 0.45
+  },
+  {
+   "id": "3a",
+   "lang": "fr",
+   "text": "Vous avez l'air épuisée, madame.",
+   "pause": 0.3
+  },
+  {
+   "id": "3b",
+   "lang": "frf",
+   "text": "Oui, je suis très fatigante aujourd'hui !",
+   "pause": 0.3
+  },
+  {
+   "id": "3c",
+   "lang": "fr",
+   "text": "Fatigante ? Pour les autres, peut-être ! Pour vous, on dit : je suis fatiguée.",
+   "pause": 0.45
+  },
+  {
+   "id": "4a",
+   "lang": "fr",
+   "text": "Il y a la queue, excusez-moi. Vous patientez ?",
+   "pause": 0.3
+  },
+  {
+   "id": "4b",
+   "lang": "frf",
+   "text": "Pas de problème, je suis ennuyeuse.",
+   "pause": 0.3
+  },
+  {
+   "id": "4c",
+   "lang": "fr",
+   "text": "Ennuyeuse ? Jamais, madame ! Pour dire que vous vous ennuyez, on dit : je m'ennuie.",
+   "pause": 0.45
+  },
+  {
+   "id": "5a",
+   "lang": "fr",
+   "text": "Voilà, huit euros cinquante.",
+   "pause": 0.3
+  },
+  {
+   "id": "5b",
+   "lang": "frf",
+   "text": "Pardon, je suis confuse.",
+   "pause": 0.3
+  },
+  {
+   "id": "5c",
+   "lang": "fr",
+   "text": "Confuse ? Vous n'avez pas à avoir honte ! Pour dire que vous ne comprenez pas, on dit : je ne comprends pas.",
+   "pause": 0.5
+  },
+  {
+   "id": "out",
+   "lang": "fr",
+   "text": "Et toi, quelle erreur as-tu déjà faite ? Dis-le-moi en commentaire, et abonne-toi pour la suite !",
+   "pause": 0
+  }
+ ]
+}

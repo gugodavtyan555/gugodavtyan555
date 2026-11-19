@@ -54,6 +54,14 @@ body{width:1080px;height:1920px;overflow:hidden;background:#0b1030;font-family:'
 
 #hav{display:flex;justify-content:center;margin-top:20px;height:560px}#hav svg{width:480px;height:544px}
 .sav{position:absolute;top:1590px;width:300px;height:330px;z-index:5}#av-m{left:50px}#av-f{right:50px}.sav svg{width:300px;height:340px}
+
+.dav{position:absolute;top:900px;width:560px;z-index:4;transform-origin:50% 100%}#dav-m{left:-30px}#dav-f{right:-30px}.dav svg{width:560px;height:635px}
+#bub{position:absolute;left:70px;top:370px;width:940px;background:#fff;color:#0b1030;border-radius:48px;padding:38px 44px;font-weight:900;font-size:62px;line-height:1.18;box-shadow:0 24px 60px rgba(0,0,0,.45);z-index:6;transform-origin:50% 100%}
+#bub:after{content:"";position:absolute;bottom:-46px;border:34px solid transparent;border-top:50px solid #fff;border-bottom:0}
+#bub.L:after{left:150px}#bub.R:after{right:150px}
+#bub .w{display:inline-block;margin:0 .16em;transition:none}#bub .bad{color:#d62828;text-decoration:underline wavy #d62828}#bub .good{color:#0a9b57}
+.dcard{position:absolute;left:70px;width:940px;border-radius:36px;padding:24px 30px;font-weight:900;font-size:60px;text-align:center;z-index:7;box-shadow:0 18px 44px rgba(0,0,0,.45)}
+#card-r{top:1565px;background:#fff;color:#c81e1e;border:8px solid #ef4135}#card-g{top:1705px;background:#12b76a;color:#fff}
 </style>
 <div id="cover"><svg viewBox="0 0 1080 1920"><defs>
 <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset=".5" stop-color="#ffc94d"/><stop offset="1" stop-color="#ff8a2a"/></linearGradient>
@@ -77,6 +85,7 @@ body{width:1080px;height:1920px;overflow:hidden;background:#0b1030;font-family:'
  <div id="right" class="card"><div class="l">✅ DIS PLUTÔT</div><div id="rt"></div></div>
 </div>
 <div id="outro" class="abs"></div>
+<div id="dlg" class="abs" style="top:0;height:1920px;display:none"><svg id="awn" width="1080" height="120" style="position:absolute;top:235px;left:0"></svg><div id="bub"></div><div id="dav-m" class="dav"></div><div id="dav-f" class="dav"></div><div id="card-r" class="dcard"></div><div id="card-g" class="dcard"></div></div>
 <div id="av-m" class="sav"></div><div id="av-f" class="sav"></div>
 <div id="cap" class="abs"></div>
 <script>
@@ -147,4 +156,31 @@ window.render=t=>{
  C.innerHTML=ch?ch.w.map(w=>`<span class="w${t>=w[1]-.03&&t<w[2]+.08?' on':''}">${w[0]}</span>`).join(' '):'';
  if(ch)C.style.transform=`scale(${.85+.15*back((t-ch.s+.05)/.18)})`;
 };
+
+if(SC.mode==='dialogue'){
+ $('#dav-m').innerHTML=AVM;$('#dav-f').innerHTML=AVF;
+ $('#awn').innerHTML=[...Array(12)].map((_,i)=>`<rect x="${i*90}" y="0" width="90" height="78" fill="${i%2?'#fff':'#e63946'}"/><circle cx="${i*90+45}" cy="78" r="45" fill="${i%2?'#fff':'#e63946'}"/>`).join('')+'<rect x="0" y="0" width="1080" height="10" fill="#8d1f2c"/>';
+ const segs=TL.segments;
+ segs.forEach(s=>{let w=0,r=0;const toks=((SC.disp&&SC.disp[s.id])||s.text).split(/\s+/);s.tk=toks.map(tok=>{if(tok.includes('[['))w=1;if(tok.includes('{{'))r=1;const o={w,r,t:tok.replace(/\[\[|\]\]|\{\{|\}\}/g,'')};if(tok.includes(']]'))w=0;if(tok.includes('}}'))r=0;return o});if(s.tk.length!==s.words.length)s.tk=s.words.map(x=>({w:0,r:0,t:x[0]}))});
+ const K=SC.dlg.length,gt={};for(let k=1;k<=K;k++){const c=S[k+'c'],i=c.tk.findIndex(o=>o.r);gt[k]=c.words[Math.max(0,i)][1]}
+ $('#prog').innerHTML='<div><i></i></div>'.repeat(K);
+ const bgf=t=>$('#bg').style.background=`radial-gradient(900px 900px at ${200+150*Math.sin(t*.5)}px ${300+120*Math.cos(t*.4)}px,#c2410c 0%,transparent 70%),radial-gradient(900px 900px at ${900+140*Math.cos(t*.45)}px ${1650+120*Math.sin(t*.35)}px,#7c2d12 0%,transparent 70%),#2b1409`;
+ window.render=t=>{
+  const CV=$('#cover'),cp=c01((t-.8)/.2);CV.style.display=cp<1?'':'none';CV.style.opacity=1-cp;CV.style.transform=`scale(${1+.25*cp})`;bgf(t);
+  ['#hook','#item','#outro','#cap','#av-m','#av-f'].forEach(s=>$(s).style.display='none');$('#dlg').style.display='';
+  const cur=[...segs].filter(s=>t>=s.start-.05).pop()||segs[0],fm=cur.lang=='frf';
+  const B=$('#bub');B.className=fm?'R':'L';B.style.transform=`scale(${.9+.1*back((t-cur.start+.05)/.25)})`;
+  B.innerHTML=cur.tk.map((o,i)=>{const w=cur.words[i],on=t>=w[1]-.05,now=on&&t<w[2]+.05;return `<span class="w${on&&o.w?' bad':''}${on&&o.r?' good':''}" style="opacity:${on?1:.2};transform:scale(${now?1.1:1})">${o.t}</span>`}).join(' ');
+  const nar=envAt(t,s=>s.lang=='fr'),fem=envAt(t,s=>s.lang=='frf');
+  anim($('#dav-m'),'m',nar,t,true,0);anim($('#dav-f'),'f',fem,t,true,1.7);
+  $('#dav-m').style.transform=`scale(${fm?.93:1.05})`;$('#dav-f').style.transform=`scale(${fm?1.05:.93})`;$('#dav-m').style.opacity=fm?.82:1;$('#dav-f').style.opacity=fm?1:.82;
+  let k=0;for(let i=1;i<=K;i++)if(t>=S[i+'a'].start-.05)k=i;const outP=t>=S.out.start-.05;
+  const R=$('#card-r'),G=$('#card-g');
+  const showR=k>0&&!outP&&t>=S[k+'b'].start-.1,showG=outP||(k>0&&t>=gt[k]-.15);
+  R.style.display=showR?'':'none';G.style.display=showG?'':'none';
+  if(showR){R.textContent='❌ '+SC.dlg[k-1].wrong;pop(R,t,S[k+'b'].start-.1,.3)}
+  if(showG){G.textContent=outP?'➕ '+SC.outro.cta:'✅ '+SC.dlg[k-1].right;pop(G,t,outP?S.out.start:gt[k]-.15,.3)}
+  document.querySelectorAll('#prog i').forEach((el,i)=>{const a=S[(i+1)+'a'].start,b=i<K-1?S[(i+2)+'a'].start:S.out.start;el.style.width=100*c01((t-a)/(b-a))+'%'});
+ };
+}
 </script>

@@ -1,0 +1,139 @@
+{
+ "mode": "dialogue",
+ "land": true,
+ "hook": [
+  "",
+  ""
+ ],
+ "items": [],
+ "outro": {
+  "q": "",
+  "cta": "ABONNE-TOI !"
+ },
+ "theme": {
+  "g1": "#2563eb",
+  "g2": "#1e3a8a",
+  "dk": "#0a1030",
+  "awn": "#e63946",
+  "awd": "#8d1f2c",
+  "c1": "#9a5a2b",
+  "c2": "#6e3a18",
+  "c3": "#4a230d",
+  "items": [
+   "☕",
+   "🥖",
+   "🧁"
+  ]
+ },
+ "cover": {
+  "pill": "",
+  "a": "",
+  "b": "",
+  "stamp": ""
+ },
+ "chips": [
+  "☕ AU CAFÉ",
+  "🧾 L'ADDITION",
+  "🥖 LA BOULANGERIE",
+  "🚶 DANS LA RUE",
+  "🚉 LE CHEMIN",
+  "🌙 LE SOIR",
+  "👔 AU BUREAU",
+  "🔊 JE N'AI PAS COMPRIS",
+  "🍰 NON, MERCI"
+ ],
+ "disp": {
+  "1b": "[[Je veux un café.]]",
+  "1c": "Aïe ! Je veux, c'est un ordre. Le serveur va te trouver très direct, presque impoli. En français, pour demander poliment, on utilise le conditionnel : je voudrais. C'est beaucoup plus doux. Tu peux aussi dire : je prendrais un café. Et n'oublie jamais le petit mot magique : s'il vous plaît. Répète après moi :",
+  "1e": "{{Je voudrais un café, s'il vous plaît.}}",
+  "1f": "{{Je voudrais un café, s'il vous plaît.}}",
+  "2b": "[[Donne-moi l'addition.]]",
+  "2c": "Donne-moi, à l'impératif, c'est trop sec, et en plus tu tutoies le serveur. Avec un inconnu, on dit vous, et on pose une question. On peut dire : {{pourriez-vous m'apporter l'addition ?}} C'est un peu long, mais c'est très poli, et le serveur sera ravi. Répète après moi :",
+  "2e": "{{Pourriez-vous m'apporter l'addition, s'il vous plaît ?}}",
+  "2f": "{{Pourriez-vous m'apporter l'addition, s'il vous plaît ?}}",
+  "3b": "[[Une baguette !]]",
+  "3c": "Oups ! Tu as oublié le plus important : le bonjour. En France, on dit toujours {{bonjour}} en entrant dans un magasin, même si on est pressé. Sans bonjour, le commerçant pense que tu ne le respectes pas. Dis d'abord bonjour, puis ta demande, puis merci. Répète après moi :",
+  "3e": "{{Bonjour madame, une baguette, s'il vous plaît.}}",
+  "3f": "{{Bonjour madame, une baguette, s'il vous plaît.}}",
+  "4b": "[[Tu peux m'aider ?]]",
+  "4c": "Attention au tutoiement ! Avec un inconnu, une personne plus âgée ou un collègue que tu ne connais pas, on dit {{vous}}. Le tu est pour les amis, la famille et les enfants. Si tu tutoies trop vite, ça peut sembler familier, voire irrespectueux. Dans le doute, choisis vous. Répète après moi :",
+  "4e": "{{Vous pouvez m'aider, s'il vous plaît ?}}",
+  "4f": "{{Vous pouvez m'aider, s'il vous plaît ?}}",
+  "5b": "[[Hé ! Où est la gare ?]]",
+  "5c": "Hé, c'est ce qu'on dit à un ami, pas à un inconnu. Pour attirer l'attention poliment, on commence par : {{excusez-moi}}, ou pardon. Ensuite, on pose la question avec le conditionnel. C'est la formule parfaite pour demander son chemin, partout en France. Répète après moi :",
+  "5e": "{{Excusez-moi, pourriez-vous m'indiquer la gare ?}}",
+  "5f": "{{Excusez-moi, pourriez-vous m'indiquer la gare ?}}",
+  "6b": "[[Bonne journée !]]",
+  "6c": "Presque ! Mais à dix-neuf heures, la journée est finie. On dit bonne journée le matin et l'après-midi. À partir de dix-sept ou dix-huit heures environ, on préfère {{bonne soirée}}. Ce n'est pas une grosse erreur, mais les Français le remarquent toujours. Répète après moi :",
+  "6e": "{{Merci, bonne soirée !}}",
+  "6f": "{{Merci, bonne soirée !}}",
+  "7b": "[[De rien.]]",
+  "7c": "De rien, c'est correct entre amis, mais avec un patron ou une personne que l'on respecte, c'est un peu trop léger. On préfère : {{je vous en prie}}, ou : avec plaisir. Ça montre que tu es à l'aise et respectueux en même temps. Répète après moi :",
+  "7e": "{{Je vous en prie, avec plaisir.}}",
+  "7f": "{{Je vous en prie, avec plaisir.}}",
+  "8b": "[[Quoi ?]]",
+  "8c": "Quoi, tout seul, c'est très brusque, presque agressif. Pour demander de répéter, dis simplement : {{pardon ?}} Ou, plus poli : pourriez-vous répéter, s'il vous plaît ? Les Français adorent aider quelqu'un qui fait un effort pour parler leur langue. Répète après moi :",
+  "8e": "{{Pardon ? Pourriez-vous répéter, s'il vous plaît ?}}",
+  "8f": "{{Pardon ? Pourriez-vous répéter, s'il vous plaît ?}}",
+  "9b": "[[Non.]]",
+  "9c": "Un non tout seul, c'est trop sec. En français, on adoucit toujours un refus. Dis : {{non, merci}}, ou : non, merci, c'est très gentil. Même chose pour accepter : oui, merci, avec plaisir. Les petits mots de politesse sont partout, et ils changent tout. Répète après moi :",
+  "9e": "{{Non, merci, c'est très gentil !}}",
+  "9f": "{{Non, merci, c'est très gentil !}}",
+  "1g": "{{Je voudrais un café, s'il vous plaît.}}",
+  "2g": "{{Pourriez-vous m'apporter l'addition, s'il vous plaît ?}}",
+  "3g": "{{Bonjour madame, une baguette, s'il vous plaît.}}",
+  "4g": "{{Vous pouvez m'aider, s'il vous plaît ?}}",
+  "5g": "{{Excusez-moi, pourriez-vous m'indiquer la gare ?}}",
+  "6g": "{{Merci, bonne soirée !}}",
+  "7g": "{{Je vous en prie, avec plaisir.}}",
+  "8g": "{{Pardon ? Pourriez-vous répéter, s'il vous plaît ?}}",
+  "9g": "{{Non, merci, c'est très gentil !}}",
+  "q1r": "{{Je voudrais un café, s'il vous plaît.}}",
+  "q2r": "{{Pourriez-vous m'apporter l'addition, s'il vous plaît ?}}",
+  "q3r": "{{Bonjour madame, une baguette, s'il vous plaît.}}",
+  "q4r": "{{Vous pouvez m'aider, s'il vous plaît ?}}",
+  "q5r": "{{Excusez-moi, pourriez-vous m'indiquer la gare ?}}",
+  "q6r": "{{Merci, bonne soirée !}}",
+  "q7r": "{{Je vous en prie, avec plaisir.}}",
+  "q8r": "{{Pardon ? Pourriez-vous répéter, s'il vous plaît ?}}",
+  "q9r": "{{Non, merci, c'est très gentil !}}"
+ },
+ "dlg": [
+  {
+   "wrong": "Je veux un café",
+   "right": "Je voudrais un café, s'il vous plaît"
+  },
+  {
+   "wrong": "Donne-moi l'addition",
+   "right": "Pourriez-vous m'apporter l'addition, s'il vous plaît ?"
+  },
+  {
+   "wrong": "Une baguette ",
+   "right": "Bonjour madame, une baguette, s'il vous plaît"
+  },
+  {
+   "wrong": "Tu peux m'aider ",
+   "right": "Vous pouvez m'aider, s'il vous plaît ?"
+  },
+  {
+   "wrong": "Hé ! Où est la gare ",
+   "right": "Excusez-moi, pourriez-vous m'indiquer la gare ?"
+  },
+  {
+   "wrong": "Bonne journée ",
+   "right": "Merci, bonne soirée "
+  },
+  {
+   "wrong": "De rien",
+   "right": "Je vous en prie, avec plaisir"
+  },
+  {
+   "wrong": "Quoi ",
+   "right": "Pardon ? Pourriez-vous répéter, s'il vous plaît ?"
+  },
+  {
+   "wrong": "Non",
+   "right": "Non, merci, c'est très gentil "
+  }
+ ]
+}

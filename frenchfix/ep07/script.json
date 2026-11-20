@@ -1,0 +1,468 @@
+{
+ "lead": 0.6,
+ "tail": 3.0,
+ "segments": [
+  {
+   "id": "h",
+   "lang": "fr",
+   "text": "Bonjour à tous ! Aujourd'hui, avec Léa, nous voyons neuf erreurs de politesse que presque tous les apprenants font en français. Elles ne sont pas graves pour la grammaire, mais elles peuvent donner une mauvaise impression à un Français sans que tu le saches. Regarde bien, répète à voix haute, et à la fin, dis-moi laquelle tu faisais déjà !",
+   "pause": 0.4
+  },
+  {
+   "id": "hl",
+   "lang": "frf",
+   "text": "Bonjour ! Je suis prête. J'espère que je ne ferai pas trop d'erreurs !",
+   "pause": 0.5
+  },
+  {
+   "id": "1a",
+   "lang": "fr",
+   "text": "Situation numéro un. Tu es dans un café parisien et tu veux un café. Léa, à toi !",
+   "pause": 0.25
+  },
+  {
+   "id": "1b",
+   "lang": "frf",
+   "text": "Je veux un café.",
+   "pause": 0.35
+  },
+  {
+   "id": "1c",
+   "lang": "fr",
+   "text": "Aïe ! Je veux, c'est un ordre. Le serveur va te trouver très direct, presque impoli. En français, pour demander poliment, on utilise le conditionnel : je voudrais. C'est beaucoup plus doux. Tu peux aussi dire : je prendrais un café. Et n'oublie jamais le petit mot magique : s'il vous plaît. Répète après moi :",
+   "pause": 0.4
+  },
+  {
+   "id": "1e",
+   "lang": "frf",
+   "text": "Je voudrais un café, s'il vous plaît.",
+   "pause": 3.2
+  },
+  {
+   "id": "1f",
+   "lang": "frf",
+   "text": "Je voudrais un café, s'il vous plaît.",
+   "pause": 3.2
+  },
+  {
+   "id": "1g",
+   "lang": "frf",
+   "text": "Je voudrais un café, s'il vous plaît.",
+   "pause": 3.2
+  },
+  {
+   "id": "2a",
+   "lang": "fr",
+   "text": "Situation numéro deux. Tu as fini de manger et tu veux payer. Léa ?",
+   "pause": 0.25
+  },
+  {
+   "id": "2b",
+   "lang": "frf",
+   "text": "Donne-moi l'addition.",
+   "pause": 0.35
+  },
+  {
+   "id": "2c",
+   "lang": "fr",
+   "text": "Donne-moi, à l'impératif, c'est trop sec, et en plus tu tutoies le serveur. Avec un inconnu, on dit vous, et on pose une question. On peut dire : {{pourriez-vous m'apporter l'addition ?}} C'est un peu long, mais c'est très poli, et le serveur sera ravi. Répète après moi :",
+   "pause": 0.4
+  },
+  {
+   "id": "2e",
+   "lang": "frf",
+   "text": "Pourriez-vous m'apporter l'addition, s'il vous plaît ?",
+   "pause": 3.2
+  },
+  {
+   "id": "2f",
+   "lang": "frf",
+   "text": "Pourriez-vous m'apporter l'addition, s'il vous plaît ?",
+   "pause": 3.2
+  },
+  {
+   "id": "2g",
+   "lang": "frf",
+   "text": "Pourriez-vous m'apporter l'addition, s'il vous plaît ?",
+   "pause": 3.2
+  },
+  {
+   "id": "3a",
+   "lang": "fr",
+   "text": "Situation numéro trois. Tu entres dans une boulangerie et tu veux une baguette.",
+   "pause": 0.25
+  },
+  {
+   "id": "3b",
+   "lang": "frf",
+   "text": "Une baguette !",
+   "pause": 0.35
+  },
+  {
+   "id": "3c",
+   "lang": "fr",
+   "text": "Oups ! Tu as oublié le plus important : le bonjour. En France, on dit toujours {{bonjour}} en entrant dans un magasin, même si on est pressé. Sans bonjour, le commerçant pense que tu ne le respectes pas. Dis d'abord bonjour, puis ta demande, puis merci. Répète après moi :",
+   "pause": 0.4
+  },
+  {
+   "id": "3e",
+   "lang": "frf",
+   "text": "Bonjour madame, une baguette, s'il vous plaît.",
+   "pause": 3.2
+  },
+  {
+   "id": "3f",
+   "lang": "frf",
+   "text": "Bonjour madame, une baguette, s'il vous plaît.",
+   "pause": 3.2
+  },
+  {
+   "id": "3g",
+   "lang": "frf",
+   "text": "Bonjour madame, une baguette, s'il vous plaît.",
+   "pause": 3.2
+  },
+  {
+   "id": "4a",
+   "lang": "fr",
+   "text": "Situation numéro quatre. Tu es dans la rue et tu demandes de l'aide à un inconnu.",
+   "pause": 0.25
+  },
+  {
+   "id": "4b",
+   "lang": "frf",
+   "text": "Tu peux m'aider ?",
+   "pause": 0.35
+  },
+  {
+   "id": "4c",
+   "lang": "fr",
+   "text": "Attention au tutoiement ! Avec un inconnu, une personne plus âgée ou un collègue que tu ne connais pas, on dit {{vous}}. Le tu est pour les amis, la famille et les enfants. Si tu tutoies trop vite, ça peut sembler familier, voire irrespectueux. Dans le doute, choisis vous. Répète après moi :",
+   "pause": 0.4
+  },
+  {
+   "id": "4e",
+   "lang": "frf",
+   "text": "Vous pouvez m'aider, s'il vous plaît ?",
+   "pause": 3.2
+  },
+  {
+   "id": "4f",
+   "lang": "frf",
+   "text": "Vous pouvez m'aider, s'il vous plaît ?",
+   "pause": 3.2
+  },
+  {
+   "id": "4g",
+   "lang": "frf",
+   "text": "Vous pouvez m'aider, s'il vous plaît ?",
+   "pause": 3.2
+  },
+  {
+   "id": "5a",
+   "lang": "fr",
+   "text": "Situation numéro cinq. Tu veux attirer l'attention d'un passant pour demander où est la gare.",
+   "pause": 0.25
+  },
+  {
+   "id": "5b",
+   "lang": "frf",
+   "text": "Hé ! Où est la gare ?",
+   "pause": 0.35
+  },
+  {
+   "id": "5c",
+   "lang": "fr",
+   "text": "Hé, c'est ce qu'on dit à un ami, pas à un inconnu. Pour attirer l'attention poliment, on commence par : {{excusez-moi}}, ou pardon. Ensuite, on pose la question avec le conditionnel. C'est la formule parfaite pour demander son chemin, partout en France. Répète après moi :",
+   "pause": 0.4
+  },
+  {
+   "id": "5e",
+   "lang": "frf",
+   "text": "Excusez-moi, pourriez-vous m'indiquer la gare ?",
+   "pause": 3.2
+  },
+  {
+   "id": "5f",
+   "lang": "frf",
+   "text": "Excusez-moi, pourriez-vous m'indiquer la gare ?",
+   "pause": 3.2
+  },
+  {
+   "id": "5g",
+   "lang": "frf",
+   "text": "Excusez-moi, pourriez-vous m'indiquer la gare ?",
+   "pause": 3.2
+  },
+  {
+   "id": "6a",
+   "lang": "fr",
+   "text": "Situation numéro six. Il est dix-neuf heures. Tu quittes le magasin et tu veux dire au revoir.",
+   "pause": 0.25
+  },
+  {
+   "id": "6b",
+   "lang": "frf",
+   "text": "Bonne journée !",
+   "pause": 0.35
+  },
+  {
+   "id": "6c",
+   "lang": "fr",
+   "text": "Presque ! Mais à dix-neuf heures, la journée est finie. On dit bonne journée le matin et l'après-midi. À partir de dix-sept ou dix-huit heures environ, on préfère {{bonne soirée}}. Ce n'est pas une grosse erreur, mais les Français le remarquent toujours. Répète après moi :",
+   "pause": 0.4
+  },
+  {
+   "id": "6e",
+   "lang": "frf",
+   "text": "Merci, bonne soirée !",
+   "pause": 3.2
+  },
+  {
+   "id": "6f",
+   "lang": "frf",
+   "text": "Merci, bonne soirée !",
+   "pause": 3.2
+  },
+  {
+   "id": "6g",
+   "lang": "frf",
+   "text": "Merci, bonne soirée !",
+   "pause": 3.2
+  },
+  {
+   "id": "7a",
+   "lang": "fr",
+   "text": "Situation numéro sept. Ton patron te dit merci pour ton travail. Tu veux répondre.",
+   "pause": 0.25
+  },
+  {
+   "id": "7b",
+   "lang": "frf",
+   "text": "De rien.",
+   "pause": 0.35
+  },
+  {
+   "id": "7c",
+   "lang": "fr",
+   "text": "De rien, c'est correct entre amis, mais avec un patron ou une personne que l'on respecte, c'est un peu trop léger. On préfère : {{je vous en prie}}, ou : avec plaisir. Ça montre que tu es à l'aise et respectueux en même temps. Répète après moi :",
+   "pause": 0.4
+  },
+  {
+   "id": "7e",
+   "lang": "frf",
+   "text": "Je vous en prie, avec plaisir.",
+   "pause": 3.2
+  },
+  {
+   "id": "7f",
+   "lang": "frf",
+   "text": "Je vous en prie, avec plaisir.",
+   "pause": 3.2
+  },
+  {
+   "id": "7g",
+   "lang": "frf",
+   "text": "Je vous en prie, avec plaisir.",
+   "pause": 3.2
+  },
+  {
+   "id": "8a",
+   "lang": "fr",
+   "text": "Situation numéro huit. Quelqu'un te parle très vite et tu n'as pas compris.",
+   "pause": 0.25
+  },
+  {
+   "id": "8b",
+   "lang": "frf",
+   "text": "Quoi ?",
+   "pause": 0.35
+  },
+  {
+   "id": "8c",
+   "lang": "fr",
+   "text": "Quoi, tout seul, c'est très brusque, presque agressif. Pour demander de répéter, dis simplement : {{pardon ?}} Ou, plus poli : pourriez-vous répéter, s'il vous plaît ? Les Français adorent aider quelqu'un qui fait un effort pour parler leur langue. Répète après moi :",
+   "pause": 0.4
+  },
+  {
+   "id": "8e",
+   "lang": "frf",
+   "text": "Pardon ? Pourriez-vous répéter, s'il vous plaît ?",
+   "pause": 3.2
+  },
+  {
+   "id": "8f",
+   "lang": "frf",
+   "text": "Pardon ? Pourriez-vous répéter, s'il vous plaît ?",
+   "pause": 3.2
+  },
+  {
+   "id": "8g",
+   "lang": "frf",
+   "text": "Pardon ? Pourriez-vous répéter, s'il vous plaît ?",
+   "pause": 3.2
+  },
+  {
+   "id": "9a",
+   "lang": "fr",
+   "text": "Dernière situation. On te propose un dessert, mais tu n'as plus faim.",
+   "pause": 0.25
+  },
+  {
+   "id": "9b",
+   "lang": "frf",
+   "text": "Non.",
+   "pause": 0.35
+  },
+  {
+   "id": "9c",
+   "lang": "fr",
+   "text": "Un non tout seul, c'est trop sec. En français, on adoucit toujours un refus. Dis : {{non, merci}}, ou : non, merci, c'est très gentil. Même chose pour accepter : oui, merci, avec plaisir. Les petits mots de politesse sont partout, et ils changent tout. Répète après moi :",
+   "pause": 0.4
+  },
+  {
+   "id": "9e",
+   "lang": "frf",
+   "text": "Non, merci, c'est très gentil !",
+   "pause": 3.2
+  },
+  {
+   "id": "9f",
+   "lang": "frf",
+   "text": "Non, merci, c'est très gentil !",
+   "pause": 3.2
+  },
+  {
+   "id": "9g",
+   "lang": "frf",
+   "text": "Non, merci, c'est très gentil !",
+   "pause": 3.2
+  },
+  {
+   "id": "rc",
+   "lang": "fr",
+   "text": "Récapitulons ! Je te donne la situation, et toi, tu dis la phrase polie. Prêt ? C'est parti !",
+   "pause": 0.4
+  },
+  {
+   "id": "q1",
+   "lang": "fr",
+   "text": "Au café.",
+   "pause": 0.25
+  },
+  {
+   "id": "q1r",
+   "lang": "frf",
+   "text": "Je voudrais un café, s'il vous plaît.",
+   "pause": 3.4
+  },
+  {
+   "id": "q2",
+   "lang": "fr",
+   "text": "L'addition.",
+   "pause": 0.25
+  },
+  {
+   "id": "q2r",
+   "lang": "frf",
+   "text": "Pourriez-vous m'apporter l'addition, s'il vous plaît ?",
+   "pause": 3.4
+  },
+  {
+   "id": "q3",
+   "lang": "fr",
+   "text": "La boulangerie.",
+   "pause": 0.25
+  },
+  {
+   "id": "q3r",
+   "lang": "frf",
+   "text": "Bonjour madame, une baguette, s'il vous plaît.",
+   "pause": 3.4
+  },
+  {
+   "id": "q4",
+   "lang": "fr",
+   "text": "Un inconnu dans la rue.",
+   "pause": 0.25
+  },
+  {
+   "id": "q4r",
+   "lang": "frf",
+   "text": "Vous pouvez m'aider, s'il vous plaît ?",
+   "pause": 3.4
+  },
+  {
+   "id": "q5",
+   "lang": "fr",
+   "text": "Où est la gare ?",
+   "pause": 0.25
+  },
+  {
+   "id": "q5r",
+   "lang": "frf",
+   "text": "Excusez-moi, pourriez-vous m'indiquer la gare ?",
+   "pause": 3.4
+  },
+  {
+   "id": "q6",
+   "lang": "fr",
+   "text": "Il est dix-neuf heures.",
+   "pause": 0.25
+  },
+  {
+   "id": "q6r",
+   "lang": "frf",
+   "text": "Merci, bonne soirée !",
+   "pause": 3.4
+  },
+  {
+   "id": "q7",
+   "lang": "fr",
+   "text": "Ton patron te remercie.",
+   "pause": 0.25
+  },
+  {
+   "id": "q7r",
+   "lang": "frf",
+   "text": "Je vous en prie, avec plaisir.",
+   "pause": 3.4
+  },
+  {
+   "id": "q8",
+   "lang": "fr",
+   "text": "Tu n'as pas compris.",
+   "pause": 0.25
+  },
+  {
+   "id": "q8r",
+   "lang": "frf",
+   "text": "Pardon ? Pourriez-vous répéter, s'il vous plaît ?",
+   "pause": 3.4
+  },
+  {
+   "id": "q9",
+   "lang": "fr",
+   "text": "On te propose un dessert.",
+   "pause": 0.25
+  },
+  {
+   "id": "q9r",
+   "lang": "frf",
+   "text": "Non, merci, c'est très gentil !",
+   "pause": 3.4
+  },
+  {
+   "id": "out",
+   "lang": "fr",
+   "text": "Bravo Léa ! Et toi, quelle erreur faisais-tu déjà ? Écris-la en commentaire, et abonne-toi pour la prochaine leçon. À bientôt !",
+   "pause": 0.3
+  },
+  {
+   "id": "outl",
+   "lang": "frf",
+   "text": "Merci Pierre ! À bientôt !",
+   "pause": 0
+  }
+ ]
+}

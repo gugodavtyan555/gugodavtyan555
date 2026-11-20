@@ -3,3 +3,7 @@ bot/config.json
 __pycache__/
 mek-dram.zip
 node_modules/
+frenchfix/ep07/final.mp4
+frenchfix/ep07/chunks/
+frenchfix/ep07/render.log
+frenchfix/ep07/*.wav

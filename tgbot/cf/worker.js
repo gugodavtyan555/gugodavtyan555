@@ -272,15 +272,16 @@ async function historyText(env, now) {
   const today = dayStr(now);
   const { results } = await env.DB.prepare("SELECT * FROM trades ORDER BY open_at ASC, id ASC").all();
   const auto = (await env.DB.prepare("SELECT v FROM kv WHERE k='auto'").first())?.v === "1";
-  const td = results.filter(t => t.strat === "R" && dayStr(t.open_at) === today);
+  const td = results.filter(t => (t.strat === "R" || t.strat === "N") && dayStr(t.open_at) === today);
   const stats = trs => { const w = trs.filter(t => t.result === "win").length, l = trs.filter(t => t.result === "loss").length, d = trs.filter(t => t.result === "draw").length; const n = w + l;
     return `✅ ${w} · ❌ ${l} · ➖ ${d} · Win rate ${n ? (100 * w / n).toFixed(1) + "%" : "—"} · P&L ${(w * PAYOUT - l >= 0 ? "+" : "") + (w * PAYOUT - l).toFixed(2)}`; };
-  const T = x => x.filter(t => (t.strat || "T") === "T"), F = x => x.filter(t => t.strat === "F"), R = x => x.filter(t => t.strat === "R");
-  const L = [`📜 *Պատմություն · ${today}*  (վիրտուալ գործարքներ)`, `Ավտո՝ ${auto ? "🟢 միացված" : "🔴 անջատված"}`, "🔁 RSI գերծայրահեղ → հակառակ, 60 րոպե", ""];
+  const T = x => x.filter(t => (t.strat || "T") === "T"), F = x => x.filter(t => t.strat === "F"), R = x => x.filter(t => t.strat === "R"), N = x => x.filter(t => t.strat === "N");
+  const L = [`📜 *Պատմություն · ${today}*  (վիրտուալ գործարքներ)`, `Ավտո՝ ${auto ? "🟢 միացված" : "🔴 անջատված"}`, "🔁 RSI գերծայրահեղ → հակառակ, 60 րոպե · 🌙 Գիշերային RSI (21-24 UTC)", ""];
   if (!td.length) L.push("Այսօր դեռ գործարք չկա։");
   const icon = { win: "✅", loss: "❌", draw: "➖", error: "⚠️" };
-  for (const t of td.slice(-40)) L.push(`${icon[t.result] || "⏳"}${t.strat === "F" ? "↩️" : t.strat === "R" ? "🔁" : ""} ${loc(t.open_at).toISOString().slice(11, 16)} ${pairName(t.pair)} ${t.dir} ${t.entry.toFixed(5)}→${t.exit != null ? t.exit.toFixed(5) : "…"}`);
+  for (const t of td.slice(-40)) L.push(`${icon[t.result] || "⏳"}${t.strat === "F" ? "↩️" : t.strat === "R" ? "🔁" : t.strat === "N" ? "🌙" : ""} ${loc(t.open_at).toISOString().slice(11, 16)} ${pairName(t.pair)} ${t.dir} ${t.entry.toFixed(5)}→${t.exit != null ? t.exit.toFixed(5) : "…"}`);
   L.push("", "*🔁 RSI գերծայրահեղ → հակառակ (60 ր, թեստ)*", `Այսօր. ${stats(R(td))}`, `Ընդհանուր (${R(results).length}). ${stats(R(results))}`,
+    "", "*🌙 Գիշերային RSI (21-24 UTC, ոչ-USD-հիմնական, 60 ր, թեստ)*", `Այսօր. ${stats(N(td))}`, `Ընդհանուր (${N(results).length}). ${stats(N(results))}`,
     "", `1 միավոր/գործարք, վճար ${Math.round(PAYOUT * 100)}%։ Break-even ~${(100 / (1 + PAYOUT)).toFixed(1)}%։ Շահույթի համար win rate-ը պետք է դրանից բարձր լինի՝ բավարար թվով գործարքների վրա։`);
   return L.join("\n");
 }
@@ -358,19 +359,29 @@ async function rankAndSettle(env, boundary, infos) {
       id: boundary, pair: i.pair, dir, expiry_sec: 3600, strength: "rsi_extreme", price: i.price, rsi5: i.r5, t: boundary
     })).run();
   }
+  // Night-hour (21-24 UTC) RSI-extreme on non-USD-major pairs: strongest edge found so far (strategies2.py).
+  const NIGHT_HOURS = [21, 22, 23], NIGHT_EXCLUDE = new Set(["EURUSD", "USDCAD", "USDJPY"]);
+  const utcHour = new Date(boundary * 1000).getUTCHours();
+  const nAll = NIGHT_HOURS.includes(utcHour) ? rAll.filter(i => !NIGHT_EXCLUDE.has(i.pair)) : [];
   const auto = (await env.DB.prepare("SELECT v FROM kv WHERE k='auto'").first())?.v === "1";
   if (auto) {
-    const ins = (i, dir, strat) => env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat, strat) VALUES (?,?,?,?,?,?,?,?)")
-      .bind(i.pair, dir, boundary, boundary + 300, i.price, Math.round(i.score * 100) / 100, JSON.stringify(i.feat), strat);
     // (trend "T" and fade "F" virtual trades were switched off at the user's request; old rows stay in the DB)
     // R = RSI-extreme reversion, 60-minute expiry (RSI14 on M5 < 30 -> UP, > 70 -> DOWN). Test candidate from the strategy search.
     const { results: openR } = await env.DB.prepare("SELECT pair FROM trades WHERE strat='R' AND result IS NULL").all();
-    const busy = new Set(openR.map(r => r.pair));
-    const cand = rAll.filter(i => !busy.has(i.pair)).slice(0, 2);
+    const busyR = new Set(openR.map(r => r.pair));
+    const cand = rAll.filter(i => !busyR.has(i.pair)).slice(0, 2);
     for (const i of cand) {
       await env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat, strat) VALUES (?,?,?,?,?,?,?,?)")
         .bind(i.pair, i.r5 < 30 ? "UP" : "DOWN", boundary, boundary + 3600, i.price, Math.round(Math.abs(i.r5 - 50) * 100) / 100, JSON.stringify(i.feat), "R").run();
       out.opened.push("R:" + i.pair);
+    }
+    // N = night-hour RSI-extreme reversion (21-24 UTC, excluding the most liquid USD pairs), 60-minute expiry.
+    const { results: openN } = await env.DB.prepare("SELECT pair FROM trades WHERE strat='N' AND result IS NULL").all();
+    const busyN = new Set(openN.map(r => r.pair));
+    for (const i of nAll.filter(i => !busyN.has(i.pair)).slice(0, 3)) {
+      await env.DB.prepare("INSERT OR IGNORE INTO trades (pair, dir, open_at, exit_at, entry, score, feat, strat) VALUES (?,?,?,?,?,?,?,?)")
+        .bind(i.pair, i.r5 < 30 ? "UP" : "DOWN", boundary, boundary + 3600, i.price, Math.round(Math.abs(i.r5 - 50) * 100) / 100, JSON.stringify(i.feat), "N").run();
+      out.opened.push("N:" + i.pair);
     }
   }
   return out;
@@ -409,14 +420,36 @@ async function maybeAlertRSI(env, i, dir, boundary) {
   return true;
 }
 
+// Automatic push for the night-hour (21-24 UTC) RSI-extreme reversion signal on non-USD-major pairs — the
+// strongest edge found in the second-round filter search (~77% forward on the held-out split).
+async function maybeAlertNight(env, i, dir, now) {
+  const on = (await env.DB.prepare("SELECT v FROM kv WHERE k='alerts'").first())?.v;
+  if (on === "0" || !env.ALLOWED_CHAT) return false;
+  let last = null; try { const r = await env.DB.prepare("SELECT v FROM kv WHERE k='lastalertnight'").first(); if (r) last = JSON.parse(r.v); } catch (e) {}
+  if (last && last.pair === i.pair && last.dir === dir && now - last.t < 3600) return false;
+  const hh = new Date(now * 1000).toISOString().slice(11, 19);
+  const text = [`🔔🌙 *Ավտոմատ Գիշերային RSI սիգնալ*`, "",
+    `🌙 ${ico[dir]} *${dir} · 60 րոպե* — ${pairName(i.pair)} (գիշերային RSI գերծայրահեղ → վերադարձ)`,
+    `M5 RSI ${i.r5.toFixed(0)} (${i.r5 < 30 ? "գերվաճառված" : "գերգնված"}) · M1 RSI ${i.r1.toFixed(0)} · EMA-ից ${i.feat.dist} ATR`,
+    `Գին ${i.price.toFixed(5)} · ${hh} UTC`, "✅ Մտիր հիմա · expiry՝ 60 րոպե",
+    "_(21-24 UTC ժամային ֆիլտր, ամենաուժեղ թեկնածուն մինչ այժմ՝ ~77% թեստում)_"].join("\n");
+  await send(env, env.ALLOWED_CHAT, text, rsiKb(i.pair));
+  await env.DB.prepare("INSERT OR REPLACE INTO kv VALUES ('lastalertnight', ?)").bind(JSON.stringify({ pair: i.pair, dir, t: now })).run();
+  return true;
+}
+
 async function cronTick(env, scheduledSec) {
   if (!marketOpen(scheduledSec)) return { closed: true };
   const infos = await cronScan(env, scheduledSec);
   const alerted = false; // trend/fade "strongest" alert disabled at the user's request (only RSI alert stays on)
   const rAll = infos.filter(i => i.r5 < 30 || i.r5 > 70).sort((a, b) => Math.abs(b.r5 - 50) - Math.abs(a.r5 - 50));
   const alertedRSI = rAll.length ? await maybeAlertRSI(env, rAll[0], rAll[0].r5 < 30 ? "UP" : "DOWN", scheduledSec).catch(() => false) : false;
+  const NIGHT_HOURS = [21, 22, 23], NIGHT_EXCLUDE = new Set(["EURUSD", "USDCAD", "USDJPY"]);
+  const utcHour = new Date(scheduledSec * 1000).getUTCHours();
+  const nAll = NIGHT_HOURS.includes(utcHour) ? rAll.filter(i => !NIGHT_EXCLUDE.has(i.pair)) : [];
+  const alertedNight = nAll.length ? await maybeAlertNight(env, nAll[0], nAll[0].r5 < 30 ? "UP" : "DOWN", scheduledSec).catch(() => false) : false;
   const onBoundary = Math.floor(scheduledSec / 60) % 5 === 0;
-  return { scanned: infos.length, alerted, alertedRSI, ...(onBoundary ? await rankAndSettle(env, Math.floor(scheduledSec / 300) * 300, infos) : {}) };
+  return { scanned: infos.length, alerted, alertedRSI, alertedNight, ...(onBoundary ? await rankAndSettle(env, Math.floor(scheduledSec / 300) * 300, infos) : {}) };
 }
 
 export default {

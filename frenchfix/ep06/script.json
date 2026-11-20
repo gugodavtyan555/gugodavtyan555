@@ -1,0 +1,108 @@
+{
+ "lead": 1.05,
+ "tail": 1.3,
+ "segments": [
+  {
+   "id": "h",
+   "lang": "fr",
+   "text": "Cette cliente entre dans ma pharmacie. Dites-moi si vous comprenez ce qu'elle veut.",
+   "pause": 0.3
+  },
+  {
+   "id": "1a",
+   "lang": "fr",
+   "text": "Bonjour madame, je peux vous aider ?",
+   "pause": 0.3
+  },
+  {
+   "id": "1b",
+   "lang": "frf",
+   "text": "Oui, j'ai une recette du docteur.",
+   "pause": 0.3
+  },
+  {
+   "id": "1c",
+   "lang": "fr",
+   "text": "Une recette ? Du gâteau au chocolat ? Non, madame. On dit : une ordonnance.",
+   "pause": 0.45
+  },
+  {
+   "id": "2a",
+   "lang": "fr",
+   "text": "Très bien. Qu'est-ce qui ne va pas ?",
+   "pause": 0.3
+  },
+  {
+   "id": "2b",
+   "lang": "frf",
+   "text": "J'ai mal à ma tête.",
+   "pause": 0.3
+  },
+  {
+   "id": "2c",
+   "lang": "fr",
+   "text": "Vous avez mal à la tête de quelqu'un d'autre ? En français, on dit : j'ai mal à la tête.",
+   "pause": 0.45
+  },
+  {
+   "id": "3a",
+   "lang": "fr",
+   "text": "Je vois. Et vous toussez aussi ?",
+   "pause": 0.3
+  },
+  {
+   "id": "3b",
+   "lang": "frf",
+   "text": "Oui, et j'ai un froid depuis hier.",
+   "pause": 0.3
+  },
+  {
+   "id": "3c",
+   "lang": "fr",
+   "text": "Un froid ? Non, madame. On dit : j'ai un rhume.",
+   "pause": 0.45
+  },
+  {
+   "id": "4a",
+   "lang": "fr",
+   "text": "D'accord. Vous avez des allergies ?",
+   "pause": 0.3
+  },
+  {
+   "id": "4b",
+   "lang": "frf",
+   "text": "Oui, je suis allergique de la poussière.",
+   "pause": 0.3
+  },
+  {
+   "id": "4c",
+   "lang": "fr",
+   "text": "Allergique de la poussière ? Non, on est allergique à quelque chose. On dit : je suis allergique à la poussière.",
+   "pause": 0.45
+  },
+  {
+   "id": "5a",
+   "lang": "fr",
+   "text": "Alors, que cherchez-vous aujourd'hui ?",
+   "pause": 0.3
+  },
+  {
+   "id": "5b",
+   "lang": "frf",
+   "text": "Je cherche des drogues pour la toux.",
+   "pause": 0.3
+  },
+  {
+   "id": "5c",
+   "lang": "fr",
+   "text": "Des drogues ?! Madame, ici, c'est une pharmacie ! On dit : des médicaments.",
+   "pause": 0.5
+  },
+  {
+   "id": "out",
+   "lang": "fr",
+   "text": "Et toi, quelle erreur as-tu déjà faite ? Dis-le-moi en commentaire, et abonne-toi pour la suite !",
+   "pause": 0
+  }
+ ]
+}

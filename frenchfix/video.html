@@ -169,20 +169,21 @@ window.render=t=>{
 };
 
 if(SC.mode==='dialogue'){
+ const TH=Object.assign({g1:'#c2410c',g2:'#7c2d12',dk:'#2b1409',awn:'#e63946',awd:'#8d1f2c',c1:'#9a5a2b',c2:'#6e3a18',c3:'#4a230d',items:['🥐','🥖','🧁']},SC.theme||{});
  $('#dav-m').innerHTML=AVM;$('#dav-f').innerHTML=AVF;
- $('#awn').innerHTML=[...Array(12)].map((_,i)=>`<rect x="${i*90}" y="0" width="90" height="78" fill="${i%2?'#fff':'#e63946'}"/><circle cx="${i*90+45}" cy="78" r="45" fill="${i%2?'#fff':'#e63946'}"/>`).join('')+'<rect x="0" y="0" width="1080" height="10" fill="#8d1f2c"/>';
+ $('#awn').innerHTML=[...Array(12)].map((_,i)=>`<rect x="${i*90}" y="0" width="90" height="78" fill="${i%2?'#fff':TH.awn}"/><circle cx="${i*90+45}" cy="78" r="45" fill="${i%2?'#fff':TH.awn}"/>`).join('')+`<rect x="0" y="0" width="1080" height="10" fill="${TH.awd}"/>`;
  const segs=TL.segments;
 
- {const C=SC.cover||{},cv=$('#cover');cv.className='dc';
-  cv.innerHTML=`<svg class="awn" width="1080" height="130">${[...Array(12)].map((_,i)=>`<rect x="${i*90}" y="0" width="90" height="82" fill="${i%2?'#fff':'#e63946'}"/><circle cx="${i*90+45}" cy="82" r="45" fill="${i%2?'#fff':'#e63946'}"/>`).join('')}<rect width="1080" height="10" fill="#8d1f2c"/></svg>
+ {const C=SC.cover||{},cv=$('#cover');cv.className='dc';cv.style.background=`radial-gradient(900px 700px at 50% 62%,${TH.g1} 0%,transparent 70%),linear-gradient(180deg,${TH.dk} 0%,${TH.g2} 45%,${TH.dk} 100%)`;
+  cv.innerHTML=`<svg class="awn" width="1080" height="130">${[...Array(12)].map((_,i)=>`<rect x="${i*90}" y="0" width="90" height="82" fill="${i%2?'#fff':TH.awn}"/><circle cx="${i*90+45}" cy="82" r="45" fill="${i%2?'#fff':TH.awn}"/>`).join('')}<rect width="1080" height="10" fill="${TH.awd}"/></svg>
   <div class="pill"><span>${C.pill}</span></div><div class="ta">${C.a}</div><div class="tb"><span>${C.b}</span></div><div class="stp">❌ ${C.stamp}</div>
-  <div class="cav" id="cvm" style="left:-70px">${AVM}</div><div class="cav" id="cvf" style="right:-70px">${AVF}</div><div class="ctr"></div>
-  <div class="pas" style="left:70px">🥐</div><div class="pas" style="left:430px;font-size:190px">🥖</div><div class="pas" style="right:80px">🧁</div>`;
+  <div class="cav" id="cvm" style="left:-70px">${AVM}</div><div class="cav" id="cvf" style="right:-70px">${AVF}</div><div class="ctr" style="background:linear-gradient(180deg,${TH.c1} 0,${TH.c1} 22px,${TH.c2} 22px,${TH.c3} 100%)"></div>
+  <div class="pas" style="left:70px">${TH.items[0]}</div><div class="pas" style="left:430px;font-size:190px">${TH.items[1]}</div><div class="pas" style="right:80px">${TH.items[2]}</div>`;
   anim($('#cvm'),'cm',.95,1,true,0);anim($('#cvf'),'cf',.3,1,true,1.7);}
  segs.forEach(s=>{let w=0,r=0;const toks=((SC.disp&&SC.disp[s.id])||s.text).split(/\s+/);s.tk=toks.map(tok=>{if(tok.includes('[['))w=1;if(tok.includes('{{'))r=1;const o={w,r,t:tok.replace(/\[\[|\]\]|\{\{|\}\}/g,'')};if(tok.includes(']]'))w=0;if(tok.includes('}}'))r=0;return o});if(s.tk.length!==s.words.length)s.tk=s.words.map(x=>({w:0,r:0,t:x[0]}))});
  const K=SC.dlg.length,gt={};for(let k=1;k<=K;k++){const c=S[k+'c'],i=c.tk.findIndex(o=>o.r);gt[k]=c.words[Math.max(0,i)][1]}
  $('#prog').innerHTML='<div><i></i></div>'.repeat(K);
- const bgf=t=>$('#bg').style.background=`radial-gradient(900px 900px at ${200+150*Math.sin(t*.5)}px ${300+120*Math.cos(t*.4)}px,#c2410c 0%,transparent 70%),radial-gradient(900px 900px at ${900+140*Math.cos(t*.45)}px ${1650+120*Math.sin(t*.35)}px,#7c2d12 0%,transparent 70%),#2b1409`;
+ const bgf=t=>$('#bg').style.background=`radial-gradient(900px 900px at ${200+150*Math.sin(t*.5)}px ${300+120*Math.cos(t*.4)}px,${TH.g1} 0%,transparent 70%),radial-gradient(900px 900px at ${900+140*Math.cos(t*.45)}px ${1650+120*Math.sin(t*.35)}px,${TH.g2} 0%,transparent 70%),${TH.dk}`;
  window.render=t=>{
   const CV=$('#cover'),cp=c01((t-.8)/.2);CV.style.display=cp<1?'':'none';CV.style.opacity=1-cp;CV.style.transform=`scale(${1+.25*cp})`;bgf(t);
   ['#hook','#item','#outro','#cap','#av-m','#av-f'].forEach(s=>$(s).style.display='none');$('#dlg').style.display='';

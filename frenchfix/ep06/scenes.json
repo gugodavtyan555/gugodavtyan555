@@ -1,0 +1,67 @@
+{
+ "mode": "dialogue",
+ "hook": [
+  "",
+  ""
+ ],
+ "items": [],
+ "outro": {
+  "q": "",
+  "cta": "ABONNE-TOI pour la suite"
+ },
+ "theme": {
+  "g1": "#14b8a6",
+  "g2": "#0f766e",
+  "dk": "#04201e",
+  "awn": "#12b76a",
+  "awd": "#0b6e46",
+  "c1": "#e5e7eb",
+  "c2": "#94a3b8",
+  "c3": "#475569",
+  "items": [
+   "💊",
+   "🌡️",
+   "🧴"
+  ]
+ },
+ "cover": {
+  "pill": "💊 À LA PHARMACIE",
+  "a": "Léa a dit :",
+  "b": "DES DROGUES ?!",
+  "stamp": "ERREUR"
+ },
+ "disp": {
+  "1b": "Oui, [[j'ai une recette]] du docteur.",
+  "1c": "Une recette ? Du gâteau au chocolat ? Non, madame. On dit : {{une ordonnance.}}",
+  "2b": "[[J'ai mal à ma tête.]]",
+  "2c": "Vous avez mal à la tête de quelqu'un d'autre ? En français, on dit : {{j'ai mal à la tête.}}",
+  "3b": "Oui, et [[j'ai un froid]] depuis hier.",
+  "3c": "Un froid ? Non, madame. On dit : {{j'ai un rhume.}}",
+  "4b": "Oui, [[je suis allergique de la poussière.]]",
+  "4c": "Allergique de la poussière ? Non, on est allergique à quelque chose. On dit : {{je suis allergique à la poussière.}}",
+  "5b": "Je cherche [[des drogues]] pour la toux.",
+  "5c": "Des drogues ?! Madame, ici, c'est une pharmacie ! On dit : {{des médicaments.}}"
+ },
+ "dlg": [
+  {
+   "wrong": "J'ai une recette",
+   "right": "Une ordonnance"
+  },
+  {
+   "wrong": "J'ai mal à ma tête",
+   "right": "J'ai mal à la tête"
+  },
+  {
+   "wrong": "J'ai un froid",
+   "right": "J'ai un rhume"
+  },
+  {
+   "wrong": "Allergique de la poussière",
+   "right": "Allergique à la poussière"
+  },
+  {
+   "wrong": "Je cherche des drogues",
+   "right": "Des médicaments"
+  }
+ ]
+}

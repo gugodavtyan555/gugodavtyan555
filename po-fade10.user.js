@@ -8,9 +8,11 @@
   // ===== կարգավորումներ =====
   const LOOK = 2;          // վրկ. նայում ենք վերջին շարժմանը
   const WITH_IMPULSE = true; // true՝ իմպուլսի ՀԵՏ (շարունակություն), false՝ հակառակ (fade)
+  const BB_N = 10;         // վրկ. Bollinger-ի պատուհան
+  const BB_K = 2.0;        // σ շեմ
   const RATIO_MIN = 2.5;   // շարժումը պետք է լինի ≥ այդքան անգամ ավելի մեծ, քան վերջին 5 րոպեի 75%-ը
   const HOLD = 10;         // գործարքի ժամկետ (վրկ)
-  const GAP = 5;           // վրկ. նվազագույն ընդմիջում սիգնալների միջև
+  const GAP = 10;          // վրկ. նվազագույն ընդմիջում սիգնալների միջև
   const BREAK_EVEN = 53.5; // % (87% եկամտաբերության դեպքում)
   const ONLY_REAL = false; // false՝ աշխատում է նաև OTC-ում (արդյունքը չափվում է առանձին)
   const DELAYS = [0, 1, 2, 3]; // ուշացումներ, որոնց համար չափվում է արդյունքը
@@ -24,7 +26,7 @@
   let stat = {};
   DELAYS.forEach((d) => (stat[d] = [0, 0]));
   let mkt = 'otc';
-  const KEY = () => 'po_fade10_' + (WITH_IMPULSE ? 'w' : 'f') + '_' + mkt;
+  const KEY = () => 'po_fade10_' + 'bb' + (WITH_IMPULSE ? 'w' : 'f') + '_' + mkt;
   const loadStat = () => { stat = {}; DELAYS.forEach((d) => (stat[d] = [0, 0])); nSig = 0; try { const o = JSON.parse(localStorage.getItem(KEY()) || 'null'); if (o) { stat = o.stat || stat; nSig = o.nSig || 0; } } catch (e) {} };
   const setMkt = (a) => { const m = isReal(a) ? 'real' : 'otc'; if (m !== mkt) { try { localStorage.setItem(KEY(), JSON.stringify({ stat, nSig })); } catch (e) {} mkt = m; pend.length = 0; loadStat(); } };
   loadStat();
@@ -52,8 +54,8 @@
   setInterval(() => {
     const real = !ONLY_REAL || isReal(sel);
     snd.textContent = !soundOn ? ' 🔇 ' : (actx && actx.state === 'running' ? ' 🔊 ' : ' 🔊? ');
-    body.textContent = (WITH_IMPULSE ? 'իմպուլսի հետ ≥' : 'fade ≥') + RATIO_MIN + ' | ' + (sel || '…') + (isReal(sel) ? ' (REAL)' : ' (OTC)') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
-      '\nարդյունք ըստ ձեր ուշացման (պետք է ≥' + BREAK_EVEN + '%)՝' +
+    body.textContent = 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (isReal(sel) ? ' (REAL)' : ' (OTC)') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
+      '\nարդյունք ըստ ձեր ուշացման (շահույթի շեմ ≥' + (isReal(sel) ? 53.5 : 52.1) + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
       '';
     try { localStorage.setItem(KEY(), JSON.stringify({ stat, nSig })); } catch (e) {}
@@ -127,20 +129,19 @@
       if (!open) pend.splice(i, 1);
     }
     if ((ONLY_REAL && !isReal(asset)) || (sel && asset !== sel)) return;
-    const p0 = priceAt(arr, t - LOOK);
-    if (p0 === null || arr[0].t > t - LOOK) return;
-    const past = p - p0;
-    if (past === 0) return;
-    const m = moves[asset] || (moves[asset] = []);
-    m.push(Math.abs(past)); if (m.length > 300) m.shift();
-    if (m.length < 60) return;
-    const q75 = m.slice().sort((a, b) => a - b)[Math.floor(m.length * 0.75)];
-    if (!q75) return;
-    const ratio = Math.abs(past) / q75;
-    if (ratio < RATIO_MIN) return;
+    // Bollinger-ի դուրս գալ՝ գինը դուրս է վերջին BB_N վայրկյանի միջինից ±BB_K σ
+    if (arr[0].t > t - BB_N) return;
+    const wnd = [];
+    for (let j = 1; j <= BB_N; j++) { const v = priceAt(arr, t - j); if (v === null) return; wnd.push(v); }
+    const mean = wnd.reduce((x, y) => x + y, 0) / BB_N;
+    const sd = Math.sqrt(wnd.reduce((x, y) => x + (y - mean) * (y - mean), 0) / BB_N);
+    if (!sd) return;
+    const zv = (p - mean) / sd;
+    if (Math.abs(zv) < BB_K) return;
     if (t - (lastSig[asset] || 0) < GAP) return;
     lastSig[asset] = t;
-    const dir = WITH_IMPULSE ? (past > 0 ? 1 : -1) : (past > 0 ? -1 : 1);
+    const ratio = Math.abs(zv);
+    const dir = WITH_IMPULSE ? (zv > 0 ? 1 : -1) : (zv > 0 ? -1 : 1);
     nSig++;
     showOverlay(dir, asset, ratio);
     pend.push({ asset, dir, t, entry: { 0: p }, done: {} }); // 0 վրկ՝ ակնթարթային մուտք՝ ընթացիկ գնով

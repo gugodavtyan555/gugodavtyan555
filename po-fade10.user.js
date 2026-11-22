@@ -56,7 +56,13 @@
   snd.textContent = ' 🔊 ';
   snd.style.cssText = 'padding:4px 8px;background:#235;font-size:14px;margin-left:4px';
   snd.onclick = () => { soundOn = !soundOn; unlock(); if (soundOn) setTimeout(() => beep(1), 150); };
-  box.append(grip, reset, snd, body);
+  const dbg = document.createElement('span');
+  dbg.textContent = ' 🐞 ';
+  dbg.style.cssText = 'padding:4px 8px;background:#442;font-size:14px;margin-left:4px';
+  const dbgOut = document.createElement('div');
+  dbgOut.style.cssText = 'font-size:8px;max-height:140px;overflow:auto;word-break:break-all;color:#ff0';
+  dbg.onclick = () => { dbgOut.textContent = dumpDom(); };
+  box.append(grip, reset, snd, dbg, dbgOut, body);
   document.addEventListener('DOMContentLoaded', () => document.body.appendChild(box));
   const pct = (a) => (a[0] + a[1] ? (100 * a[0] / (a[0] + a[1])).toFixed(1) + '%' : '—');
   let nTicks = 0;
@@ -152,6 +158,22 @@
     ];
     for (const f of tries) { if (!calcVisible()) break; f(); await sleep(150); }
     return 'ok';
+  }
+  function dumpDom() {
+    let out = '';
+    try {
+      const all = [...document.querySelectorAll('div,section,aside')];
+      const withCalc = all.filter((e) => /Калькулятор/.test(e.textContent || '') && vis(e)).sort((a, b) => (a.textContent || '').length - (b.textContent || '').length);
+      let root = null;
+      for (const e of withCalc) { if (e.querySelectorAll('*').length >= 14) { root = e; break; } }
+      out += 'CALC: ' + (root ? root.outerHTML.replace(/\s+/g, ' ').slice(0, 1800) : 'չի գտնվել (բացեք հաշվիչը՝ սեղմեք Сумма դաշտը, հետո 🐞)') + '\n';
+      const el = stakeEl || findStakeEl();
+      out += 'FIELD: ' + (el ? ((el.parentElement || el).outerHTML || '').replace(/\s+/g, ' ').slice(0, 500) : 'չկա') + '\n';
+      const k = findKeys();
+      out += 'KEYS: ' + (k ? Object.keys(k).join(',') : 'ստեղները չգտնվեցին');
+    } catch (x) { out += 'ERR ' + (x && x.message); }
+    try { navigator.clipboard.writeText(out); } catch (x) {}
+    return out;
   }
   async function setStakeAsync(v) { // վերադարձնում է { ok, how, info }
     const str = String(v);

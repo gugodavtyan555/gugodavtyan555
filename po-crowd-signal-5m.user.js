@@ -136,6 +136,7 @@
   let lastSent = 0;
   // ---- պայմանային վիճակագրություն ----
   const COND_N = 50, COND_RATE = 0.60;
+  const FOCUS_ONLY = false; // true՝ սիգնալ միայն ֆոկուս կանոնից
   const FOCUS = TF === 60 ? 'trend300' : ''; // նախապես ընտրված մեկ կանոն՝ մաքուր (նոր տվյալներով) ստուգման համար
   let cond = {};
   try { cond = JSON.parse(localStorage.getItem(KM('cond')) || '{}'); } catch (e) {}
@@ -257,7 +258,7 @@
       const w = c.st.rate * c.st.n, pnl = w * 0.92 - (c.st.n - w);
       if (pnl > lp) { lp = pnl; lead = c; c.pnl = pnl; }
     }
-    if (FOCUS) { pick = cands.find((c) => c.name === 'f:' + FOCUS) || null; }
+    if (FOCUS && FOCUS_ONLY) { pick = cands.find((c) => c.name === 'f:' + FOCUS) || null; }
     else if (best) { pick = best; proven = true; }
     else if (lead) pick = lead;
     else if (main) { const st = main.st || stat(main.joint); if (!(st.n >= COND_N && st.rate < 0.5)) pick = main; }

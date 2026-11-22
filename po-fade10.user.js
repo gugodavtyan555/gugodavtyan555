@@ -41,12 +41,17 @@
   reset.textContent = ' ⟲ ';
   reset.style.cssText = 'padding:4px 8px;background:#533;font-size:14px;margin-left:4px';
   reset.onclick = () => { if (confirm('Մաքրե՞լ հաշվիչները')) { DELAYS.forEach((d) => (stat[d] = [0, 0])); nSig = 0; } };
-  box.append(grip, reset, body);
+  const snd = document.createElement('span');
+  snd.textContent = ' 🔊 ';
+  snd.style.cssText = 'padding:4px 8px;background:#235;font-size:14px;margin-left:4px';
+  snd.onclick = () => { soundOn = !soundOn; unlock(); if (soundOn) beep(1); };
+  box.append(grip, reset, snd, body);
   document.addEventListener('DOMContentLoaded', () => document.body.appendChild(box));
   const pct = (a) => (a[0] + a[1] ? (100 * a[0] / (a[0] + a[1])).toFixed(1) + '%' : '—');
   let nTicks = 0;
   setInterval(() => {
     const real = !ONLY_REAL || isReal(sel);
+    snd.textContent = !soundOn ? ' 🔇 ' : (actx && actx.state === 'running' ? ' 🔊 ' : ' 🔊? ');
     body.textContent = (WITH_IMPULSE ? 'իմպուլսի հետ ≥' : 'fade ≥') + RATIO_MIN + ' | ' + (sel || '…') + (isReal(sel) ? ' (REAL)' : ' (OTC)') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
       '\nարդյունք ըստ ձեր ուշացման (պետք է ≥' + BREAK_EVEN + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
@@ -54,6 +59,31 @@
     try { localStorage.setItem(KEY(), JSON.stringify({ stat, nSig })); } catch (e) {}
   }, 2000);
 
+  // ---- ձայն ----
+  let actx = null, soundOn = true;
+  function unlock() {
+    try {
+      if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); }
+      if (actx && actx.state === 'suspended') actx.resume();
+    } catch (e) {}
+  }
+  ['touchstart', 'click'].forEach((ev) => document.addEventListener(ev, unlock, { passive: true }));
+  function beep(dir) {
+    if (!soundOn) return;
+    try {
+      unlock();
+      if (!actx) return;
+      const t0 = actx.currentTime, freqs = dir > 0 ? [660, 990] : [500, 330]; // վերև՝ բարձրացող երկու ձայն, ներքև՝ իջնող
+      freqs.forEach((f, i) => {
+        const o = actx.createOscillator(), g = actx.createGain(), st = t0 + i * 0.17;
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, st);
+        g.gain.exponentialRampToValueAtTime(0.6, st + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, st + 0.15);
+        o.connect(g); g.connect(actx.destination); o.start(st); o.stop(st + 0.16);
+      });
+    } catch (e) {}
+  }
   // ---- ցուցանակ ----
   let ov = null, ovTimer = null;
   function showOverlay(dir, asset, ratio) {
@@ -65,6 +95,7 @@
     ov.style.background = dir > 0 ? '#12a34a' : '#d9372a';
     ov.innerHTML = (dir > 0 ? '🟢 ԳՆԵԼ ↑' : '🔴 ՎԱՃԱՌ. ↓') + '<div style="font-size:12px;margin-top:2px;font-weight:600">' + asset + ' · ՀԻՄԱ · ' + HOLD + 'վրկ</div>';
     ov.style.display = 'block';
+    beep(dir);
     clearTimeout(ovTimer);
     ovTimer = setTimeout(() => { ov.style.display = 'none'; }, 3500);
   }

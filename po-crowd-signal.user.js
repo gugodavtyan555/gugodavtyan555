@@ -63,7 +63,7 @@
   const EXPIRY_MS = 60000;
   // ---- 5s tick analysis: many variants, every tick, persisted ----
   const TF = 60; // մոմի տևողություն՝ 60 (1 րոպե) կամ 300 (5 րոպե)
-  const HZ = TF, OVL = HZ * 2, BUF = TF === 60 ? 1300 : 2600;
+  const HZ = TF, OVL = HZ * 2, BUF = TF <= 60 ? 1300 : 2600;
   const K = { an: TF === 60 ? 'po_an60' : 'po_an' + TF, cond: TF === 60 ? 'po_cond2' : 'po_cond' + TF, sig: TF === 60 ? 'po_sig2' : 'po_sig' + TF };
   let market = 'otc'; // 'otc' կամ 'real'՝ վիճակագրությունը առանձին է
   const marketOf = (a) => (/_otc$/i.test(a || '') ? 'otc' : 'real');
@@ -109,6 +109,7 @@
     if (TF === 60) { upBuf.push([asset, ts, price]); if (upBuf.length > 20000) upBuf.splice(0, 5000); }
     tickCount++; lastTickAt = Date.now(); tickLog.push(lastTickAt); if (tickLog.length > 400) tickLog.shift();
     trackList(vsig, asset, ts, price, (q, win) => { for (const k of q.keys) { const c = cond[k] || (cond[k] = { w: 0, l: 0 }); if (win) c.w++; else c.l++; } });
+    trackList(latPend, asset, ts, price, (q, win) => { if (win) sigStat.lat.w++; else sigStat.lat.l++; });
     trackList(sigPend, asset, ts, price, (q, win) => { const z = sigStat[q.src]; if (win) z.w++; else z.l++; });
     const q = tq[asset] || (tq[asset] = []);
     while (q.length && ts >= q[0].ts + HZ) {
@@ -124,7 +125,7 @@
       const d = VARS[k](arr);
       if (d) q.push({ k, ts, p: price, dir: d });
     }
-    if (TSEND && ts % TF >= TF - 10 && sentMin !== Math.floor(ts / TF) && asset === (selAsset || curAsset)) {
+    if (TSEND && ts % TF >= TF - Math.min(10, TF / 5) && sentMin !== Math.floor(ts / TF) && asset === (selAsset || curAsset)) {
       sentMin = Math.floor(ts / TF);
       try { minuteEnd(asset, ts); } catch (e) {}
     }
@@ -154,11 +155,28 @@
       else if (ts >= q.ts0 + TF) { if (price !== q.entry) cb(q, (price > q.entry) === (q.dir > 0)); list.splice(i, 1); }
     }
   }
+  let ovEl = null, ovTimer = null;
+  function showOverlay(dir, asset, ts0, tsNow) {
+    const t0 = Date.now();
+    if (!ovEl) {
+      ovEl = document.createElement('div');
+      ovEl.style.cssText = 'position:fixed;left:8%;right:8%;top:22%;z-index:100000;padding:18px;border-radius:18px;text-align:center;font:700 44px/1.1 -apple-system,sans-serif;color:#fff;box-shadow:0 0 30px #000a;pointer-events:none';
+      document.body.appendChild(ovEl);
+    }
+    ovEl.style.background = dir > 0 ? '#12a34a' : '#d9372a';
+    ovEl.style.display = 'block';
+    const tick = () => {
+      const left = Math.ceil(ts0 - (tsNow + (Date.now() - t0) / 1000));
+      ovEl.innerHTML = (dir > 0 ? '🟢 ԳՆԵԼ ↑' : '🔴 ՎԱՃԱՌԵԼ ↓') + '<div style="font-size:20px;margin-top:6px;font-weight:600">' + asset + (left > 0 ? ' · սեղմել ' + left + ' վրկ հետո' : ' · ՀԻՄԱ') + '</div>';
+      if (left < -4) { ovEl.style.display = 'none'; clearInterval(ovTimer); }
+    };
+    clearInterval(ovTimer); tick(); ovTimer = setInterval(tick, 400);
+  }
   function minuteEnd(asset, ts) {
     const arr = ticks[asset];
     if (!arr || arr.length < 100) return;
     const now = Date.now(), ts0 = (Math.floor(ts / TF) + 1) * TF;
-    const cs = candlesOf(arr), done = cs.slice(0, -1).filter((c) => c.n >= TF), cur = cs[cs.length - 1];
+    const cs = candlesOf(arr), done = cs.slice(0, -1).filter((c) => c.n >= (TF === 10 ? 4 : TF)), cur = cs[cs.length - 1];
     const px = lastPrice[asset];
     const ol = outlook(arr);
     const cands = []; // {name, dir, keys, joint, main}
@@ -241,7 +259,9 @@
     else if (main) { const st = main.st || stat(main.joint); if (!(st.n >= COND_N && st.rate < 0.5)) pick = main; }
     if (pick && calm) {
       const st = pick.st || stat(pick.joint);
-      send((pick.dir > 0 ? '🟢 ' : '🔴 ') + asset + (pick.main ? '' : ' [' + pick.name + ']') + (st.n >= 10 ? ' ' + Math.round(st.rate * 100) + '% (' + st.n + ')' : '') + (proven ? ' ⭐' : '') + (pick.pnl !== undefined ? ' P&L ' + (pick.pnl > 0 ? '+' : '') + pick.pnl.toFixed(1) : '') + ' | ' + (TF === 60 ? '1' : '5') + ' րոպեանոց մոմի վերջ, մտեք հաջորդի սկզբին' + (TF === 60 ? '' : ', ժամկետ 5ր'));
+      const msgText = (pick.dir > 0 ? '🟢 ' : '🔴 ') + asset + (pick.main ? '' : ' [' + pick.name + ']') + (st.n >= 10 ? ' ' + Math.round(st.rate * 100) + '% (' + st.n + ')' : '') + (proven ? ' ⭐' : '') + (pick.pnl !== undefined ? ' P&L ' + (pick.pnl > 0 ? '+' : '') + pick.pnl.toFixed(1) : '') + ' | ' + (TF === 60 ? '1' : '5') + ' րոպեանոց մոմի վերջ, մտեք հաջորդի սկզբին' + (TF === 60 ? '' : ', ժամկետ 5ր');
+      if (TF === 10) showOverlay(pick.dir, asset, ts0, ts); else send(msgText);
+      if (TF === 10) latPend.push({ asset, dir: pick.dir, ts0: ts0 + 3, t: now });
       sigPend.push({ asset, dir: pick.dir, d: pick.dir, ts0, t: now, src: 'cond' });
       if (px !== undefined) oldPend.push({ asset, dir: pick.dir, p: px, t: now });
       lastSig = { asset, d: pick.dir, p: px !== undefined ? px : arr[arr.length - 1].p, t: now };
@@ -305,8 +325,8 @@
   let tickCount = 0, lastTickAt = 0;
   const tickLog = [];
   const sigPend = [];
-  let sigStat = { global: { w: 0, l: 0 }, recent: { w: 0, l: 0 }, cond: { w: 0, l: 0 }, old: { w: 0, l: 0 } };
-  const oldPend = [];
+  let sigStat = { global: { w: 0, l: 0 }, recent: { w: 0, l: 0 }, cond: { w: 0, l: 0 }, old: { w: 0, l: 0 }, lat: { w: 0, l: 0 } };
+  const oldPend = [], latPend = [];
   try { const o = JSON.parse(localStorage.getItem(KM('sig')) || 'null'); if (o) sigStat = Object.assign(sigStat, o); } catch (e) {}
   function resolveSigs() {
     const nowo = Date.now();
@@ -338,9 +358,9 @@
     for (const k in VARS) if (!tstat[k]) tstat[k] = { w: 0, l: 0 };
     for (const k in tstat) { const v = tstat[k], t = v.w + v.l; if (t > WIN) { v.w *= WIN / t; v.l *= WIN / t; } }
     try { cond = JSON.parse(localStorage.getItem(KM('cond')) || '{}'); } catch (e) { cond = {}; }
-    sigStat = { global: { w: 0, l: 0 }, recent: { w: 0, l: 0 }, cond: { w: 0, l: 0 }, old: { w: 0, l: 0 } };
+    sigStat = { global: { w: 0, l: 0 }, recent: { w: 0, l: 0 }, cond: { w: 0, l: 0 }, old: { w: 0, l: 0 }, lat: { w: 0, l: 0 } };
     try { const o = JSON.parse(localStorage.getItem(KM('sig')) || 'null'); if (o) sigStat = Object.assign(sigStat, o); } catch (e) {}
-    lastCand = null; vsig.length = 0; sigPend.length = 0; oldPend.length = 0;
+    lastCand = null; vsig.length = 0; sigPend.length = 0; oldPend.length = 0; latPend.length = 0;
     for (const a in tq) tq[a] = [];
     for (const a in rec) delete rec[a];
   }
@@ -418,7 +438,7 @@
     const nowT = Date.now(), age = lastTickAt ? Math.round((nowT - lastTickAt) / 1000) : -1;
     const lastMin = tickLog.filter((x) => nowT - x <= 60000).length;
     const alive = '\n📡 տիկեր ' + tickCount + ' · վերջինը ' + (age < 0 ? '—' : age + ' վրկ առաջ') + ' · վերջին րոպե ' + lastMin + ' · հերթ ' + ((tq[ca] || []).length) + (age > 15 ? ' ⚠ հոսքը կանգնել է' : '');
-    const sl = alive + '\nℹ️ ' + why + '\n📊 սիգնալների արդյունք՝ global ' + sigStat.global.w + '/' + sigStat.global.l + ' · recent ' + sigStat.recent.w + '/' + sigStat.recent.l + ' · cond ' + sigStat.cond.w + '/' + sigStat.cond.l + ' · հին եղանակ ' + sigStat.old.w + '/' + sigStat.old.l;
+    const sl = alive + '\nℹ️ ' + why + '\n📊 սիգնալների արդյունք՝ global ' + sigStat.global.w + '/' + sigStat.global.l + ' · recent ' + sigStat.recent.w + '/' + sigStat.recent.l + ' · cond ' + sigStat.cond.w + '/' + sigStat.cond.l + ' · հին եղանակ ' + sigStat.old.w + '/' + sigStat.old.l + (TF === 10 ? ' · 3վրկ ուշացումով ' + sigStat.lat.w + '/' + sigStat.lat.l : '');
     return flag + ' | ER ' + er.toFixed(2) + (hr !== null ? ' | 3ր ' + Math.round(hr * 100) + '% (' + rr.length + ')' : '') + sig + fc + '\n' + condText() + sl;
   }
   function tickText() {
@@ -505,7 +525,7 @@
       }
       delete buckets[asset];
     }
-    info.firstChild.textContent = (TF === 60 ? '1ր ' : '5ր ') + (market === 'real' ? 'REAL ' : 'OTC ') + 'WS:' + nWs + ' deals:' + nDeals + ' crowd ' + stat() + ' ';
+    info.firstChild.textContent = (TF === 60 ? '1ր ' : TF === 10 ? '10վրկ ' : '5ր ') + (market === 'real' ? 'REAL ' : 'OTC ') + 'WS:' + nWs + ' deals:' + nDeals + ' crowd ' + stat() + ' ';
     box2.textContent = statusText() + '\n' + tickText();
     try { localStorage.setItem(KM('an'), JSON.stringify({ t: tstat, c: cstat })); } catch (e) {}
   }, WINDOW_MS);

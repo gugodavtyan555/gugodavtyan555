@@ -31,7 +31,7 @@
   const ticks = {};        // asset -> [{t,p}]
   const moves = {};        // asset -> [|move|, ...] (վերջին ~300)
   const pend = [];
-  let sel = '', lastSig = {}, nSig = 0, lastTickT = 0, lastTickP = 0;
+  let sel = '', lastSig = {}, nSig = 0, lastTickT = 0, lastTickP = 0, lastWall = 0;
   let stat = {};
   DELAYS.forEach((d) => (stat[d] = [0, 0]));
   let mkt = 'otc';
@@ -69,7 +69,7 @@
   setInterval(() => {
     const real = !ONLY_REAL || isReal(sel);
     snd.textContent = !soundOn ? ' 🔇 ' : (unlocked ? ' 🔊 ' : ' 🔊? սեղմեք ');
-    body.textContent = (AUTO ? '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (isReal(sel) ? ' (REAL)' : ' (OTC)') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
+    body.textContent = (AUTO ? '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (sel ? (isReal(sel) ? ' (REAL)' : ' (OTC)') : '') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
       '\nարդյունք ըստ ձեր ուշացման (շահույթի շեմ ≥' + (isReal(sel) ? 53.5 : 52.1) + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
       '';
@@ -555,7 +555,7 @@
     const arr = ticks[asset] || (ticks[asset] = []);
     arr.push({ t, p });
     if (arr.length > 900) arr.splice(0, 300);
-    nTicks++;
+    nTicks++; lastWall = Date.now();
     if (asset === sel || !sel) { lastTickT = t; lastTickP = p; }
     if (PARLAY) parlayResolve(p, t, asset);
     // ---- արդյունքների հետևում ----
@@ -594,6 +594,21 @@
     pend.push({ asset, dir, t, entry: { 0: p }, done: {} }); // 0 վրկ՝ ակնթարթային մուտք՝ ընթացիկ գնով
   }
 
+  // ---- watchdog՝ եթե գների հոսքը չի բռնվել կամ կանգնել է, էջը ինքնաբերաբար թարմացնել (առավելագույնը 3 անգամ) ----
+  const reloadCount = () => { try { return Number(sessionStorage.getItem('po_rl_f') || 0); } catch (e) { return 0; } };
+  const setReload = (n) => { try { sessionStorage.setItem('po_rl_f', String(n)); } catch (e) {} };
+  document.addEventListener('DOMContentLoaded', () => setTimeout(() => {
+    if (nTicks > 0) { setReload(0); return; }
+    const n = reloadCount();
+    if (n < 3) { setReload(n + 1); autoMsg = '⚠ հոսքը չբռնվեց, թարմացնում եմ…'; setTimeout(() => location.reload(), 800); }
+    else autoMsg = '⚠ հոսքը չի բռնվում՝ թարմացրեք ձեռքով';
+  }, 15000));
+  setInterval(() => { // հոսքը կանգնել է՞ (45 վրկ առանց տիկի)
+    if (nTicks > 0 && lastWall && Date.now() - lastWall > 45000) {
+      const n = reloadCount();
+      if (n < 3) { setReload(n + 1); autoMsg = '⚠ հոսքը կանգնեց, թարմացնում եմ…'; setTimeout(() => location.reload(), 800); }
+    }
+  }, 10000);
   // ---- WebSocket ----
   const Orig = window.WebSocket;
   window.WebSocket = function (...a) {

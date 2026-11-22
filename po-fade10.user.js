@@ -262,14 +262,11 @@
       out += 'KEYS: ' + (g ? Object.keys(g).join(',') : 'չգտնվեցին') + '\n';
       if (g && g._cont) out += 'CONT: ' + (g._cont.outerHTML || '').replace(/\s+/g, ' ').slice(0, 900) + '\n';
       else if (vs) { let c = vs; for (let i = 0; i < 4 && c.parentElement; i++) c = c.parentElement; out += 'NEAR: ' + (c.outerHTML || '').replace(/\s+/g, ' ').slice(0, 900) + '\n'; }
-      const fe = findStakeEl();
-      if (fe) {
-        const r0 = fe.getBoundingClientRect();
-        out += 'FIELDRECT: ' + Math.round(r0.left) + ',' + Math.round(r0.top) + ' ' + Math.round(r0.width) + 'x' + Math.round(r0.height) + ' top=' + topmost(fe) + ' vp=' + window.innerWidth + 'x' + window.innerHeight + '\n';
-        for (const ch of ['7', '0', 'back', 'disp']) {
-          const pt = keyPoint(ch, r0), t = document.elementFromPoint(pt[0], pt[1]);
-          out += 'AT ' + ch + ' (' + Math.round(pt[0]) + ',' + Math.round(pt[1]) + '): ' + (t ? chain(t, 4) + ' txt=' + (t.textContent || '').trim().slice(0, 8) : 'null') + '\n';
-        }
+      out += 'VP: ' + window.innerWidth + 'x' + window.innerHeight + ' · calcOpen=' + calcOpenNow() + '\n';
+      const pts = { field: PP.field, '7': PP.keys['7'], '0': PP.keys['0'], back: PP.back, disp: PP.disp };
+      for (const nm of Object.keys(pts)) {
+        const c = pp(pts[nm]), t = document.elementFromPoint(c[0], c[1]);
+        out += 'AT ' + nm + ' (' + Math.round(c[0]) + ',' + Math.round(c[1]) + '): ' + (t ? chain(t, 3) + ' txt=' + (t.textContent || '').trim().slice(0, 8) + ' v=' + (t.value !== undefined ? t.value : '') : 'null') + '\n';
       }
       out += 'IFR: ' + [...document.querySelectorAll('iframe')].map((f) => { let acc = false; try { acc = !!f.contentDocument; } catch (x) {} return (f.src || '').slice(0, 50) + ' acc=' + acc + ' ' + Math.round(f.getBoundingClientRect().width) + 'x' + Math.round(f.getBoundingClientRect().height); }).join(' | ') + '\n';
       const el = stakeEl || findStakeEl();
@@ -278,11 +275,58 @@
     try { navigator.clipboard.writeText(out); } catch (x) {}
     return out;
   }
+  // ---- դիրքային շարժիչ՝ էկրանի համամասնություններով (ձեր սարքի նկարից) ----
+  const SSW = 920, SSY0 = 140, SSH = 1634; // նկարի լայնություն, էջի վերևի շեղում, էջի բարձրություն (px)
+  const PP = { field: [657, 1281], disp: [343, 557], back: [691, 1022],
+    keys: { '7': [227, 748], '8': [459, 748], '9': [691, 748], '4': [227, 840], '5': [459, 840], '6': [691, 840], '1': [227, 931], '2': [459, 931], '3': [691, 931], '.': [227, 1022], '0': [459, 1022] } };
+  function pp(pt) { return [pt[0] / SSW * window.innerWidth, (pt[1] - SSY0) / SSH * window.innerHeight]; }
+  function hitAt(pt) { const c = pp(pt); try { return document.elementFromPoint(c[0], c[1]); } catch (x) { return null; } }
+  function calcOpenNow() {
+    const t = hitAt(PP.keys['7']);
+    return !!t && t.tagName !== 'CANVAS' && !/(chart|plot|layer)/i.test(String(t.className || ''));
+  }
+  function numAt(pt) { // թիվը կետում (դաշտ/ցուցանակ)
+    const t = hitAt(pt);
+    if (!t) return null;
+    const raw = t.value !== undefined && t.value !== '' ? String(t.value) : String(t.textContent || '');
+    const m = raw.replace(',', '.').match(/(\d+(?:\.\d+)?)/);
+    return m ? parseFloat(m[1]) : null;
+  }
+  async function typeProp(str) { // վերադարձնում է { ok, info }
+    const want = parseFloat(str);
+    const cur = numAt(PP.field);
+    if (cur !== null && Math.abs(cur - want) < 1e-9 && !calcOpenNow()) return { ok: true, info: 'արդեն ' + cur };
+    if (!calcOpenNow()) {
+      const fc = pp(PP.field); fireAt(fc[0], fc[1]);
+      for (let i = 0; i < 10 && !calcOpenNow(); i++) await sleep(80);
+      await sleep(150);
+    }
+    if (!calcOpenNow()) return { ok: false, info: 'հաշվիչը չբացվեց (կետում՝ ' + (hitAt(PP.keys['7']) ? hitAt(PP.keys['7']).tagName : 'null') + ')' };
+    const bc = pp(PP.back);
+    for (let i = 0; i < 9; i++) { fireAt(bc[0], bc[1]); await sleep(25); }
+    for (const ch of str) { const kp = PP.keys[ch]; if (!kp) return { ok: false, info: 'չկա ստեղն ' + ch }; const c = pp(kp); fireAt(c[0], c[1]); await sleep(40); }
+    await sleep(140);
+    const shown = numAt(PP.disp);
+    const ok = shown !== null && Math.abs(shown - want) < 1e-9;
+    // փակել հաշվիչը
+    const closers = [
+      () => { try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); } catch (x) {} },
+      () => { const fc = pp(PP.field); fireAt(fc[0], fc[1]); },
+      () => { try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch (x) {} }
+    ];
+    for (const f of closers) { if (!calcOpenNow()) break; f(); await sleep(180); }
+    return { ok, info: 'ցուցանակ=' + shown + (calcOpenNow() ? ' (հաշվիչը բաց մնաց)' : '') };
+  }
   async function setStakeAsync(v) { // վերադարձնում է { ok, how, info }
     const str = String(v);
+    try {
+      const pr = await typeProp(str);
+      if (pr.ok) return { ok: true, how: 'P', info: pr.info };
+      var propNote = pr.info;
+    } catch (x) { var propNote = 'err:' + (x && x.message); }
     if (!stakeEl || !document.contains(stakeEl) || !topmost(stakeEl)) stakeEl = findStakeEl();
     const el = stakeEl;
-    if (!el) return { ok: false, how: 'no-el', info: 'դաշտ չկա · ' + dumpCands() };
+    if (!el) return { ok: false, how: 'no-el', info: 'P:' + propNote + ' · դաշտ չկա' };
     const read = () => String(el.value !== undefined ? el.value : el.textContent || '').trim().replace(',', '.');
     if (read() === str) return { ok: true, how: '=', info: desc(el) }; // արդեն նույնն է
     let kp;
@@ -312,7 +356,7 @@
       await sleep(140); // սպասում ենք, որ հավելվածը չվերադարձնի արժեքը
       if (read() === str) return { ok: true, how: 'ABC'[i], info: desc(el) };
     }
-    return { ok: false, how: 'fail', info: kpNote + ' · ' + desc(el) + ' · ' + dumpCands() };
+    return { ok: false, how: 'fail', info: 'P:' + propNote + ' · ' + kpNote + ' · ' + desc(el) };
   }
   function readBalance() {
     try {

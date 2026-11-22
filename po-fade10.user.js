@@ -75,20 +75,57 @@
   try { const o = JSON.parse(localStorage.getItem('po_parlay') || 'null'); if (o) par = Object.assign(par, o); } catch (e) {}
   let parPend = null, parMsg = '';
   function savePar() { try { localStorage.setItem('po_parlay', JSON.stringify(par)); } catch (e) {} }
-  function setStake(v) {
+  function desc(e) {
+    try { return (e.tagName || '?') + '[type=' + (e.type || '') + ',ro=' + (e.readOnly ? 1 : 0) + ',ce=' + (e.isContentEditable ? 1 : 0) + ',v=' + (e.value !== undefined ? e.value : (e.textContent || '').slice(0, 12)) + ']'; } catch (x) { return '?'; }
+  }
+  function findStakeEl() {
+    const cands = [];
     try {
-      const inputs = document.querySelectorAll('input');
-      for (const inp of inputs) {
-        let node = inp, ctx = '';
-        for (let k = 0; k < 4 && node; k++) { node = node.parentElement; if (node) ctx += ' ' + (node.textContent || ''); }
-        if (!/(Сумма|Amount|Sum)/i.test(ctx)) continue;
-        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-        setter.call(inp, String(v));
-        ['input', 'change', 'blur'].forEach((n) => inp.dispatchEvent(new Event(n, { bubbles: true })));
-        return true;
+      document.querySelectorAll('input,[contenteditable="true"]').forEach((e) => {
+        const val = String(e.value !== undefined ? e.value : e.textContent || '').trim();
+        if (!/^\d+([.,]\d+)?$/.test(val)) return; // ժամանակի դաշտը (00:00:10) չի համապատասխանում
+        let node = e, ok = false;
+        for (let k = 0; k < 4 && node; k++) {
+          node = node.parentElement;
+          const tx = node ? (node.textContent || '') : '';
+          if (/(Сумма|Amount|Sum)/i.test(tx) && !/(Время|Time)/i.test(tx)) { ok = true; break; }
+        }
+        cands.push({ e, ok });
+      });
+    } catch (x) {}
+    const good = cands.find((c) => c.ok);
+    return good ? good.e : (cands[0] ? cands[0].e : null);
+  }
+  let stakeEl = null;
+  function setStake(v) { // վերադարձնում է { ok, how, info }
+    const str = String(v);
+    if (!stakeEl || !document.contains(stakeEl)) stakeEl = findStakeEl();
+    const el = stakeEl;
+    if (!el) return { ok: false, how: 'no-el', info: 'դաշտ չկա' };
+    const read = () => String(el.value !== undefined ? el.value : el.textContent || '').trim().replace(',', '.');
+    const ev = (n) => { try { el.dispatchEvent(new Event(n, { bubbles: true })); } catch (x) {} };
+    try { // A՝ native setter + իրադարձություններ (React)
+      if (el.tagName === 'INPUT') { const st = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; st.call(el, str); } else { el.textContent = str; }
+      ev('input'); ev('change'); ev('blur');
+    } catch (x) {}
+    if (read() === str) return { ok: true, how: 'A', info: desc(el) };
+    try { // B՝ focus + select + execCommand (ինչպես մուտքագրում)
+      el.focus(); if (el.select) el.select();
+      document.execCommand('selectAll', false, null); document.execCommand('insertText', false, str);
+      ev('input'); ev('change');
+    } catch (x) {}
+    if (read() === str) return { ok: true, how: 'B', info: desc(el) };
+    try { // C՝ նիշ առ նիշ ստեղնաշարի իրադարձություններ
+      el.focus(); if (el.select) el.select();
+      for (const ch of str) {
+        ['keydown', 'keypress'].forEach((n) => { try { el.dispatchEvent(new KeyboardEvent(n, { key: ch, bubbles: true })); } catch (x) {} });
+        if (el.tagName === 'INPUT') { const st = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; st.call(el, (read() === '' || read() === '0' ? '' : read()) + ch); }
+        ev('input');
+        try { el.dispatchEvent(new KeyboardEvent('keyup', { key: ch, bubbles: true })); } catch (x) {}
       }
-    } catch (e) {}
-    return false;
+    } catch (x) {}
+    if (read() === str) return { ok: true, how: 'C', info: desc(el) };
+    return { ok: false, how: 'fail', info: desc(el) };
   }
   function parlayResolve(p, t, asset) {
     if (!parPend || parPend.asset !== asset || t < parPend.t + HOLD) return;
@@ -152,8 +189,9 @@
     if (!b) { autoMsg = 'կոճակը չի գտնվել'; return; }
     if (PARLAY) {
       if (parPend) { autoMsg = 'սպասում եմ նախորդ գործարքի արդյունքին'; return; }
-      const okS = setStake(par.stake);
-      parMsg = okS ? '' : '⚠ գումարի դաշտը չգտա՝ սահմանեք $' + par.stake + ' ինքներդ';
+      const r = setStake(par.stake);
+      parMsg = r.ok ? 'գումար $' + par.stake + ' դրվեց (' + r.how + ')' : '⚠ գումարը չդրվեց՝ ' + r.info + ' · սահմանեք $' + par.stake + ' ինքներդ';
+      if (r.ok && par.stake !== STAKE0) { setTimeout(() => fire(b), 140); parPend = { asset, dir, t: lastTickT, entry: lastTickP, pay: payoutNow() || 92 }; nAuto++; autoMsg = 'սեղմվեց ' + (dir > 0 ? 'Купить' : 'Продать') + ' #' + nAuto + ' (գումար $' + par.stake + ')'; return; }
     }
     fire(b);
     if (PARLAY) parPend = { asset, dir, t: lastTickT, entry: lastTickP, pay: payoutNow() || 92 };

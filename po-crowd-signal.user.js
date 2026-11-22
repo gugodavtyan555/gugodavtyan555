@@ -135,7 +135,7 @@
   const MIN_RATE = 0.52, MIN_TRIALS = TF === 60 ? 500 : 150, GAP_MS = 60000;
   let lastSent = 0;
   // ---- պայմանային վիճակագրություն ----
-  const COND_N = TF === 10 ? 100 : 50, COND_RATE = TF === 10 ? 0.57 : 0.60;
+  const COND_N = TF === 10 ? 50 : 50, COND_RATE = TF === 10 ? 0.55 : 0.60;
   const PROVEN_ONLY = TF === 10; // 10 վրկ՝ սիգնալ միայն ապացուցված պայմանի դեպքում
   const FOCUS_ONLY = false; // true՝ սիգնալ միայն ֆոկուս կանոնից
   const FOCUS = TF === 60 ? 'trend300' : ''; // նախապես ընտրված մեկ կանոն՝ մաքուր (նոր տվյալներով) ստուգման համար

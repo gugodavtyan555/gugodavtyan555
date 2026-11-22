@@ -160,14 +160,14 @@
     const t0 = Date.now();
     if (!ovEl) {
       ovEl = document.createElement('div');
-      ovEl.style.cssText = 'position:fixed;left:8%;right:8%;top:22%;z-index:100000;padding:18px;border-radius:18px;text-align:center;font:700 44px/1.1 -apple-system,sans-serif;color:#fff;box-shadow:0 0 30px #000a;pointer-events:none';
+      ovEl.style.cssText = 'position:fixed;left:22%;right:22%;top:13%;z-index:100000;padding:6px 8px;border-radius:12px;text-align:center;font:700 20px/1.15 -apple-system,sans-serif;opacity:.93;color:#fff;box-shadow:0 0 30px #000a;pointer-events:none';
       document.body.appendChild(ovEl);
     }
     ovEl.style.background = dir > 0 ? '#12a34a' : '#d9372a';
     ovEl.style.display = 'block';
     const tick = () => {
       const left = Math.ceil(ts0 - (tsNow + (Date.now() - t0) / 1000));
-      ovEl.innerHTML = (dir > 0 ? '🟢 ԳՆԵԼ ↑' : '🔴 ՎԱՃԱՌԵԼ ↓') + '<div style="font-size:20px;margin-top:6px;font-weight:600">' + asset + (left > 0 ? ' · սեղմել ' + left + ' վրկ հետո' : ' · ՀԻՄԱ') + '</div>';
+      ovEl.innerHTML = (dir > 0 ? '🟢 ԳՆԵԼ ↑' : '🔴 ՎԱՃԱՌ. ↓') + '<div style="font-size:12px;margin-top:2px;font-weight:600">' + asset + (left > 0 ? ' · սեղմել ' + left + ' վրկ հետո' : ' · ՀԻՄԱ') + '</div>';
       if (left < -4) { ovEl.style.display = 'none'; clearInterval(ovTimer); }
     };
     clearInterval(ovTimer); tick(); ovTimer = setInterval(tick, 400);

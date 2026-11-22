@@ -282,10 +282,10 @@
       out += 'KEYS: ' + (g ? Object.keys(g).join(',') : 'չգտնվեցին') + '\n';
       if (g && g._cont) out += 'CONT: ' + (g._cont.outerHTML || '').replace(/\s+/g, ' ').slice(0, 900) + '\n';
       else if (vs) { let c = vs; for (let i = 0; i < 4 && c.parentElement; i++) c = c.parentElement; out += 'NEAR: ' + (c.outerHTML || '').replace(/\s+/g, ' ').slice(0, 900) + '\n'; }
-      out += 'VP: ' + window.innerWidth + 'x' + window.innerHeight + ' · calcOpen=' + calcOpenNow() + '\n';
-      const pts = { field: PP.field, '7': PP.keys['7'], '0': PP.keys['0'], back: PP.back, disp: PP.disp };
-      for (const nm of Object.keys(pts)) {
-        const c = pp(pts[nm]), t = document.elementFromPoint(c[0], c[1]);
+      const fcd = fieldCenter();
+      out += 'VP: ' + window.innerWidth + 'x' + window.innerHeight + ' · anchor=' + fcd.src + ' · calcOpen=' + calcOpenNow(fcd) + ' · fieldNum=' + fieldNum(fcd) + '\n';
+      for (const nm of ['field', '7', '0', 'back', 'disp']) {
+        const c = kpt(nm, fcd), t = document.elementFromPoint(c[0], c[1]);
         out += 'AT ' + nm + ' (' + Math.round(c[0]) + ',' + Math.round(c[1]) + '): ' + (t ? chain(t, 3) + ' txt=' + (t.textContent || '').trim().slice(0, 8) + ' v=' + (t.value !== undefined ? t.value : '') : 'null') + '\n';
       }
       out += 'IFR: ' + [...document.querySelectorAll('iframe')].map((f) => { let acc = false; try { acc = !!f.contentDocument; } catch (x) {} return (f.src || '').slice(0, 50) + ' acc=' + acc + ' ' + Math.round(f.getBoundingClientRect().width) + 'x' + Math.round(f.getBoundingClientRect().height); }).join(' | ') + '\n';
@@ -295,88 +295,95 @@
     try { navigator.clipboard.writeText(out); } catch (x) {}
     return out;
   }
-  // ---- դիրքային շարժիչ՝ էկրանի համամասնություններով (ձեր սարքի նկարից) ----
-  const SSW = 920, SSY0 = 140, SSH = 1634; // նկարի լայնություն, էջի վերևի շեղում, էջի բարձրություն (px)
-  const PP = { field: [657, 1281], disp: [343, 557], back: [691, 1022],
-    keys: { '7': [227, 748], '8': [459, 748], '9': [691, 748], '4': [227, 840], '5': [459, 840], '6': [691, 840], '1': [227, 931], '2': [459, 931], '3': [691, 931], '.': [227, 1022], '0': [459, 1022] } };
-  function pp(pt) { return [pt[0] / SSW * window.innerWidth, (pt[1] - SSY0) / SSH * window.innerHeight]; }
-  function hitAt(pt) { const c = pp(pt); try { return document.elementFromPoint(c[0], c[1]); } catch (x) { return null; } }
-  function calcOpenNow() {
-    const t = hitAt(PP.keys['7']);
-    return !!t && t.tagName !== 'CANVAS' && !/(chart|plot|layer)/i.test(String(t.className || ''));
+  // ---- դիրքային շարժիչ՝ «Сумма» մակագրությամբ խարսխված, խիստ ստուգումներով ----
+  const SSW = 920;
+  const KC = [-430, -198, 34], KR = [-533, -441, -350, -259];
+  const KM = { '7': [0, 0], '8': [1, 0], '9': [2, 0], '4': [0, 1], '5': [1, 1], '6': [2, 1], '1': [0, 2], '2': [1, 2], '3': [2, 2], '.': [0, 3], '0': [1, 3], back: [2, 3] };
+  function fieldCenter() {
+    const s = window.innerWidth / SSW;
+    try {
+      const labels = [...document.querySelectorAll('div,span,label,p')].filter((e) => /^(Сумма|Amount)$/i.test((e.textContent || '').trim()));
+      for (const l of labels) {
+        const r = l.getBoundingClientRect();
+        if (r.width < 10 || r.height < 5 || r.top < 0 || r.top > window.innerHeight) continue;
+        return { x: r.left + 187.5 * s, y: r.top + r.height / 2 + 67 * s, s, src: 'label' };
+      }
+    } catch (x) {}
+    return { x: 287 / 402 * window.innerWidth, y: (1281 - 140) / 1634 * window.innerHeight, s, src: 'fixed' };
   }
-  function numAt(pt) { // թիվը կետում (դաշտ/ցուցանակ)
-    const t = hitAt(pt);
+  function kpt(name, fc) {
+    if (name === 'disp') return [fc.x - 314 * fc.s, fc.y - 724 * fc.s];
+    if (name === 'field') return [fc.x, fc.y];
+    const m = KM[name];
+    return [fc.x + KC[m[0]] * fc.s, fc.y + KR[m[1]] * fc.s];
+  }
+  function hitXY(p) { try { return document.elementFromPoint(p[0], p[1]); } catch (x) { return null; } }
+  function dispRaw(fc) { // հաշվիչի ցուցանակի «$…» տեքստը (դատարկ էլ կարող է լինել՝ «$»), եթե հաշվիչը իրոք բաց է
+    const t = hitXY(kpt('disp', fc));
     if (!t) return null;
-    const raw = t.value !== undefined && t.value !== '' ? String(t.value) : String(t.textContent || '');
-    const m = raw.replace(',', '.').match(/(\d+(?:\.\d+)?)/);
+    const re = /^\s*\$\s*[\d.,]*\s*$/;
+    const cands = [t.value, t.textContent, t.parentElement && t.parentElement.textContent];
+    for (const c of cands) {
+      if (c === undefined || c === null) continue;
+      const st = String(c).replace(',', '.');
+      if (re.test(st)) return st.replace(/[^\d.]/g, '');
+    }
+    return null;
+  }
+  function dispNum(fc) { const r = dispRaw(fc); return r === null || r === '' || isNaN(parseFloat(r)) ? null : parseFloat(r); }
+  function calcOpenNow(fc) { return dispRaw(fc || fieldCenter()) !== null; }
+  function fieldNum(fc) { // «Сумма» դաշտի ընթացիկ թիվը (խիստ ստուգում՝ իսկապես թվային դաշտ է)
+    const t = hitXY(kpt('field', fc));
+    if (!t) return null;
+    const raw = (t.value !== undefined && t.value !== '' ? String(t.value) : String(t.textContent || '')).trim().replace(',', '.');
+    const m = raw.match(/^\$?\s*(\d+(?:\.\d+)?)$/);
     return m ? parseFloat(m[1]) : null;
+  }
+  function tapPt(p) {
+    const t = hitXY(p);
+    if (!t) return null;
+    const o = { bubbles: true, cancelable: true, composed: true, clientX: p[0], clientY: p[1], view: window };
+    ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach((n) => {
+      try { t.dispatchEvent(n.startsWith('pointer') ? new PointerEvent(n, o) : new MouseEvent(n, o)); } catch (e) {}
+    });
+    return t;
   }
   async function typeProp(str) { // վերադարձնում է { ok, info }
     const want = parseFloat(str);
-    const cur = numAt(PP.field);
-    if (cur !== null && Math.abs(cur - want) < 1e-9 && !calcOpenNow()) return { ok: true, info: 'արդեն ' + cur };
-    if (!calcOpenNow()) {
-      const fc = pp(PP.field); fireAt(fc[0], fc[1]);
+    let fc = fieldCenter();
+    if (!calcOpenNow(fc)) {
+      const fn = fieldNum(fc);
+      if (fn === null) return { ok: false, info: 'Сумма դաշտը չգտնվեց (' + fc.src + ')՝ ոչինչ չեմ սեղմել' };
+      if (Math.abs(fn - want) < 1e-9) return { ok: true, info: 'արդեն ' + fn };
+      tapPt(kpt('field', fc));
       for (let i = 0; i < 10 && !calcOpenNow(); i++) await sleep(80);
       await sleep(150);
+      fc = fieldCenter();
     }
-    if (!calcOpenNow()) return { ok: false, info: 'հաշվիչը չբացվեց (կետում՝ ' + (hitAt(PP.keys['7']) ? hitAt(PP.keys['7']).tagName : 'null') + ')' };
-    const bc = pp(PP.back);
-    for (let i = 0; i < 9; i++) { fireAt(bc[0], bc[1]); await sleep(25); }
-    for (const ch of str) { const kp = PP.keys[ch]; if (!kp) return { ok: false, info: 'չկա ստեղն ' + ch }; const c = pp(kp); fireAt(c[0], c[1]); await sleep(40); }
+    if (!calcOpenNow(fc)) return { ok: false, info: 'հաշվիչը չբացվեց՝ ստեղները չեմ սեղմել' };
+    for (let i = 0; i < 9; i++) { tapPt(kpt('back', fc)); await sleep(25); }
+    for (const ch of str) {
+      if (!KM[ch]) return { ok: false, info: 'չկա ստեղն ' + ch };
+      if (!calcOpenNow(fc)) return { ok: false, info: 'հաշվիչը անհետացավ՝ կանգնեցի' };
+      tapPt(kpt(ch, fc)); await sleep(40);
+    }
     await sleep(140);
-    const shown = numAt(PP.disp);
+    const shown = dispNum(fc);
     const ok = shown !== null && Math.abs(shown - want) < 1e-9;
-    // փակել հաշվիչը
     const closers = [
       () => { try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); } catch (x) {} },
-      () => { const fc = pp(PP.field); fireAt(fc[0], fc[1]); },
+      () => { tapPt(kpt('field', fc)); },
       () => { try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch (x) {} }
     ];
-    for (const f of closers) { if (!calcOpenNow()) break; f(); await sleep(180); }
-    return { ok, info: 'ցուցանակ=' + shown + (calcOpenNow() ? ' (հաշվիչը բաց մնաց)' : '') };
+    for (const f of closers) { if (!calcOpenNow(fc)) break; f(); await sleep(180); }
+    return { ok, info: 'ցուցանակ=' + shown + (calcOpenNow(fc) ? ' (հաշվիչը բաց մնաց)' : '') };
   }
-  async function setStakeAsync(v) { // վերադարձնում է { ok, how, info }
+  async function setStakeAsync(v) { // միայն ստուգված ցուցանակով եղանակ՝ DOM-ի կեղծ հաջողություններ չկան
     const str = String(v);
     try {
       const pr = await typeProp(str);
-      if (pr.ok) return { ok: true, how: 'P', info: pr.info };
-      var propNote = pr.info;
-    } catch (x) { var propNote = 'err:' + (x && x.message); }
-    if (!stakeEl || !document.contains(stakeEl) || !topmost(stakeEl)) stakeEl = findStakeEl();
-    const el = stakeEl;
-    if (!el) return { ok: false, how: 'no-el', info: 'P:' + propNote + ' · դաշտ չկա' };
-    const read = () => String(el.value !== undefined ? el.value : el.textContent || '').trim().replace(',', '.');
-    if (read() === str) return { ok: true, how: '=', info: desc(el) }; // արդեն նույնն է
-    let kp;
-    try { kp = await viaKeypad(el, str); } catch (x) { kp = 'err:' + (x && x.message); }
-    await sleep(120);
-    if (read() === str) return { ok: true, how: 'K', info: desc(el) };
-    const kpNote = 'keypad:' + kp;
-    const ev = (n) => { try { el.dispatchEvent(new Event(n, { bubbles: true })); } catch (x) {} };
-    const nativeSet = (val) => { if (el.tagName === 'INPUT') { const st = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; st.call(el, val); } else { el.textContent = val; } };
-    const tries = [
-      () => { nativeSet(str); ev('input'); ev('change'); ev('blur'); },
-      () => { el.focus(); if (el.select) el.select(); document.execCommand('selectAll', false, null); document.execCommand('insertText', false, str); ev('input'); ev('change'); },
-      () => {
-        el.focus(); if (el.select) el.select(); nativeSet('');
-        ev('input');
-        let cur = '';
-        for (const ch of str) {
-          ['keydown', 'keypress'].forEach((n) => { try { el.dispatchEvent(new KeyboardEvent(n, { key: ch, bubbles: true })); } catch (x) {} });
-          cur += ch; nativeSet(cur); ev('input');
-          try { el.dispatchEvent(new KeyboardEvent('keyup', { key: ch, bubbles: true })); } catch (x) {}
-        }
-        ev('change'); ev('blur');
-      }
-    ];
-    for (let i = 0; i < tries.length; i++) {
-      try { tries[i](); } catch (x) {}
-      await sleep(140); // սպասում ենք, որ հավելվածը չվերադարձնի արժեքը
-      if (read() === str) return { ok: true, how: 'ABC'[i], info: desc(el) };
-    }
-    return { ok: false, how: 'fail', info: 'P:' + propNote + ' · ' + kpNote + ' · ' + desc(el) };
+      return pr.ok ? { ok: true, how: 'P', info: pr.info } : { ok: false, how: 'fail', info: pr.info };
+    } catch (x) { return { ok: false, how: 'err', info: 'սխալ՝ ' + (x && x.message) }; }
   }
   function readBalance() {
     try {

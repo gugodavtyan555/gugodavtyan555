@@ -46,14 +46,14 @@
   const snd = document.createElement('span');
   snd.textContent = ' 🔊 ';
   snd.style.cssText = 'padding:4px 8px;background:#235;font-size:14px;margin-left:4px';
-  snd.onclick = () => { soundOn = !soundOn; unlock(); if (soundOn) beep(1); };
+  snd.onclick = () => { soundOn = !soundOn; unlock(); if (soundOn) setTimeout(() => beep(1), 150); };
   box.append(grip, reset, snd, body);
   document.addEventListener('DOMContentLoaded', () => document.body.appendChild(box));
   const pct = (a) => (a[0] + a[1] ? (100 * a[0] / (a[0] + a[1])).toFixed(1) + '%' : '—');
   let nTicks = 0;
   setInterval(() => {
     const real = !ONLY_REAL || isReal(sel);
-    snd.textContent = !soundOn ? ' 🔇 ' : (actx && actx.state === 'running' ? ' 🔊 ' : ' 🔊? ');
+    snd.textContent = !soundOn ? ' 🔇 ' : (unlocked ? ' 🔊 ' : ' 🔊? սեղմեք ');
     body.textContent = 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (isReal(sel) ? ' (REAL)' : ' (OTC)') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
       '\nարդյունք ըստ ձեր ուշացման (շահույթի շեմ ≥' + (isReal(sel) ? 53.5 : 52.1) + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
@@ -61,28 +61,59 @@
     try { localStorage.setItem(KEY(), JSON.stringify({ stat, nSig })); } catch (e) {}
   }, 2000);
 
-  // ---- ձայն ----
-  let actx = null, soundOn = true;
+  // ---- ձայն (HTML audio՝ չի խլանում անձայն ռեժիմում) + Web Audio պահեստային ----
+  let actx = null, soundOn = true, unlocked = false;
+  function makeWav(freqs) {
+    const sr = 22050, dur = 0.16, gap = 0.03, m = Math.floor(sr * dur), g = Math.floor(sr * gap);
+    const total = freqs.length * (m + g), pcm = new Int16Array(total);
+    freqs.forEach((f, k) => {
+      const o = k * (m + g);
+      for (let i = 0; i < m; i++) { const env = Math.min(1, i / 250, (m - i) / 500); pcm[o + i] = Math.sin(2 * Math.PI * f * i / sr) * env * 30000; }
+    });
+    const bytes = new Uint8Array(44 + pcm.length * 2), dv = new DataView(bytes.buffer);
+    const ws = (off, str) => { for (let i = 0; i < str.length; i++) dv.setUint8(off + i, str.charCodeAt(i)); };
+    ws(0, 'RIFF'); dv.setUint32(4, 36 + pcm.length * 2, true); ws(8, 'WAVE'); ws(12, 'fmt ');
+    dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, sr, true);
+    dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); ws(36, 'data'); dv.setUint32(40, pcm.length * 2, true);
+    for (let i = 0; i < pcm.length; i++) dv.setInt16(44 + i * 2, pcm[i], true);
+    let bin = ''; bytes.forEach((x) => (bin += String.fromCharCode(x)));
+    return 'data:audio/wav;base64,' + btoa(bin);
+  }
+  let upA = null, downA = null;
+  try { upA = new Audio(makeWav([660, 990, 1320])); downA = new Audio(makeWav([660, 440, 330])); upA.preload = downA.preload = 'auto'; } catch (e) {}
   function unlock() {
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
     try {
       if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); }
       if (actx && actx.state === 'suspended') actx.resume();
+      if (actx) { const bf = actx.createBuffer(1, 1, 22050), sr = actx.createBufferSource(); sr.buffer = bf; sr.connect(actx.destination); sr.start(0); }
     } catch (e) {}
+    [upA, downA].forEach((a) => {
+      if (!a || a._ok) return;
+      try {
+        a.muted = true;
+        const pr = a.play();
+        if (pr && pr.then) pr.then(() => { a.pause(); a.currentTime = 0; a.muted = false; a._ok = true; unlocked = true; }).catch(() => { a.muted = false; });
+      } catch (e) { a.muted = false; }
+    });
   }
-  ['touchstart', 'click'].forEach((ev) => document.addEventListener(ev, unlock, { passive: true }));
+  ['touchend', 'click', 'pointerup'].forEach((ev) => document.addEventListener(ev, unlock, { passive: true, capture: true }));
   function beep(dir) {
     if (!soundOn) return;
+    let played = false;
     try {
-      unlock();
+      const a = dir > 0 ? upA : downA;
+      if (a && a._ok) { a.currentTime = 0; a.volume = 1; const pr = a.play(); if (pr && pr.catch) pr.catch(() => {}); played = true; }
+    } catch (e) {}
+    if (played) return;
+    try {
       if (!actx) return;
-      const t0 = actx.currentTime, freqs = dir > 0 ? [660, 990] : [500, 330]; // վերև՝ բարձրացող երկու ձայն, ներքև՝ իջնող
+      const t0 = actx.currentTime, freqs = dir > 0 ? [660, 990, 1320] : [660, 440, 330];
       freqs.forEach((f, i) => {
-        const o = actx.createOscillator(), g = actx.createGain(), st = t0 + i * 0.17;
+        const o = actx.createOscillator(), g = actx.createGain(), st = t0 + i * 0.19;
         o.type = 'sine'; o.frequency.value = f;
-        g.gain.setValueAtTime(0.0001, st);
-        g.gain.exponentialRampToValueAtTime(0.6, st + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, st + 0.15);
-        o.connect(g); g.connect(actx.destination); o.start(st); o.stop(st + 0.16);
+        g.gain.setValueAtTime(0.0001, st); g.gain.exponentialRampToValueAtTime(0.8, st + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, st + 0.17);
+        o.connect(g); g.connect(actx.destination); o.start(st); o.stop(st + 0.18);
       });
     } catch (e) {}
   }

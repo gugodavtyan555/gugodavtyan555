@@ -21,6 +21,7 @@ const BLOG_PRODUCT = {
   'christmas-party-games-for-adults': 'holiday-party-mega-bundle', 'christmas-trivia-questions-and-answers': 'free-christmas-games',
   'thanksgiving-games-for-family': 'thanksgiving-party-games', 'new-years-eve-party-ideas-at-home': 'new-years-eve-party-games',
   'how-to-host-a-murder-mystery-party': 'murder-mystery-mistletoe-manor',
+  'new-year-budget-reset': 'budget-planner', 'small-business-tax-prep-checklist': 'small-business-tracker',
 };
 
 const BOARDS = {
@@ -249,6 +250,32 @@ const PINS13 = [
   ['big-game-football-party-games', 'How to Host a Game Day Party', 'Checklist + games', 'A week-by-week party checklist plus squares, predictions, bingo and charades for halftime.', 'game day party, football party ideas, big game party, party checklist'],
 ];
 
+// Batch 14 (Nov 22, 2026): New Year money reset, 2027 goals, debt-free year and tax prep for late Dec / January.
+const PINS14 = [
+  ['blog:new-year-budget-reset', 'New Year Budget Reset in 7 Steps', 'Start 2027 organized', 'Total up December, rebuild your categories, set three goals and automate them. One evening, whole year sorted.', 'new year budget, budget reset, january budget, money goals 2027'],
+  ['blog:new-year-budget-reset', 'January Money Checklist', 'Fresh start', 'Cancel forgotten subscriptions, set your 2027 goals and plan a monthly 15-minute money check-in.', 'january money checklist, new year finance, budgeting tips, save money 2027'],
+  ['blog:new-year-budget-reset', 'How to Recover From Holiday Spending', 'After Christmas', 'A calm plan to get back on track in January without guilt: total, reset, automate.', 'holiday spending, after christmas budget, money reset, budgeting for beginners'],
+  ['blog:small-business-tax-prep-checklist', 'Small Business Tax Prep Checklist', 'Before tax season', 'Income, expenses by category, receipts, mileage and home office: what to gather for your accountant.', 'small business taxes, tax prep checklist, freelancer taxes, bookkeeping tips'],
+  ['blog:small-business-tax-prep-checklist', 'Freelancer Taxes: Get Organized in December', 'Year-end checklist', 'Group your expenses, match receipts and check your tax set-aside before January.', 'freelancer taxes, self employed tips, year end bookkeeping, small business finance'],
+  ['small-business-tracker', 'Income & Expense Tracker for Tax Time', 'Excel + Google Sheets', 'Every transaction by category with monthly totals, profit and a dashboard. Ready for your accountant.', 'income expense tracker, small business bookkeeping, tax prep spreadsheet, side hustle'],
+  ['small-business-tracker', 'Start 2027 With Clean Business Books', 'Simple bookkeeping', 'Ten minutes a week: log income and expenses and see profit by month. Made for freelancers and makers.', 'bookkeeping spreadsheet, small business finance, freelancer tools, business budget'],
+  ['budget-planner', 'Monthly Budget Spreadsheet for 2027', 'Excel + Google Sheets', 'Budget vs. actual by category, what is left and your savings rate, calculated for you every month.', 'monthly budget spreadsheet, budget template 2027, google sheets budget, personal finance'],
+  ['budget-planner', 'The Budget That Actually Works in January', 'Real numbers', 'Built from what you really spend, with automatic totals and a simple dashboard.', 'budget planner, how to budget, budgeting tips, money management'],
+  ['debt-payoff-planner', 'Make 2027 Your Debt-Free Year', 'Snowball or avalanche', 'See your debt-free date and total interest for both methods. Add extra payments and watch the date move.', 'debt free 2027, debt payoff planner, debt snowball, pay off debt'],
+  ['debt-payoff-planner', 'Pay Off Holiday Credit Card Debt Fast', 'Payoff plan', 'List your cards, add an extra amount each month and get a month-by-month plan to zero.', 'credit card debt, pay off debt fast, holiday debt, debt payoff spreadsheet'],
+  ['savings-goals-tracker', '2027 Savings Goals Tracker', 'Emergency fund · trip · car', 'Set goals with dates, see how much to save each month and track progress with bars.', 'savings goals, savings tracker, emergency fund, savings challenge 2027'],
+  ['savings-goals-tracker', 'Start an Emergency Fund in January', 'Month by month', 'Pick a target and a date; the tracker tells you how much to save each payday.', 'emergency fund, how to save money, savings plan, money goals'],
+  ['2027-planner', '2027 Digital Planner with Goals Pages', 'iPad · Letter · A4', 'Year, month and week pages with habit trackers and goal planning, all hyperlinked.', '2027 planner, digital planner, goal planner, goodnotes planner'],
+  ['2027-planner', 'Set Your 2027 Goals: Planner Pages', 'Plan the year', 'Yearly goals, monthly priorities and weekly check-ins in one printable or digital planner.', 'goal setting 2027, new year goals, planner printable, productivity planner'],
+  ['money-bundle', 'New Year Money Bundle: 5 Tools', 'Save $15', 'Budget, debt payoff, savings goals, business tracker and the 2027 planner in one download.', 'personal finance bundle, budget templates, new year money goals, finance spreadsheets'],
+  ['money-bundle', 'Everything to Organize Your Money in 2027', 'One download', 'Five spreadsheets and a planner that work together for budget, debt and savings.', 'money organization, finance planner, budget bundle, financial goals'],
+  ['free-budget-template', 'Free Budget Template for the New Year', 'Free download', 'A one-page 50/30/20 budget that shows if your spending is on track. Excel and Google Sheets.', 'free budget template, 50 30 20 budget, free budget spreadsheet, new year budget'],
+  ['blog:how-to-set-financial-goals-for-2027', 'How to Set Money Goals You Actually Keep', '2027 edition', 'Three goals, a number and a date, monthly amounts and weekly actions: the simple routine.', 'financial goals 2027, new year resolutions money, goal setting, personal finance tips'],
+  ['blog:debt-snowball-vs-avalanche', 'Debt Snowball or Avalanche for 2027?', 'Worked example', 'Five debts, $250 extra a month: see which method pays off faster and costs less.', 'debt snowball vs avalanche, pay off debt, debt free journey, debt payoff'],
+  ['blog:sinking-funds-explained', 'Sinking Funds: Never Be Surprised by a Bill', 'Plan ahead', 'Save a little every month for holidays, car repairs and insurance so big bills stop hurting.', 'sinking funds, budgeting tips, save money, money saving ideas'],
+  ['blog:50-30-20-budget-rule', 'The 50/30/20 Rule for Your 2027 Budget', 'Simple budgeting', 'Needs, wants and savings: how to split your take-home pay, with a free checker.', '50 30 20 budget, budgeting for beginners, budget rule, personal finance'],
+];
+
 const THEMES = [
   { bg: '#EEF4F0', ink: '#1F2A37', accent: '#2F7D5B', band: '#2F7D5B', bandInk: '#FFFFFF' },
   { bg: '#FBF3E8', ink: '#2B2118', accent: '#B5622E', band: '#2B2118', bandInk: '#FBF3E8' },
@@ -281,7 +308,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1500 }, deviceScaleFactor: 1 });
   const rows = [];
-  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8, ...PINS9, ...PINS10, ...PINS11, ...PINS12, ...PINS13];
+  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8, ...PINS9, ...PINS10, ...PINS11, ...PINS12, ...PINS13, ...PINS14];
   for (let i = 0; i < ALL.length; i++) {
     const [ref, headline, , description, keywords] = ALL[i];
     const file = `pin-${String(i + 1).padStart(2, '0')}-${ref.replace('blog:', '')}.jpg`;
@@ -348,7 +375,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   // Batch 11 + seasonal push (Nov 11): 11 pins were already sent. Add the free downloads, then move
   // Thanksgiving and Christmas/New Year pins to the front of the unsent queue while people search for them.
   const START11 = 11;
-  const at11 = rows.length - PINS11.length - PINS12.length - PINS13.length;
+  const at11 = rows.length - PINS11.length - PINS12.length - PINS13.length - PINS14.length;
   order.push(...rows.slice(at11, at11 + PINS11.length + PINS12.length));
   const unsent = order.splice(START11);
   const kind = (r) => /thanksgiving/i.test(r.link + r.title) ? 'T'
@@ -365,7 +392,10 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
     }
   }
   // Batch 13: Valentine's / game day pins go to the end of the queue.
-  order.push(...rows.slice(rows.length - PINS13.length));
+  // Batch 14 (New Year money) is mixed in: 1 Valentine/game-day pin, then 2 New Year money pins.
+  const v13 = rows.slice(at11 + PINS11.length + PINS12.length, at11 + PINS11.length + PINS12.length + PINS13.length);
+  const n14 = rows.slice(rows.length - PINS14.length);
+  while (v13.length || n14.length) { if (v13.length) order.push(v13.shift()); for (let k = 0; k < 2 && n14.length; k++) order.push(n14.shift()); }
   fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
     title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
     alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,

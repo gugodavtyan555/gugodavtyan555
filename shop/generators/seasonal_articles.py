@@ -160,3 +160,58 @@ SEASONAL = [
 """,
     },
 ]
+
+SEASONAL += [
+    {
+        "slug": "new-year-budget-reset",
+        "title": "New Year Budget Reset: A 7-Step Plan to Start 2027 With Your Money Organized",
+        "description": "After the holidays, reset your budget in one evening: total up December, rebuild your categories, set three money goals and automate them for 2027.",
+        "date": "2026-11-22",
+        "products": ["budget-planner", "money-bundle"],
+        "html": """
+<p>January is the best month to fix your money: the holiday spending is over, and everyone is in a fresh-start mood. This reset takes one evening and sets up the whole year.</p>
+<h2>1. Total up December</h2>
+<p>Add up what you spent on gifts, food, travel and parties. Don't judge it, just write the number down. It becomes your holiday budget for next year, and you can start saving for it monthly in January.</p>
+<h2>2. Check what you really earn</h2>
+<p>Use your take-home pay, not your salary. If your income changes month to month, budget with your lowest typical month and treat anything extra as a bonus.</p>
+<h2>3. Rebuild your categories from last year</h2>
+<p>Look at three months of bank statements and list what you actually spend on rent, utilities, groceries, transport, insurance, subscriptions and eating out. A budget built on real numbers is one you can keep.</p>
+<h2>4. Cancel what you forgot about</h2>
+<p>January is subscription-cleaning month. Free trials from the holidays turn into paid plans now. Cancel anything you didn't use in December.</p>
+<h2>5. Pick three money goals</h2>
+<p>For example: a $1,000 emergency fund by April, the $2,500 credit card paid off by September, $100 a month into a holiday fund. Give each goal a number and a date.</p>
+<h2>6. Automate the goals on payday</h2>
+<p>Turn each goal into a monthly amount and set up automatic transfers the day after payday. Money you never see is money you don't spend.</p>
+<h2>7. Schedule a 15-minute monthly check-in</h2>
+<p>On the first Sunday of every month, compare budget with actual spending and move money between categories if needed. Small corrections every month beat a big rescue in December.</p>
+<h2>A simple tool helps</h2>
+<p>A budget spreadsheet that calculates totals, what's left and your savings rate for you makes the monthly check-in quick. Pair it with a yearly planner to keep the three goals in front of you.</p>
+""",
+    },
+    {
+        "slug": "small-business-tax-prep-checklist",
+        "title": "Small Business Tax Prep Checklist: What to Gather Before Tax Season",
+        "description": "A simple year-end checklist for freelancers and small business owners: income records, expenses by category, mileage, home office, receipts and what to hand to your accountant.",
+        "date": "2026-11-22",
+        "products": ["small-business-tracker", "money-bundle"],
+        "html": """
+<p>Tax season is much easier when your records are ready before January. Use this checklist in December to get organized. It is general guidance, not tax advice: rules differ by country and state, so confirm details with a tax professional.</p>
+<h2>1. Income</h2>
+<ul><li>Total income for the year, by month and by client or sales channel.</li>
+<li>Payment platform reports (card processors, marketplaces, online stores).</li>
+<li>Any forms or statements your clients or platforms send you.</li></ul>
+<h2>2. Expenses by category</h2>
+<p>Group every business expense: software and subscriptions, equipment, supplies, advertising, website, phone and internet, professional fees, education, bank and payment fees. Totals per category are what your accountant needs.</p>
+<h2>3. Receipts</h2>
+<p>Match each expense to a receipt or invoice. Save them as PDFs in one folder per month so nothing is lost.</p>
+<h2>4. Mileage and travel</h2>
+<p>If you drive for business, list the date, purpose and miles of each trip. Keep travel receipts for flights, hotels and meals with clients.</p>
+<h2>5. Home office</h2>
+<p>If you work from home, note the size of your workspace and your household costs (rent, utilities, internet). Your accountant can tell you what applies to you.</p>
+<h2>6. Profit and set-aside</h2>
+<p>Income minus expenses is your profit. Many freelancers set aside 25–30% of profit through the year for taxes. Check how close your savings are to what you'll owe.</p>
+<h2>7. Start next year organized</h2>
+<p>On January 1, start a fresh income and expense tracker. Ten minutes a week of entering transactions means next year's tax prep takes an hour, not a weekend.</p>
+""",
+    },
+]

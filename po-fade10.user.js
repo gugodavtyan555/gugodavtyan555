@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         PO fade 10s (real pairs)
+// @name         PO impulse 10s
 // @match        https://*.pocketoption.com/*
 // @run-at       document-start
 // @grant        none
@@ -7,7 +7,8 @@
 (function () {
   // ===== կարգավորումներ =====
   const LOOK = 2;          // վրկ. նայում ենք վերջին շարժմանը
-  const RATIO_MIN = 1.5;   // շարժումը պետք է լինի ≥ այդքան անգամ ավելի մեծ, քան վերջին 5 րոպեի 75%-ը
+  const WITH_IMPULSE = true; // true՝ իմպուլսի ՀԵՏ (շարունակություն), false՝ հակառակ (fade)
+  const RATIO_MIN = 2.5;   // շարժումը պետք է լինի ≥ այդքան անգամ ավելի մեծ, քան վերջին 5 րոպեի 75%-ը
   const HOLD = 10;         // գործարքի ժամկետ (վրկ)
   const GAP = 5;           // վրկ. նվազագույն ընդմիջում սիգնալների միջև
   const BREAK_EVEN = 53.5; // % (87% եկամտաբերության դեպքում)
@@ -23,7 +24,7 @@
   let stat = {};
   DELAYS.forEach((d) => (stat[d] = [0, 0]));
   let mkt = 'otc';
-  const KEY = () => 'po_fade10_' + mkt;
+  const KEY = () => 'po_fade10_' + (WITH_IMPULSE ? 'w' : 'f') + '_' + mkt;
   const loadStat = () => { stat = {}; DELAYS.forEach((d) => (stat[d] = [0, 0])); nSig = 0; try { const o = JSON.parse(localStorage.getItem(KEY()) || 'null'); if (o) { stat = o.stat || stat; nSig = o.nSig || 0; } } catch (e) {} };
   const setMkt = (a) => { const m = isReal(a) ? 'real' : 'otc'; if (m !== mkt) { try { localStorage.setItem(KEY(), JSON.stringify({ stat, nSig })); } catch (e) {} mkt = m; pend.length = 0; loadStat(); } };
   loadStat();
@@ -46,7 +47,7 @@
   let nTicks = 0;
   setInterval(() => {
     const real = !ONLY_REAL || isReal(sel);
-    body.textContent = 'fade10 | ' + (sel || '…') + (isReal(sel) ? ' (REAL)' : ' (OTC)') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
+    body.textContent = (WITH_IMPULSE ? 'իմպուլսի հետ ≥' : 'fade ≥') + RATIO_MIN + ' | ' + (sel || '…') + (isReal(sel) ? ' (REAL)' : ' (OTC)') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
       '\nարդյունք ըստ ձեր ուշացման (պետք է ≥' + BREAK_EVEN + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
       '';
@@ -108,7 +109,7 @@
     if (ratio < RATIO_MIN) return;
     if (t - (lastSig[asset] || 0) < GAP) return;
     lastSig[asset] = t;
-    const dir = past > 0 ? -1 : 1; // հակառակ վերջին շարժմանը
+    const dir = WITH_IMPULSE ? (past > 0 ? 1 : -1) : (past > 0 ? -1 : 1);
     nSig++;
     showOverlay(dir, asset, ratio);
     pend.push({ asset, dir, t, entry: { 0: p }, done: {} }); // 0 վրկ՝ ակնթարթային մուտք՝ ընթացիկ գնով

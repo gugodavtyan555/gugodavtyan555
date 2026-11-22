@@ -11,6 +11,7 @@
   const HOLD = 10;         // գործարքի ժամկետ (վրկ)
   const GAP = 5;           // վրկ. նվազագույն ընդմիջում սիգնալների միջև
   const BREAK_EVEN = 53.5; // % (87% եկամտաբերության դեպքում)
+  const ONLY_REAL = false; // false՝ աշխատում է նաև OTC-ում (արդյունքը չափվում է առանձին)
   const DELAYS = [0, 1, 2, 3]; // ուշացումներ, որոնց համար չափվում է արդյունքը
   // ==========================
 
@@ -21,7 +22,11 @@
   let sel = '', lastSig = {}, nSig = 0;
   let stat = {};
   DELAYS.forEach((d) => (stat[d] = [0, 0]));
-  try { const o = JSON.parse(localStorage.getItem('po_fade10') || 'null'); if (o) { stat = o.stat || stat; nSig = o.nSig || 0; } } catch (e) {}
+  let mkt = 'otc';
+  const KEY = () => 'po_fade10_' + mkt;
+  const loadStat = () => { stat = {}; DELAYS.forEach((d) => (stat[d] = [0, 0])); nSig = 0; try { const o = JSON.parse(localStorage.getItem(KEY()) || 'null'); if (o) { stat = o.stat || stat; nSig = o.nSig || 0; } } catch (e) {} };
+  const setMkt = (a) => { const m = isReal(a) ? 'real' : 'otc'; if (m !== mkt) { try { localStorage.setItem(KEY(), JSON.stringify({ stat, nSig })); } catch (e) {} mkt = m; pend.length = 0; loadStat(); } };
+  loadStat();
 
   // ---- վահանակ ----
   const box = document.createElement('div');
@@ -40,12 +45,12 @@
   const pct = (a) => (a[0] + a[1] ? (100 * a[0] / (a[0] + a[1])).toFixed(1) + '%' : '—');
   let nTicks = 0;
   setInterval(() => {
-    const real = isReal(sel);
-    body.textContent = 'fade10 | ' + (sel || '…') + (real ? ' (REAL)' : ' (OTC՝ անջատված)') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
+    const real = !ONLY_REAL || isReal(sel);
+    body.textContent = 'fade10 | ' + (sel || '…') + (isReal(sel) ? ' (REAL)' : ' (OTC)') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
       '\nարդյունք ըստ ձեր ուշացման (պետք է ≥' + BREAK_EVEN + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
-      (real ? '' : '\n⚠ ընտրեք իրական (ոչ OTC) զույգ, օր. EUR/USD');
-    try { localStorage.setItem('po_fade10', JSON.stringify({ stat, nSig })); } catch (e) {}
+      '';
+    try { localStorage.setItem(KEY(), JSON.stringify({ stat, nSig })); } catch (e) {}
   }, 2000);
 
   // ---- ցուցանակ ----
@@ -89,7 +94,7 @@
       }
       if (!open) pend.splice(i, 1);
     }
-    if (!isReal(asset) || (sel && asset !== sel)) return;
+    if ((ONLY_REAL && !isReal(asset)) || (sel && asset !== sel)) return;
     const p0 = priceAt(arr, t - LOOK);
     if (p0 === null || arr[0].t > t - LOOK) return;
     const past = p - p0;
@@ -115,7 +120,7 @@
     const ws = new Orig(...a);
     const origSend = ws.send.bind(ws);
     ws.send = function (m) {
-      try { if (typeof m === 'string' && m.includes('changeSymbol')) { const o = JSON.parse(m.slice(m.indexOf('{'))); if (o.asset) sel = o.asset; } } catch (e) {}
+      try { if (typeof m === 'string' && m.includes('changeSymbol')) { const o = JSON.parse(m.slice(m.indexOf('{'))); if (o.asset) { sel = o.asset; setMkt(sel); } } } catch (e) {}
       return origSend(m);
     };
     let last = '', chain = Promise.resolve();
@@ -129,7 +134,7 @@
         if (last === 'updateStream' && d[0] === '[') {
           try { const a = JSON.parse(d); for (const r of a) if (r && r[0]) onTick(r[0], r[1], r[2]); } catch (e) {}
         } else if (last === 'updateHistoryNewFast' && d[0] === '{') {
-          try { const h = JSON.parse(d); if (h.asset) sel = h.asset; } catch (e) {}
+          try { const h = JSON.parse(d); if (h.asset) { sel = h.asset; setMkt(sel); } } catch (e) {}
         }
       }).catch(() => {});
     });

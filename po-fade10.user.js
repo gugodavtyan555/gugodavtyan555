@@ -17,7 +17,10 @@
   const ONLY_REAL = false; // false՝ աշխատում է նաև OTC-ում (արդյունքը չափվում է առանձին)
   // ---- ավտոմատ սեղմում (պաշտպանիչ կանոններով) ----
   const AUTO = true;        // true՝ սիգնալի պահին ինքնաբերաբար սեղմել Купить/Продать
-  const ALLOW_REAL = false; // false՝ ՄԻԱՅՆ Demo հաշվի վրա (իրական հաշվի վրա չի սեղմի)
+  const ALLOW_REAL = true;        // true՝ աշխատում է նաև REAL հաշվի վրա (հաստատումով և սահմաններով)
+  const REAL_MAX_STAKE = 10;      // $ REAL-ում ոչ մի գործարք այս գումարից մեծ չէ
+  const REAL_LOSS_LIMIT = 10;     // $ երբ հաշվեկշիռը նվազի սկզբնականից այսքանով, ամեն ինչ կանգնում է
+  const REAL_MAX_TRADES = 100;    // REAL-ում առավելագույն գործարքներ մեկ էջի բեռնման ընթացքում
   const MIN_PAYOUT = 80;    // % նվազագույն եկամտաբերություն, որի դեպքում սեղմում է
   const MAX_AUTO = 300;     // նվազագույն սահման՝ մեկ էջի բեռնման ընթացքում առավելագույն գործարքներ
   // ---- 8 քայլանոց սանդուղք (parlay)՝ շահածը գնում է հաջորդ գործարքին (միայն Demo) ----
@@ -67,9 +70,14 @@
   const pct = (a) => (a[0] + a[1] ? (100 * a[0] / (a[0] + a[1])).toFixed(1) + '%' : '—');
   let nTicks = 0;
   setInterval(() => {
+    if (AUTO && ALLOW_REAL && !realAsked && acct() === 'real') {
+      realAsked = true;
+      realOk = confirm('⚠ REAL հաշիվ՝ ավտոմատ առևտուրը ՄԻԱՑՎԱԾ Է։\n\nՍահմաններ՝\n• մեկ գործարք՝ առավելագույնը $' + REAL_MAX_STAKE + '\n• կորստի սահման՝ $' + REAL_LOSS_LIMIT + ' (հետո կանգնում է)\n• առավելագույնը ' + REAL_MAX_TRADES + ' գործարք\n• սանդուղք՝ ' + STEPS + ' քայլ, սկսած $' + STAKE0 + '\n\nԱռավելությունը ապացուցված չէ։ Շարունակե՞լ։');
+      if (realOk) sessBal0 = readBalance();
+    }
     const real = !ONLY_REAL || isReal(sel);
     snd.textContent = !soundOn ? ' 🔇 ' : (unlocked ? ' 🔊 ' : ' 🔊? սեղմեք ');
-    body.textContent = (AUTO ? '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (sel ? (isReal(sel) ? ' (REAL)' : ' (OTC)') : '') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
+    body.textContent = (AUTO ? (acct() === 'real' ? '💰REAL' + (realOk ? '' : '(չհաստատված)') + ' ' : '') + '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (sel ? (isReal(sel) ? ' (REAL)' : ' (OTC)') : '') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
       '\nարդյունք ըստ ձեր ուշացման (շահույթի շեմ ≥' + (isReal(sel) ? 53.5 : 52.1) + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
       '';
@@ -80,7 +88,19 @@
   let par = { stake: STAKE0, streak: 0, attempts: 1, best: 0, done: 0, wins: 0, losses: 0 };
   try { const o = JSON.parse(localStorage.getItem('po_parlay') || 'null'); if (o) par = Object.assign(par, o); } catch (e) {}
   let parPend = null, parMsg = '', prep = null;
-  function savePar() { try { localStorage.setItem('po_parlay', JSON.stringify(par)); } catch (e) {} }
+  let realOk = false, realAsked = false, sessBal0 = null, parAcct = '';
+  function parKey() { return 'po_parlay_' + (parAcct || 'demo'); }
+  function ensureParAcct(a) { // առանձին սանդուղք Demo-ի և REAL-ի համար
+    if (!a || a === 'unknown' || parAcct === a) return;
+    if (parAcct) { try { localStorage.setItem(parKey(), JSON.stringify(par)); } catch (e) {} }
+    parAcct = a;
+    let o = null; try { o = JSON.parse(localStorage.getItem(parKey()) || 'null'); } catch (e) {}
+    if (!o && a === 'demo') { try { o = JSON.parse(localStorage.getItem('po_parlay') || 'null'); } catch (e) {} }
+    par = Object.assign({ stake: STAKE0, streak: 0, attempts: 1, best: 0, done: 0, wins: 0, losses: 0 }, o || {});
+    if (a === 'real' && (!par.stake || par.stake > REAL_MAX_STAKE)) { par.stake = STAKE0; par.streak = 0; }
+    parPend = null;
+  }
+  function savePar() { try { localStorage.setItem(parKey(), JSON.stringify(par)); } catch (e) {} }
   function desc(e) {
     try { return (e.tagName || '?') + '[type=' + (e.type || '') + ',ro=' + (e.readOnly ? 1 : 0) + ',ce=' + (e.isContentEditable ? 1 : 0) + ',v=' + (e.value !== undefined ? e.value : (e.textContent || '').slice(0, 12)) + ']'; } catch (x) { return '?'; }
   }
@@ -384,7 +404,8 @@
   function prepareNext() {
     if (!PARLAY || !AUTO) return;
     const a = acct();
-    if (a !== 'demo' && !(a === 'real' && ALLOW_REAL)) return;
+    if (a !== 'demo' && !(a === 'real' && ALLOW_REAL && realOk)) return;
+    ensureParAcct(a);
     const want = par.stake;
     const task = setStakeAsync(String(want)).then((r) => {
       parMsg = r.ok ? 'պատրաստ՝ հաջորդ գումար $' + want + ' (' + r.how + ')' : '⚠ նախապատրաստումը չստացվեց՝ ' + r.info;
@@ -436,7 +457,15 @@
     if (!AUTO) return;
     const a = acct();
     if (a === 'unknown') { autoMsg = 'հաշիվը չի որոշվել՝ չեմ սեղմում'; return; }
-    if (a === 'real' && !ALLOW_REAL) { autoMsg = 'REAL հաշիվ՝ ավտոմատ սեղմումը արգելված է (միայն Demo)'; return; }
+    ensureParAcct(a);
+    if (a === 'real') {
+      if (!ALLOW_REAL) { autoMsg = 'REAL հաշիվ՝ ավտոմատ սեղմումը արգելված է (միայն Demo)'; return; }
+      if (!realOk) { autoMsg = 'REAL՝ դեռ չեք հաստատել (էջում հարցումը չեղարկվել է)'; return; }
+      if (nAuto >= REAL_MAX_TRADES) { autoMsg = 'REAL գործարքների սահմանը լրացավ (' + REAL_MAX_TRADES + ')'; return; }
+      const bnow = readBalance();
+      if (sessBal0 !== null && bnow !== null && bnow - par.stake < sessBal0 - REAL_LOSS_LIMIT) { autoMsg = '🛑 կորստի սահմանը ($' + REAL_LOSS_LIMIT + ') հասավ կամ հաջորդ գործարքը կանցնի այն՝ կանգնեցի'; return; }
+      if (par.stake > REAL_MAX_STAKE) { autoMsg = 'գումարը $' + par.stake + ' > սահմանի $' + REAL_MAX_STAKE + '՝ չեմ սեղմում'; return; }
+    }
     if (nAuto >= MAX_AUTO) { autoMsg = 'գործարքների սահմանը լրացավ (' + MAX_AUTO + ')'; return; }
     const pay = payoutNow();
     if (pay !== null && pay < MIN_PAYOUT) { autoMsg = 'եկամտաբերություն ' + pay + '% < ' + MIN_PAYOUT + '%՝ չեմ սեղմում'; return; }

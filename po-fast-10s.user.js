@@ -136,6 +136,7 @@
   let lastSent = 0;
   // ---- պայմանային վիճակագրություն ----
   const COND_N = 50, COND_RATE = 0.60;
+  const FOCUS = TF === 60 ? 'trend300' : ''; // նախապես ընտրված մեկ կանոն՝ մաքուր (նոր տվյալներով) ստուգման համար
   let cond = {};
   try { cond = JSON.parse(localStorage.getItem(KM('cond')) || '{}'); } catch (e) {}
   const vsig = [];
@@ -235,6 +236,8 @@
         add('main', mainDir, ['agree=' + agree, 'out=' + ob, 'hr=' + hb, 'crowd=' + cb, 'skill=' + kb, 'last=' + lw, 'pos=' + pos], joint, true);
       }
     }
+    // ---- ֆոկուս՝ մեկ նախապես ընտրված կանոն, թարմ հաշվիչով ----
+    if (FOCUS && VARS[FOCUS]) { const fd = VARS[FOCUS](arr); if (fd) add('f:' + FOCUS, fd, [], 'f:' + FOCUS + '|', false); }
     // ---- լաբորատորիա՝ ամեն կանոն առանձին վիրտուալ գործարք ----
     for (const k in VARS) { const dv = VARS[k](arr); if (dv) add('v:' + k, dv, [], 'v:' + k + '|', false); }
     // ---- գրանցում (բոլորը, վիրտուալ) ----
@@ -254,7 +257,8 @@
       const w = c.st.rate * c.st.n, pnl = w * 0.92 - (c.st.n - w);
       if (pnl > lp) { lp = pnl; lead = c; c.pnl = pnl; }
     }
-    if (best) { pick = best; proven = true; }
+    if (FOCUS) { pick = cands.find((c) => c.name === 'f:' + FOCUS) || null; }
+    else if (best) { pick = best; proven = true; }
     else if (lead) pick = lead;
     else if (main) { const st = main.st || stat(main.joint); if (!(st.n >= COND_N && st.rate < 0.5)) pick = main; }
     if (pick && calm) {
@@ -276,7 +280,9 @@
     const tot = Object.entries(cond).filter(([k]) => k.includes('|')).reduce((a, [, v]) => a + v.w + v.l, 0);
     const lb = Object.entries(cond).filter(([k]) => k.startsWith('v:') && !k.includes('|')).map(([k, v]) => { const n = v.w + v.l; return { k: k.slice(2), n, pnl: v.w * 0.92 - v.l, r: v.w / n, z: (v.w - n / 2) / Math.sqrt(n / 4) }; })
       .filter((x) => x.n >= 20).sort((a, b) => b.pnl - a.pnl).slice(0, 3);
-    return '🏁 ' + (lb.length ? lb.map((x) => x.k + ' ' + Math.round(x.r * 100) + '% n' + x.n + ' P&L ' + (x.pnl > 0 ? '+' : '') + x.pnl.toFixed(1) + ' z' + x.z.toFixed(1)).join(' | ') : 'լաբորատորիա՝ տվյալ է հավաքվում') +
+    const fo = FOCUS ? cond['f:' + FOCUS + '|'] : null;
+    const fl = fo ? (() => { const n = fo.w + fo.l, z = n ? (fo.w - n / 2) / Math.sqrt(n / 4) : 0; return '🔭 ֆոկուս ' + FOCUS + ' (թարմ)՝ ' + fo.w + '/' + fo.l + (n ? ' ' + Math.round(100 * fo.w / n) + '% z' + z.toFixed(1) : '') + '\n'; })() : (FOCUS ? '🔭 ֆոկուս ' + FOCUS + ' (թարմ)՝ 0/0\n' : '');
+    return fl + '🏁 ' + (lb.length ? lb.map((x) => x.k + ' ' + Math.round(x.r * 100) + '% n' + x.n + ' P&L ' + (x.pnl > 0 ? '+' : '') + x.pnl.toFixed(1) + ' z' + x.z.toFixed(1)).join(' | ') : 'լաբորատորիա՝ տվյալ է հավաքվում') +
       '\n🎯 ընթացիկ ' + (lastCand ? lastCand.joint + ' ' + Math.round(lastCand.rate * 100) + '% (' + lastCand.n + ')' : '—') +
       '\n🏆 ' + (top.length ? top.map((x) => x.k + ' ' + Math.round(x.r * 100) + '% (' + x.n + ')').join(' | ') : 'դեռ քիչ տվյալ (' + tot + ')');
   }

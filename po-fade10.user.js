@@ -138,18 +138,32 @@
     }
     return { ok: false, how: 'fail', info: desc(el) + ' · ' + dumpCands() };
   }
-  function parlayResolve(p, t, asset) {
-    if (!parPend || parPend.asset !== asset || t < parPend.t + HOLD) return;
-    const mv = (p - parPend.entry) * parPend.dir;
-    const pay = parPend.pay;
-    if (mv > 0) {
+  function readBalance() {
+    try {
+      const txt = document.body.innerText || '';
+      const i = txt.search(/QT\s*(Demo|Real)/i);
+      if (i < 0) return null;
+      const seg = txt.slice(i, i + 80).replace(/QT\s*(Demo|Real)/i, '').replace(/USD/gi, '');
+      const m = seg.match(/(\d[\d,]*(?:\.\d+)?)/);
+      if (!m) return null;
+      const v = parseFloat(m[1].replace(/,/g, ''));
+      return isNaN(v) ? null : v;
+    } catch (e) { return null; }
+  }
+  function applyParlay(res, pay, profit) { // res՝ 1 շահ, -1 կորուստ, 0 ոչ-ոքի
+    if (res > 0) {
       par.wins++; par.streak++; par.best = Math.max(par.best, par.streak);
-      par.stake = Math.round(par.stake * (1 + pay / 100) * 100) / 100;
+      par.stake = Math.round((profit && profit > 0 ? par.stake + profit : par.stake * (1 + pay / 100)) * 100) / 100;
       if (par.streak >= STEPS) { par.done++; par.streak = 0; par.stake = STAKE0; par.attempts++; parMsg = '🎉 ' + STEPS + '/' + STEPS + ' անցավ!'; try { beep(1); } catch (e) {} }
-    } else if (mv < 0) {
+    } else if (res < 0) {
       par.losses++; par.streak = 0; par.stake = STAKE0; par.attempts++;
     }
     parPend = null; savePar();
+  }
+  function parlayResolve(p, t, asset) { // պահեստային՝ միայն եթե հաշվեկշիռը չի կարդացվում
+    if (!parPend || parPend.byBal || parPend.asset !== asset || t < parPend.t + HOLD + 1) return;
+    const mv = (p - parPend.entry) * parPend.dir;
+    applyParlay(mv > 0 ? 1 : mv < 0 ? -1 : 0, parPend.pay);
   }
   // ---- ավտոմատ սեղմման գործիքներ ----
   let nAuto = 0, autoMsg = '', btnBuy = null, btnSell = null;
@@ -200,7 +214,8 @@
     if (!b) { autoMsg = 'կոճակը չի գտնվել'; return; }
     if (PARLAY) {
       if (parPend) { autoMsg = 'սպասում եմ նախորդ գործարքի արդյունքին'; return; }
-      const pp = { asset, dir, t: lastTickT, entry: lastTickP, pay: pay || 92 };
+      const bal0 = readBalance();
+      const pp = { asset, dir, t: lastTickT, entry: lastTickP, pay: pay || 92, byBal: bal0 !== null };
       parPend = pp; // արգելափակում է նոր սիգնալները, մինչև այս գործարքի արդյունքը
       autoMsg = 'դնում եմ գումար $' + par.stake + '…';
       setStakeAsync(par.stake).then((r) => {
@@ -208,6 +223,16 @@
         if (!r.ok) { parPend = null; parMsg = '⚠ գումարը չդրվեց՝ ' + r.info; autoMsg = 'չսեղմեցի՝ գումարը չի փոխվում (սխալ գումարով գործարք չեմ բացում)'; return; }
         parMsg = 'գումար $' + par.stake + ' դրվեց (' + r.how + ')';
         fire(b);
+        if (bal0 !== null) {
+          setTimeout(() => {
+            if (parPend !== pp) return;
+            const bal1 = readBalance();
+            if (bal1 === null) { pp.byBal = false; return; }
+            const diff = Math.round((bal1 - bal0) * 100) / 100;
+            parMsg = 'հաշվեկշիռ ' + bal0 + ' → ' + bal1 + ' (' + (diff > 0 ? '+' : '') + diff + ') ' + (diff > 0 ? 'ՇԱՀ' : diff < 0 ? 'կորուստ' : 'ոչ-ոքի');
+            applyParlay(diff > 0.001 ? 1 : diff < -0.001 ? -1 : 0, pp.pay, diff);
+          }, HOLD * 1000 + 2800);
+        }
         nAuto++;
         autoMsg = 'սեղմվեց ' + (dir > 0 ? 'Купить' : 'Продать') + ' #' + nAuto + ' (գումար $' + par.stake + ')';
       });

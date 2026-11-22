@@ -15,6 +15,11 @@
   const GAP = 10;          // վրկ. նվազագույն ընդմիջում սիգնալների միջև
   const BREAK_EVEN = 53.5; // % (87% եկամտաբերության դեպքում)
   const ONLY_REAL = false; // false՝ աշխատում է նաև OTC-ում (արդյունքը չափվում է առանձին)
+  // ---- ավտոմատ սեղմում (պաշտպանիչ կանոններով) ----
+  const AUTO = true;        // true՝ սիգնալի պահին ինքնաբերաբար սեղմել Купить/Продать
+  const ALLOW_REAL = false; // false՝ ՄԻԱՅՆ Demo հաշվի վրա (իրական հաշվի վրա չի սեղմի)
+  const MIN_PAYOUT = 80;    // % նվազագույն եկամտաբերություն, որի դեպքում սեղմում է
+  const MAX_AUTO = 300;     // նվազագույն սահման՝ մեկ էջի բեռնման ընթացքում առավելագույն գործարքներ
   const DELAYS = [0, 1, 2, 3]; // ուշացումներ, որոնց համար չափվում է արդյունքը
   // ==========================
 
@@ -54,13 +59,64 @@
   setInterval(() => {
     const real = !ONLY_REAL || isReal(sel);
     snd.textContent = !soundOn ? ' 🔇 ' : (unlocked ? ' 🔊 ' : ' 🔊? սեղմեք ');
-    body.textContent = 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (isReal(sel) ? ' (REAL)' : ' (OTC)') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
+    body.textContent = (AUTO ? '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (isReal(sel) ? ' (REAL)' : ' (OTC)') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
       '\nարդյունք ըստ ձեր ուշացման (շահույթի շեմ ≥' + (isReal(sel) ? 53.5 : 52.1) + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
       '';
     try { localStorage.setItem(KEY(), JSON.stringify({ stat, nSig })); } catch (e) {}
   }, 2000);
 
+  // ---- ավտոմատ սեղմման գործիքներ ----
+  let nAuto = 0, autoMsg = '', btnBuy = null, btnSell = null;
+  function acct() { // 'demo' | 'real' | 'unknown'
+    try {
+      const m = (document.body.innerText || '').match(/QT\s*(Demo|Real)/i);
+      return m ? m[1].toLowerCase() : 'unknown';
+    } catch (e) { return 'unknown'; }
+  }
+  function payoutNow() {
+    try {
+      const els = document.querySelectorAll('div,span,p');
+      for (const e of els) {
+        if (e.children.length) continue;
+        const m = (e.textContent || '').trim().match(/^\+(\d{2,3})%$/);
+        if (m && e.offsetParent !== null) return Number(m[1]);
+      }
+    } catch (e) {}
+    return null;
+  }
+  function findBtn(words) {
+    const els = document.querySelectorAll('button,div,span,a');
+    let best = null;
+    for (const e of els) {
+      const t = (e.textContent || '').trim().toLowerCase();
+      if (words.includes(t) && e.offsetParent !== null) { best = e; if (e.tagName === 'BUTTON') return e; }
+    }
+    return best;
+  }
+  function fire(el) {
+    const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+    const o = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, view: window };
+    ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach((n) => {
+      try { el.dispatchEvent(n.startsWith('pointer') ? new PointerEvent(n, o) : new MouseEvent(n, o)); } catch (e) {}
+    });
+  }
+  function autoClick(dir) {
+    if (!AUTO) return;
+    const a = acct();
+    if (a === 'unknown') { autoMsg = 'հաշիվը չի որոշվել՝ չեմ սեղմում'; return; }
+    if (a === 'real' && !ALLOW_REAL) { autoMsg = 'REAL հաշիվ՝ ավտոմատ սեղմումը արգելված է (միայն Demo)'; return; }
+    if (nAuto >= MAX_AUTO) { autoMsg = 'գործարքների սահմանը լրացավ (' + MAX_AUTO + ')'; return; }
+    const pay = payoutNow();
+    if (pay !== null && pay < MIN_PAYOUT) { autoMsg = 'եկամտաբերություն ' + pay + '% < ' + MIN_PAYOUT + '%՝ չեմ սեղմում'; return; }
+    if (!btnBuy || !document.contains(btnBuy)) btnBuy = findBtn(['купить', 'buy', 'higher']);
+    if (!btnSell || !document.contains(btnSell)) btnSell = findBtn(['продать', 'sell', 'lower']);
+    const b = dir > 0 ? btnBuy : btnSell;
+    if (!b) { autoMsg = 'կոճակը չի գտնվել'; return; }
+    fire(b);
+    nAuto++;
+    autoMsg = 'սեղմվեց ' + (dir > 0 ? 'Купить' : 'Продать') + ' #' + nAuto + (pay !== null ? ' (եկամտ. ' + pay + '%)' : '');
+  }
   // ---- ձայն (HTML audio՝ չի խլանում անձայն ռեժիմում) + Web Audio պահեստային ----
   let actx = null, soundOn = true, unlocked = false;
   function makeWav(freqs) {
@@ -173,6 +229,7 @@
     lastSig[asset] = t;
     const ratio = Math.abs(zv);
     const dir = WITH_IMPULSE ? (zv > 0 ? 1 : -1) : (zv > 0 ? -1 : 1);
+    autoClick(dir);
     nSig++;
     showOverlay(dir, asset, ratio);
     pend.push({ asset, dir, t, entry: { 0: p }, done: {} }); // 0 վրկ՝ ակնթարթային մուտք՝ ընթացիկ գնով

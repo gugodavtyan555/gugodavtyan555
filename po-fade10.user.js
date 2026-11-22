@@ -79,7 +79,7 @@
   // ---- parlay վիճակ ----
   let par = { stake: STAKE0, streak: 0, attempts: 1, best: 0, done: 0, wins: 0, losses: 0 };
   try { const o = JSON.parse(localStorage.getItem('po_parlay') || 'null'); if (o) par = Object.assign(par, o); } catch (e) {}
-  let parPend = null, parMsg = '';
+  let parPend = null, parMsg = '', prep = null;
   function savePar() { try { localStorage.setItem('po_parlay', JSON.stringify(par)); } catch (e) {} }
   function desc(e) {
     try { return (e.tagName || '?') + '[type=' + (e.type || '') + ',ro=' + (e.readOnly ? 1 : 0) + ',ce=' + (e.isContentEditable ? 1 : 0) + ',v=' + (e.value !== undefined ? e.value : (e.textContent || '').slice(0, 12)) + ']'; } catch (x) { return '?'; }
@@ -379,6 +379,18 @@
       par.losses++; par.streak = 0; par.stake = STAKE0; par.attempts++;
     }
     parPend = null; savePar();
+    prepareNext(); // անմիջապես դնել հաջորդ գումարը, որ պատրաստ լինի հաջորդ սիգնալին
+  }
+  function prepareNext() {
+    if (!PARLAY || !AUTO) return;
+    const a = acct();
+    if (a !== 'demo' && !(a === 'real' && ALLOW_REAL)) return;
+    const want = par.stake;
+    const task = setStakeAsync(String(want)).then((r) => {
+      parMsg = r.ok ? 'պատրաստ՝ հաջորդ գումար $' + want + ' (' + r.how + ')' : '⚠ նախապատրաստումը չստացվեց՝ ' + r.info;
+    }).catch((x) => { parMsg = '⚠ նախապատրաստման սխալ՝ ' + (x && x.message); });
+    prep = task;
+    task.then(() => { if (prep === task) prep = null; });
   }
   function parlayResolve(p, t, asset) { // պահեստային՝ միայն եթե հաշվեկշիռը չի կարդացվում
     if (!parPend || parPend.byBal || parPend.asset !== asset || t < parPend.t + HOLD + 1) return;
@@ -438,7 +450,7 @@
       const pp = { asset, dir, t: lastTickT, entry: lastTickP, pay: pay || 92, byBal: bal0 !== null };
       parPend = pp; // արգելափակում է նոր սիգնալները, մինչև այս գործարքի արդյունքը
       autoMsg = 'դնում եմ գումար $' + par.stake + '…';
-      setStakeAsync(par.stake).then((r) => {
+      (prep || Promise.resolve()).then(() => setStakeAsync(String(par.stake))).then((r) => {
         if (parPend !== pp) return;
         if (!r.ok) { parPend = null; parMsg = '⚠ գումարը չդրվեց՝ ' + r.info; autoMsg = 'չսեղմեցի՝ գումարը չի փոխվում (սխալ գումարով գործարք չեմ բացում)'; return; }
         parMsg = 'գումար $' + par.stake + ' դրվեց (' + r.how + ')';
@@ -451,7 +463,7 @@
             const diff = Math.round((bal1 - bal0) * 100) / 100;
             parMsg = 'հաշվեկշիռ ' + bal0 + ' → ' + bal1 + ' (' + (diff > 0 ? '+' : '') + diff + ') ' + (diff > 0 ? 'ՇԱՀ' : diff < 0 ? 'կորուստ' : 'ոչ-ոքի');
             applyParlay(diff > 0.001 ? 1 : diff < -0.001 ? -1 : 0, pp.pay, diff);
-          }, HOLD * 1000 + 2800);
+          }, HOLD * 1000 + 1600);
         }
         nAuto++;
         autoMsg = 'սեղմվեց ' + (dir > 0 ? 'Купить' : 'Продать') + ' #' + nAuto + ' (գումար $' + par.stake + ')';

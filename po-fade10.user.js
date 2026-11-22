@@ -20,6 +20,10 @@
   const ALLOW_REAL = false; // false՝ ՄԻԱՅՆ Demo հաշվի վրա (իրական հաշվի վրա չի սեղմի)
   const MIN_PAYOUT = 80;    // % նվազագույն եկամտաբերություն, որի դեպքում սեղմում է
   const MAX_AUTO = 300;     // նվազագույն սահման՝ մեկ էջի բեռնման ընթացքում առավելագույն գործարքներ
+  // ---- 8 քայլանոց սանդուղք (parlay)՝ շահածը գնում է հաջորդ գործարքին (միայն Demo) ----
+  const PARLAY = true;
+  const STEPS = 8;
+  const STAKE0 = 1;         // $ սկզբնական գումար
   const DELAYS = [0, 1, 2, 3]; // ուշացումներ, որոնց համար չափվում է արդյունքը
   // ==========================
 
@@ -27,7 +31,7 @@
   const ticks = {};        // asset -> [{t,p}]
   const moves = {};        // asset -> [|move|, ...] (վերջին ~300)
   const pend = [];
-  let sel = '', lastSig = {}, nSig = 0;
+  let sel = '', lastSig = {}, nSig = 0, lastTickT = 0, lastTickP = 0;
   let stat = {};
   DELAYS.forEach((d) => (stat[d] = [0, 0]));
   let mkt = 'otc';
@@ -59,13 +63,46 @@
   setInterval(() => {
     const real = !ONLY_REAL || isReal(sel);
     snd.textContent = !soundOn ? ' 🔇 ' : (unlocked ? ' 🔊 ' : ' 🔊? սեղմեք ');
-    body.textContent = (AUTO ? '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (isReal(sel) ? ' (REAL)' : ' (OTC)') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
+    body.textContent = (AUTO ? '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (isReal(sel) ? ' (REAL)' : ' (OTC)') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
       '\nարդյունք ըստ ձեր ուշացման (շահույթի շեմ ≥' + (isReal(sel) ? 53.5 : 52.1) + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
       '';
     try { localStorage.setItem(KEY(), JSON.stringify({ stat, nSig })); } catch (e) {}
   }, 2000);
 
+  // ---- parlay վիճակ ----
+  let par = { stake: STAKE0, streak: 0, attempts: 1, best: 0, done: 0, wins: 0, losses: 0 };
+  try { const o = JSON.parse(localStorage.getItem('po_parlay') || 'null'); if (o) par = Object.assign(par, o); } catch (e) {}
+  let parPend = null, parMsg = '';
+  function savePar() { try { localStorage.setItem('po_parlay', JSON.stringify(par)); } catch (e) {} }
+  function setStake(v) {
+    try {
+      const inputs = document.querySelectorAll('input');
+      for (const inp of inputs) {
+        let node = inp, ctx = '';
+        for (let k = 0; k < 4 && node; k++) { node = node.parentElement; if (node) ctx += ' ' + (node.textContent || ''); }
+        if (!/(Сумма|Amount|Sum)/i.test(ctx)) continue;
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+        setter.call(inp, String(v));
+        ['input', 'change', 'blur'].forEach((n) => inp.dispatchEvent(new Event(n, { bubbles: true })));
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+  function parlayResolve(p, t, asset) {
+    if (!parPend || parPend.asset !== asset || t < parPend.t + HOLD) return;
+    const mv = (p - parPend.entry) * parPend.dir;
+    const pay = parPend.pay;
+    if (mv > 0) {
+      par.wins++; par.streak++; par.best = Math.max(par.best, par.streak);
+      par.stake = Math.round(par.stake * (1 + pay / 100) * 100) / 100;
+      if (par.streak >= STEPS) { par.done++; par.streak = 0; par.stake = STAKE0; par.attempts++; parMsg = '🎉 ' + STEPS + '/' + STEPS + ' անցավ!'; try { beep(1); } catch (e) {} }
+    } else if (mv < 0) {
+      par.losses++; par.streak = 0; par.stake = STAKE0; par.attempts++;
+    }
+    parPend = null; savePar();
+  }
   // ---- ավտոմատ սեղմման գործիքներ ----
   let nAuto = 0, autoMsg = '', btnBuy = null, btnSell = null;
   function acct() { // 'demo' | 'real' | 'unknown'
@@ -101,7 +138,7 @@
       try { el.dispatchEvent(n.startsWith('pointer') ? new PointerEvent(n, o) : new MouseEvent(n, o)); } catch (e) {}
     });
   }
-  function autoClick(dir) {
+  function autoClick(dir, asset) {
     if (!AUTO) return;
     const a = acct();
     if (a === 'unknown') { autoMsg = 'հաշիվը չի որոշվել՝ չեմ սեղմում'; return; }
@@ -113,7 +150,13 @@
     if (!btnSell || !document.contains(btnSell)) btnSell = findBtn(['продать', 'sell', 'lower']);
     const b = dir > 0 ? btnBuy : btnSell;
     if (!b) { autoMsg = 'կոճակը չի գտնվել'; return; }
+    if (PARLAY) {
+      if (parPend) { autoMsg = 'սպասում եմ նախորդ գործարքի արդյունքին'; return; }
+      const okS = setStake(par.stake);
+      parMsg = okS ? '' : '⚠ գումարի դաշտը չգտա՝ սահմանեք $' + par.stake + ' ինքներդ';
+    }
     fire(b);
+    if (PARLAY) parPend = { asset, dir, t: lastTickT, entry: lastTickP, pay: payoutNow() || 92 };
     nAuto++;
     autoMsg = 'սեղմվեց ' + (dir > 0 ? 'Купить' : 'Продать') + ' #' + nAuto + (pay !== null ? ' (եկամտ. ' + pay + '%)' : '');
   }
@@ -199,6 +242,8 @@
     arr.push({ t, p });
     if (arr.length > 900) arr.splice(0, 300);
     nTicks++;
+    if (asset === sel || !sel) { lastTickT = t; lastTickP = p; }
+    if (PARLAY) parlayResolve(p, t, asset);
     // ---- արդյունքների հետևում ----
     for (let i = pend.length - 1; i >= 0; i--) {
       const q = pend[i];
@@ -229,7 +274,7 @@
     lastSig[asset] = t;
     const ratio = Math.abs(zv);
     const dir = WITH_IMPULSE ? (zv > 0 ? 1 : -1) : (zv > 0 ? -1 : 1);
-    autoClick(dir);
+    autoClick(dir, asset);
     nSig++;
     showOverlay(dir, asset, ratio);
     pend.push({ asset, dir, t, entry: { 0: p }, done: {} }); // 0 վրկ՝ ակնթարթային մուտք՝ ընթացիկ գնով

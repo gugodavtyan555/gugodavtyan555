@@ -243,7 +243,7 @@
     autoMsg = 'սեղմվեց ' + (dir > 0 ? 'Купить' : 'Продать') + ' #' + nAuto + (pay !== null ? ' (եկամտ. ' + pay + '%)' : '');
   }
   // ---- ձայն (HTML audio՝ չի խլանում անձայն ռեժիմում) + Web Audio պահեստային ----
-  let actx = null, soundOn = true, unlocked = false;
+  let actx = null, soundOn = false, unlocked = false;
   function makeWav(freqs) {
     const sr = 22050, dur = 0.16, gap = 0.03, m = Math.floor(sr * dur), g = Math.floor(sr * gap);
     const total = freqs.length * (m + g), pcm = new Int16Array(total);

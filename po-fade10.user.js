@@ -115,9 +115,42 @@
   // ---- «Калькулятор» ստեղնաշարով գումար մուտքագրում ----
   function vis(e) { try { return e.offsetParent !== null || (e.getClientRects && e.getClientRects().length > 0); } catch (x) { return true; } }
   function calcVisible() {
-    try { return [...document.querySelectorAll('div,span,p,button')].some((e) => (e.textContent || '').trim() === 'Калькулятор' && vis(e)); } catch (x) { return false; }
+    try { return !!findKeysGeneric() || [...document.querySelectorAll('div,span,p,button')].some((e) => (e.textContent || '').trim() === 'Калькулятор' && vis(e)); } catch (x) { return false; }
+  }
+  function keyChars() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.']; }
+  function findKeysGeneric() {
+    try {
+      const all = [...document.querySelectorAll('*')];
+      const txt = (e) => (e.textContent || '').trim();
+      const sevens = all.filter((e) => txt(e) === '7' && vis(e));
+      for (const sv of sevens) {
+        let cont = sv;
+        for (let k = 0; k < 8 && cont.parentElement; k++) {
+          cont = cont.parentElement;
+          const inner = [...cont.querySelectorAll('*')].filter((e) => vis(e));
+          const keys = {};
+          let okAll = true;
+          for (const ch of keyChars()) {
+            const c = inner.filter((e) => txt(e) === ch);
+            if (!c.length) { okAll = false; break; }
+            keys[ch] = c[0];
+          }
+          if (!okAll) continue;
+          let w = keys['0'];
+          while (w.parentElement && w.parentElement !== cont && w.parentElement.children.length < 9) w = w.parentElement;
+          let back = w.nextElementSibling;
+          if (!back && w.parentElement) back = w.parentElement.lastElementChild;
+          if (!back) continue;
+          keys.back = back; keys._cont = cont;
+          return keys;
+        }
+      }
+    } catch (x) {}
+    return null;
   }
   function findKeys() {
+    const g = findKeysGeneric();
+    if (g) return g;
     const keys = {};
     try {
       const all = [...document.querySelectorAll('button,div,span')];
@@ -159,18 +192,29 @@
     for (const f of tries) { if (!calcVisible()) break; f(); await sleep(150); }
     return 'ok';
   }
+  let dumpN = 0;
+  function chain(e, n) {
+    const out = [];
+    let x = e;
+    for (let i = 0; i < n && x; i++) { out.push((x.tagName || '?') + '.' + String(x.className || '').toString().slice(0, 24) + '(' + (x.children ? x.children.length : 0) + ')'); x = x.parentElement; }
+    return out.join(' < ');
+  }
   function dumpDom() {
-    let out = '';
+    dumpN++;
+    let out = 'DBG#' + dumpN + ' ' + new Date().toTimeString().slice(0, 8) + '\n';
     try {
-      const all = [...document.querySelectorAll('div,section,aside')];
-      const withCalc = all.filter((e) => /Калькулятор/.test(e.textContent || '') && vis(e)).sort((a, b) => (a.textContent || '').length - (b.textContent || '').length);
-      let root = null;
-      for (const e of withCalc) { if (e.querySelectorAll('*').length >= 14) { root = e; break; } }
-      out += 'CALC: ' + (root ? root.outerHTML.replace(/\s+/g, ' ').slice(0, 1800) : 'չի գտնվել (բացեք հաշվիչը՝ սեղմեք Сумма դաշտը, հետո 🐞)') + '\n';
+      const all = [...document.querySelectorAll('*')];
+      const sevens = all.filter((e) => (e.textContent || '').trim() === '7');
+      out += '7-երի քանակ՝ ' + sevens.length + ' (տեսանելի ' + sevens.filter(vis).length + ') · iframe ' + document.querySelectorAll('iframe').length + ' · shadow ' + all.filter((e) => e.shadowRoot).length + '\n';
+      if (sevens[0]) out += '7: ' + chain(sevens[0], 6) + '\n';
+      const vs = sevens.find(vis);
+      if (vs) out += '7(vis): ' + chain(vs, 6) + '\n';
+      const g = findKeysGeneric();
+      out += 'KEYS: ' + (g ? Object.keys(g).join(',') : 'չգտնվեցին') + '\n';
+      if (g && g._cont) out += 'CONT: ' + (g._cont.outerHTML || '').replace(/\s+/g, ' ').slice(0, 900) + '\n';
+      else if (vs) { let c = vs; for (let i = 0; i < 4 && c.parentElement; i++) c = c.parentElement; out += 'NEAR: ' + (c.outerHTML || '').replace(/\s+/g, ' ').slice(0, 900) + '\n'; }
       const el = stakeEl || findStakeEl();
-      out += 'FIELD: ' + (el ? ((el.parentElement || el).outerHTML || '').replace(/\s+/g, ' ').slice(0, 500) : 'չկա') + '\n';
-      const k = findKeys();
-      out += 'KEYS: ' + (k ? Object.keys(k).join(',') : 'ստեղները չգտնվեցին');
+      out += 'FIELD: ' + (el ? ((el.parentElement || el).outerHTML || '').replace(/\s+/g, ' ').slice(0, 300) : 'չկա');
     } catch (x) { out += 'ERR ' + (x && x.message); }
     try { navigator.clipboard.writeText(out); } catch (x) {}
     return out;

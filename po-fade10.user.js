@@ -97,35 +97,46 @@
     return good ? good.e : (cands[0] ? cands[0].e : null);
   }
   let stakeEl = null;
-  function setStake(v) { // վերադարձնում է { ok, how, info }
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  function dumpCands() {
+    try {
+      return [...document.querySelectorAll('input,[contenteditable="true"]')].slice(0, 6).map((e) => {
+        let r = null; try { r = e.getBoundingClientRect(); } catch (x) {}
+        return desc(e) + (r ? '{' + Math.round(r.width) + 'x' + Math.round(r.height) + '}' : '') + '.' + String(e.className || '').slice(0, 18);
+      }).join(' | ');
+    } catch (x) { return '?'; }
+  }
+  async function setStakeAsync(v) { // վերադարձնում է { ok, how, info }
     const str = String(v);
     if (!stakeEl || !document.contains(stakeEl)) stakeEl = findStakeEl();
     const el = stakeEl;
-    if (!el) return { ok: false, how: 'no-el', info: 'դաշտ չկա' };
+    if (!el) return { ok: false, how: 'no-el', info: 'դաշտ չկա · ' + dumpCands() };
     const read = () => String(el.value !== undefined ? el.value : el.textContent || '').trim().replace(',', '.');
+    if (read() === str) return { ok: true, how: '=', info: desc(el) }; // արդեն նույնն է
+    if (el.readOnly) return { ok: false, how: 'ro', info: 'readonly · ' + desc(el) + ' · ' + dumpCands() };
     const ev = (n) => { try { el.dispatchEvent(new Event(n, { bubbles: true })); } catch (x) {} };
-    try { // A՝ native setter + իրադարձություններ (React)
-      if (el.tagName === 'INPUT') { const st = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; st.call(el, str); } else { el.textContent = str; }
-      ev('input'); ev('change'); ev('blur');
-    } catch (x) {}
-    if (read() === str) return { ok: true, how: 'A', info: desc(el) };
-    try { // B՝ focus + select + execCommand (ինչպես մուտքագրում)
-      el.focus(); if (el.select) el.select();
-      document.execCommand('selectAll', false, null); document.execCommand('insertText', false, str);
-      ev('input'); ev('change');
-    } catch (x) {}
-    if (read() === str) return { ok: true, how: 'B', info: desc(el) };
-    try { // C՝ նիշ առ նիշ ստեղնաշարի իրադարձություններ
-      el.focus(); if (el.select) el.select();
-      for (const ch of str) {
-        ['keydown', 'keypress'].forEach((n) => { try { el.dispatchEvent(new KeyboardEvent(n, { key: ch, bubbles: true })); } catch (x) {} });
-        if (el.tagName === 'INPUT') { const st = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; st.call(el, (read() === '' || read() === '0' ? '' : read()) + ch); }
+    const nativeSet = (val) => { if (el.tagName === 'INPUT') { const st = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; st.call(el, val); } else { el.textContent = val; } };
+    const tries = [
+      () => { nativeSet(str); ev('input'); ev('change'); ev('blur'); },
+      () => { el.focus(); if (el.select) el.select(); document.execCommand('selectAll', false, null); document.execCommand('insertText', false, str); ev('input'); ev('change'); },
+      () => {
+        el.focus(); if (el.select) el.select(); nativeSet('');
         ev('input');
-        try { el.dispatchEvent(new KeyboardEvent('keyup', { key: ch, bubbles: true })); } catch (x) {}
+        let cur = '';
+        for (const ch of str) {
+          ['keydown', 'keypress'].forEach((n) => { try { el.dispatchEvent(new KeyboardEvent(n, { key: ch, bubbles: true })); } catch (x) {} });
+          cur += ch; nativeSet(cur); ev('input');
+          try { el.dispatchEvent(new KeyboardEvent('keyup', { key: ch, bubbles: true })); } catch (x) {}
+        }
+        ev('change'); ev('blur');
       }
-    } catch (x) {}
-    if (read() === str) return { ok: true, how: 'C', info: desc(el) };
-    return { ok: false, how: 'fail', info: desc(el) };
+    ];
+    for (let i = 0; i < tries.length; i++) {
+      try { tries[i](); } catch (x) {}
+      await sleep(140); // սպասում ենք, որ հավելվածը չվերադարձնի արժեքը
+      if (read() === str) return { ok: true, how: 'ABC'[i], info: desc(el) };
+    }
+    return { ok: false, how: 'fail', info: desc(el) + ' · ' + dumpCands() };
   }
   function parlayResolve(p, t, asset) {
     if (!parPend || parPend.asset !== asset || t < parPend.t + HOLD) return;
@@ -189,12 +200,20 @@
     if (!b) { autoMsg = 'կոճակը չի գտնվել'; return; }
     if (PARLAY) {
       if (parPend) { autoMsg = 'սպասում եմ նախորդ գործարքի արդյունքին'; return; }
-      const r = setStake(par.stake);
-      parMsg = r.ok ? 'գումար $' + par.stake + ' դրվեց (' + r.how + ')' : '⚠ գումարը չդրվեց՝ ' + r.info + ' · սահմանեք $' + par.stake + ' ինքներդ';
-      if (r.ok && par.stake !== STAKE0) { setTimeout(() => fire(b), 140); parPend = { asset, dir, t: lastTickT, entry: lastTickP, pay: payoutNow() || 92 }; nAuto++; autoMsg = 'սեղմվեց ' + (dir > 0 ? 'Купить' : 'Продать') + ' #' + nAuto + ' (գումար $' + par.stake + ')'; return; }
+      const pp = { asset, dir, t: lastTickT, entry: lastTickP, pay: pay || 92 };
+      parPend = pp; // արգելափակում է նոր սիգնալները, մինչև այս գործարքի արդյունքը
+      autoMsg = 'դնում եմ գումար $' + par.stake + '…';
+      setStakeAsync(par.stake).then((r) => {
+        if (parPend !== pp) return;
+        if (!r.ok) { parPend = null; parMsg = '⚠ գումարը չդրվեց՝ ' + r.info; autoMsg = 'չսեղմեցի՝ գումարը չի փոխվում (սխալ գումարով գործարք չեմ բացում)'; return; }
+        parMsg = 'գումար $' + par.stake + ' դրվեց (' + r.how + ')';
+        fire(b);
+        nAuto++;
+        autoMsg = 'սեղմվեց ' + (dir > 0 ? 'Купить' : 'Продать') + ' #' + nAuto + ' (գումար $' + par.stake + ')';
+      });
+      return;
     }
     fire(b);
-    if (PARLAY) parPend = { asset, dir, t: lastTickT, entry: lastTickP, pay: payoutNow() || 92 };
     nAuto++;
     autoMsg = 'սեղմվեց ' + (dir > 0 ? 'Купить' : 'Продать') + ' #' + nAuto + (pay !== null ? ' (եկամտ. ' + pay + '%)' : '');
   }

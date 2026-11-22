@@ -135,7 +135,8 @@
   const MIN_RATE = 0.52, MIN_TRIALS = TF === 60 ? 500 : 150, GAP_MS = 60000;
   let lastSent = 0;
   // ---- պայմանային վիճակագրություն ----
-  const COND_N = 50, COND_RATE = 0.60;
+  const COND_N = TF === 10 ? 100 : 50, COND_RATE = TF === 10 ? 0.57 : 0.60;
+  const PROVEN_ONLY = TF === 10; // 10 վրկ՝ սիգնալ միայն ապացուցված պայմանի դեպքում
   const FOCUS_ONLY = false; // true՝ սիգնալ միայն ֆոկուս կանոնից
   const FOCUS = TF === 60 ? 'trend300' : ''; // նախապես ընտրված մեկ կանոն՝ մաքուր (նոր տվյալներով) ստուգման համար
   let cond = {};
@@ -248,7 +249,7 @@
     const bad = Q.asset === asset && Q.state === 'bad';
     const calm = !bad && !(ol && ol.bad >= 3);
     let best = null;
-    for (const c of cands) { const st = stat(c.joint); c.st = st; if (st.n >= (c.main ? COND_N : 150) && st.rate >= COND_RATE && (!best || st.rate > best.st.rate)) best = c; }
+    for (const c of cands) { const st = stat(c.joint); c.st = st; if (st.n >= (c.main || TF === 10 ? COND_N : 150) && st.rate >= COND_RATE && (!best || st.rate > best.st.rate)) best = c; }
     const main = cands.find((c) => c.main);
     if (main) lastCand = { joint: main.joint, dir: main.dir, n: main.st ? main.st.n : stat(main.joint).n, rate: main.st ? main.st.rate : stat(main.joint).rate };
     let pick = null, proven = false;
@@ -260,6 +261,7 @@
     }
     if (FOCUS && FOCUS_ONLY) { pick = cands.find((c) => c.name === 'f:' + FOCUS) || null; }
     else if (best) { pick = best; proven = true; }
+    else if (PROVEN_ONLY) pick = null;
     else if (lead) pick = lead;
     else if (main) { const st = main.st || stat(main.joint); if (!(st.n >= COND_N && st.rate < 0.5)) pick = main; }
     if (pick && calm) {
@@ -441,6 +443,7 @@
       for (const n in tstat) mx = Math.max(mx, tstat[n].w + tstat[n].l);
       why = 'տաքացում՝ վիճակագրություն ' + Math.round(mx) + '/' + MIN_TRIALS + (TF === 60 ? '' : ' (առաջին արդյունքը 5 րոպե հետո)');
     }
+    else if (PROVEN_ONLY) why = 'սիգնալ կգա միայն ⭐ ապացուցված պայմանի դեպքում (≥' + COND_N + ' փորձ, ≥' + Math.round(COND_RATE * 100) + '%)'
     else why = 'սիգնալ կգա մոմի վերջին վայրկյաններին' + (lastCand && lastCand.n >= COND_N && lastCand.rate >= COND_RATE ? ' ⭐ ապացուցված պայման' : '');
     const nowT = Date.now(), age = lastTickAt ? Math.round((nowT - lastTickAt) / 1000) : -1;
     const lastMin = tickLog.filter((x) => nowT - x <= 60000).length;

@@ -174,12 +174,51 @@
     } catch (x) { return null; }
     return keys.back ? keys : null;
   }
+  // ---- դիրքով սեղմում (հաշվիչի կոճակները՝ դաշտի նկատմամբ հայտնի հեռավորություններով) ----
+  const KP_COL = [-430, -198, 34];          // x-շեղում դաշտի կենտրոնից (375px լայնության համար)
+  const KP_ROW = [-533, -441, -350, -259];  // y-շեղում
+  const KP_MAP = { '7': [0, 0], '8': [1, 0], '9': [2, 0], '4': [0, 1], '5': [1, 1], '6': [2, 1], '1': [0, 2], '2': [1, 2], '3': [2, 2], '.': [0, 3], '0': [1, 3], back: [2, 3], disp: [0, -1] };
+  function keyPoint(ch, r) {
+    const s = r.width / 375, m = KP_MAP[ch], cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    if (ch === 'disp') return [cx - 314 * s, cy - 724 * s];
+    return [cx + KP_COL[m[0]] * s, cy + KP_ROW[m[1]] * s];
+  }
+  function fireAt(x, y) {
+    const t = document.elementFromPoint(x, y);
+    if (!t) return null;
+    const o = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, view: window };
+    ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach((n) => {
+      try { t.dispatchEvent(n.startsWith('pointer') ? new PointerEvent(n, o) : new MouseEvent(n, o)); } catch (e) {}
+    });
+    return t;
+  }
+  async function viaPoints(el) {
+    const r = el.getBoundingClientRect();
+    return r;
+  }
+  async function typeByPoints(el, str) {
+    const r = el.getBoundingClientRect();
+    const hit = fireAt(...keyPoint('back', r));
+    if (!hit) return 'no-hit';
+    for (let i = 0; i < 8; i++) { fireAt(...keyPoint('back', r)); await sleep(25); }
+    for (const ch of str) { if (!KP_MAP[ch]) return 'no-key:' + ch; fireAt(...keyPoint(ch, r)); await sleep(40); }
+    await sleep(100);
+    return 'P';
+  }
   async function viaKeypad(el, str) {
     try { fire(el); el.focus && el.focus(); } catch (x) {}
     for (let i = 0; i < 6 && !calcVisible(); i++) await sleep(80);
     await sleep(120);
     const keys = findKeys();
-    if (!keys) return 'no-keypad';
+    if (!keys) {
+      const rr = await typeByPoints(el, str);
+      const closers = [
+        () => { try { el.blur && el.blur(); } catch (x) {} },
+        () => { try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); } catch (x) {} }
+      ];
+      for (const f of closers) f();
+      return rr;
+    }
     for (let i = 0; i < 9; i++) { fire(keys.back); await sleep(25); }
     for (const ch of str) { if (!keys[ch]) return 'no-key:' + ch; fire(keys[ch]); await sleep(35); }
     await sleep(100);
@@ -213,6 +252,15 @@
       out += 'KEYS: ' + (g ? Object.keys(g).join(',') : 'չգտնվեցին') + '\n';
       if (g && g._cont) out += 'CONT: ' + (g._cont.outerHTML || '').replace(/\s+/g, ' ').slice(0, 900) + '\n';
       else if (vs) { let c = vs; for (let i = 0; i < 4 && c.parentElement; i++) c = c.parentElement; out += 'NEAR: ' + (c.outerHTML || '').replace(/\s+/g, ' ').slice(0, 900) + '\n'; }
+      const fe = stakeEl || findStakeEl();
+      if (fe) {
+        const r0 = fe.getBoundingClientRect();
+        for (const ch of ['7', '0', 'back', 'disp']) {
+          const pt = keyPoint(ch, r0), t = document.elementFromPoint(pt[0], pt[1]);
+          out += 'AT ' + ch + ' (' + Math.round(pt[0]) + ',' + Math.round(pt[1]) + '): ' + (t ? chain(t, 4) + ' txt=' + (t.textContent || '').trim().slice(0, 8) : 'null') + '\n';
+        }
+      }
+      out += 'IFR: ' + [...document.querySelectorAll('iframe')].map((f) => { let acc = false; try { acc = !!f.contentDocument; } catch (x) {} return (f.src || '').slice(0, 50) + ' acc=' + acc + ' ' + Math.round(f.getBoundingClientRect().width) + 'x' + Math.round(f.getBoundingClientRect().height); }).join(' | ') + '\n';
       const el = stakeEl || findStakeEl();
       out += 'FIELD: ' + (el ? ((el.parentElement || el).outerHTML || '').replace(/\s+/g, ' ').slice(0, 300) : 'չկա');
     } catch (x) { out += 'ERR ' + (x && x.message); }

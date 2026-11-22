@@ -106,6 +106,53 @@
       }).join(' | ');
     } catch (x) { return '?'; }
   }
+  // ---- «Калькулятор» ստեղնաշարով գումար մուտքագրում ----
+  function vis(e) { try { return e.offsetParent !== null || (e.getClientRects && e.getClientRects().length > 0); } catch (x) { return true; } }
+  function calcVisible() {
+    try { return [...document.querySelectorAll('div,span,p,button')].some((e) => (e.textContent || '').trim() === 'Калькулятор' && vis(e)); } catch (x) { return false; }
+  }
+  function findKeys() {
+    const keys = {};
+    try {
+      const all = [...document.querySelectorAll('button,div,span')];
+      for (const ch of ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.']) {
+        const c = all.filter((e) => (e.textContent || '').trim() === ch && vis(e));
+        let pick = null;
+        for (const e of c) { // պահանջում ենք՝ նախնիներից մեկը պարունակի «Калькулятор»
+          let n = e, ok = false;
+          for (let k = 0; k < 7 && n; k++) { n = n.parentElement; if (n && /Калькулятор/.test(n.textContent || '')) { ok = true; break; } }
+          if (ok) { pick = e; break; }
+        }
+        if (!pick) return null;
+        keys[ch] = pick;
+      }
+      // «ջնջել» կոճակը՝ '0'-ի հաջորդ ստեղնը ցանցում
+      let w = keys['0'];
+      while (w.parentElement && w.parentElement.children.length < 9) w = w.parentElement;
+      let back = w.nextElementSibling;
+      if (!back && w.parentElement) back = w.parentElement.lastElementChild;
+      keys.back = back;
+    } catch (x) { return null; }
+    return keys.back ? keys : null;
+  }
+  async function viaKeypad(el, str) {
+    try { fire(el); el.focus && el.focus(); } catch (x) {}
+    for (let i = 0; i < 6 && !calcVisible(); i++) await sleep(80);
+    await sleep(120);
+    const keys = findKeys();
+    if (!keys) return 'no-keypad';
+    for (let i = 0; i < 9; i++) { fire(keys.back); await sleep(25); }
+    for (const ch of str) { if (!keys[ch]) return 'no-key:' + ch; fire(keys[ch]); await sleep(35); }
+    await sleep(100);
+    // փակել հաշվիչը
+    const tries = [
+      () => { try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch (x) {} },
+      () => { try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); } catch (x) {} },
+      () => { try { const t = document.elementFromPoint(6, Math.round(window.innerHeight * 0.45)); if (t) fire(t); } catch (x) {} }
+    ];
+    for (const f of tries) { if (!calcVisible()) break; f(); await sleep(150); }
+    return 'ok';
+  }
   async function setStakeAsync(v) { // վերադարձնում է { ok, how, info }
     const str = String(v);
     if (!stakeEl || !document.contains(stakeEl)) stakeEl = findStakeEl();
@@ -113,7 +160,11 @@
     if (!el) return { ok: false, how: 'no-el', info: 'դաշտ չկա · ' + dumpCands() };
     const read = () => String(el.value !== undefined ? el.value : el.textContent || '').trim().replace(',', '.');
     if (read() === str) return { ok: true, how: '=', info: desc(el) }; // արդեն նույնն է
-    if (el.readOnly) return { ok: false, how: 'ro', info: 'readonly · ' + desc(el) + ' · ' + dumpCands() };
+    let kp;
+    try { kp = await viaKeypad(el, str); } catch (x) { kp = 'err:' + (x && x.message); }
+    await sleep(120);
+    if (read() === str) return { ok: true, how: 'K', info: desc(el) };
+    const kpNote = 'keypad:' + kp;
     const ev = (n) => { try { el.dispatchEvent(new Event(n, { bubbles: true })); } catch (x) {} };
     const nativeSet = (val) => { if (el.tagName === 'INPUT') { const st = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; st.call(el, val); } else { el.textContent = val; } };
     const tries = [
@@ -136,7 +187,7 @@
       await sleep(140); // սպասում ենք, որ հավելվածը չվերադարձնի արժեքը
       if (read() === str) return { ok: true, how: 'ABC'[i], info: desc(el) };
     }
-    return { ok: false, how: 'fail', info: desc(el) + ' · ' + dumpCands() };
+    return { ok: false, how: 'fail', info: kpNote + ' · ' + desc(el) + ' · ' + dumpCands() };
   }
   function readBalance() {
     try {
@@ -235,7 +286,7 @@
         }
         nAuto++;
         autoMsg = 'սեղմվեց ' + (dir > 0 ? 'Купить' : 'Продать') + ' #' + nAuto + ' (գումար $' + par.stake + ')';
-      });
+      }).catch((x) => { if (parPend === pp) parPend = null; parMsg = '⚠ սխալ՝ ' + (x && x.message); });
       return;
     }
     fire(b);

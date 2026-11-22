@@ -84,6 +84,16 @@
   function desc(e) {
     try { return (e.tagName || '?') + '[type=' + (e.type || '') + ',ro=' + (e.readOnly ? 1 : 0) + ',ce=' + (e.isContentEditable ? 1 : 0) + ',v=' + (e.value !== undefined ? e.value : (e.textContent || '').slice(0, 12)) + ']'; } catch (x) { return '?'; }
   }
+  function topmost(e) { // իրականում տեսանելի՞ է՝ նրա կենտրոնում հենց ինքն է վերևում
+    try {
+      const r = e.getBoundingClientRect();
+      if (r.width < 20 || r.height < 10) return false;
+      const x = r.left + r.width / 2, y = r.top + r.height / 2;
+      if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) return false;
+      const h = document.elementFromPoint(x, y);
+      return !!h && (h === e || e.contains(h) || h.contains(e));
+    } catch (x) { return false; }
+  }
   function findStakeEl() {
     const cands = [];
     try {
@@ -96,11 +106,11 @@
           const tx = node ? (node.textContent || '') : '';
           if (/(Сумма|Amount|Sum)/i.test(tx) && !/(Время|Time)/i.test(tx)) { ok = true; break; }
         }
-        cands.push({ e, ok });
+        cands.push({ e, ok, top: topmost(e) });
       });
     } catch (x) {}
-    const good = cands.find((c) => c.ok);
-    return good ? good.e : (cands[0] ? cands[0].e : null);
+    const best = cands.find((c) => c.top && c.ok) || cands.find((c) => c.top) || cands.find((c) => c.ok) || cands[0];
+    return best ? best.e : null;
   }
   let stakeEl = null;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -252,9 +262,10 @@
       out += 'KEYS: ' + (g ? Object.keys(g).join(',') : 'չգտնվեցին') + '\n';
       if (g && g._cont) out += 'CONT: ' + (g._cont.outerHTML || '').replace(/\s+/g, ' ').slice(0, 900) + '\n';
       else if (vs) { let c = vs; for (let i = 0; i < 4 && c.parentElement; i++) c = c.parentElement; out += 'NEAR: ' + (c.outerHTML || '').replace(/\s+/g, ' ').slice(0, 900) + '\n'; }
-      const fe = stakeEl || findStakeEl();
+      const fe = findStakeEl();
       if (fe) {
         const r0 = fe.getBoundingClientRect();
+        out += 'FIELDRECT: ' + Math.round(r0.left) + ',' + Math.round(r0.top) + ' ' + Math.round(r0.width) + 'x' + Math.round(r0.height) + ' top=' + topmost(fe) + ' vp=' + window.innerWidth + 'x' + window.innerHeight + '\n';
         for (const ch of ['7', '0', 'back', 'disp']) {
           const pt = keyPoint(ch, r0), t = document.elementFromPoint(pt[0], pt[1]);
           out += 'AT ' + ch + ' (' + Math.round(pt[0]) + ',' + Math.round(pt[1]) + '): ' + (t ? chain(t, 4) + ' txt=' + (t.textContent || '').trim().slice(0, 8) : 'null') + '\n';
@@ -269,7 +280,7 @@
   }
   async function setStakeAsync(v) { // վերադարձնում է { ok, how, info }
     const str = String(v);
-    if (!stakeEl || !document.contains(stakeEl)) stakeEl = findStakeEl();
+    if (!stakeEl || !document.contains(stakeEl) || !topmost(stakeEl)) stakeEl = findStakeEl();
     const el = stakeEl;
     if (!el) return { ok: false, how: 'no-el', info: 'դաշտ չկա · ' + dumpCands() };
     const read = () => String(el.value !== undefined ? el.value : el.textContent || '').trim().replace(',', '.');

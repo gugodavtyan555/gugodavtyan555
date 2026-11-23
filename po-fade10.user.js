@@ -697,13 +697,13 @@
     return r.map((v) => v / sd).concat([(last - pm) / psd, Math.log(sd / Math.abs(last) + 1e-12), /_otc$/i.test(sel || '') ? 1 : 0]).concat(ms).concat([ups]);
   }
   // ռեժիմ՝ «ծուռ/կողքային» (լավ) թե «թրենդային» (վատ)՝ Kaufman-ի արդյունավետության գործակից (ER = զուտ շարժում / անցած ճանապարհ)
-  const ER_W = 120, ER_MAX = 0.12, ER_MAX_S = 0.22;
+  const ER_W = 90, ER_MAX = 0.14, ER_MAX_S = 0.25;
   function regimeOf(asset) {
     const arr = ticks[asset]; if (!arr || !arr.length) return { ok: false, er: NaN, why: 'տիկեր չկան' };
     const tl = Math.floor(arr[arr.length - 1].t), px = [];
     for (let j = ER_W; j >= 0; j--) { const v = priceAt(arr, tl - j); if (v === null) return { ok: false, er: NaN, why: 'պատմությունը քիչ է' }; px.push(v); }
     const er = (w) => { const q = px.slice(-w - 1); let path = 0; for (let i = 1; i < q.length; i++) path += Math.abs(q[i] - q[i - 1]); return path ? Math.abs(q[q.length - 1] - q[0]) / path : 1; };
-    const eL = er(ER_W), eS = er(40);
+    const eL = er(ER_W), eS = er(30);
     return { ok: eL <= ER_MAX && eS <= ER_MAX_S, er: eL, why: 'ER ' + eL.toFixed(2) + '/' + eS.toFixed(2) };
   }
   function aiRate() { const h = ai.hits; return h.length ? h.reduce((a, b) => a + b, 0) / h.length : 0; }
@@ -924,6 +924,7 @@
     return out;
   }
   async function switchTo(id) {
+    delete ticks[id]; lPend = lPend.filter((q) => q.asset !== id); // հին (հնացած) տիկերը չեն խառնվում նոր պատմությանը
     const cur = sel ? dispName(sel) : '', want = dispName(id);
     const openers = cur ? findByText(cur, null).filter((e) => e.getBoundingClientRect().top < innerHeight * 0.4) : [];
     if (!openers.length) { rotMsg = '🔄 ընթացիկ զույգի կոճակը չգտնվեց (' + cur + ')'; return false; }
@@ -953,7 +954,7 @@
     if (ratio < 3) return { ok: false, why: 'միակողմանի վազք (' + ratio.toFixed(1) + ')' };
     return { ok: true, why: 'լավ՝ ' + w.length + ' տիկ, ծուռ ' + ratio.toFixed(1) };
   }
-  let evalAt = Date.now() + 5000, trendBad = 0;
+  let evalAt = Date.now() + 5000, trendBad = 0, freshPair = true;
   setInterval(async () => {
     if (!ROTATE || !AUTO || !running || rotBusy || parPend || prep) return;
     const now = Date.now();
@@ -961,10 +962,15 @@
     const pay0 = payoutNow();
     if (pay0 !== null && pay0 < ROT_PAY) { must = true; rotMsg = '🔄 ' + sel + ' եկամտ. ' + pay0 + '% < ' + ROT_PAY + '%՝ փոխում եմ'; }
     else if (now >= evalAt) {
+      const rgm = regimeOf(sel);
+      if (isNaN(rgm.er)) { evalAt = now + 4000; rotMsg = '🔄 ' + sel + '՝ հավաքում եմ գրաֆիկի պատմություն (' + rgm.why + ')…'; return; } // նոր զույգ՝ դեռ չի կարելի գնահատել
       const g = chartGood(sel);
-      const rgm = regimeOf(sel); if (g.ok && !rgm.ok && ++trendBad >= 2) { g.ok = false; g.why = 'թրենդային գրաֆիկ (' + rgm.why + ')'; } if (rgm.ok) trendBad = 0;
-      if (!g.ok) { trendBad = 0; must = true; rotMsg = '🔄 ' + sel + '՝ վատ գրաֆիկ (' + g.why + ')՝ փոխում եմ'; }
-      else { rotMsg = '🔄 ' + sel + ' ' + g.why + ' (' + (pay0 === null ? '?' : pay0) + '%)՝ մնում եմ'; evalAt = now + 30000; return; }
+      if (g.ok && !rgm.ok) { g.ok = false; g.why = 'թրենդային գրաֆիկ (' + rgm.why + ')'; }
+      if (!g.ok && !freshPair && ++trendBad < 2) { g.ok = true; g.why = 'սպասում եմ՝ վատ նշան (' + g.why + ')'; evalAt = now + 12000; rotMsg = '🔄 ' + sel + '՝ ' + g.why; return; } // արդեն ընտրված զույգ՝ փոխում ենք 2-րդ վատ գնահատականից
+      freshPair = false;
+      if (g.ok) trendBad = 0;
+      if (!g.ok) { trendBad = 0; must = true; rotMsg = '🔄 ' + sel + '՝ վատ գրաֆիկ (' + g.why + ')՝ փոխում եմ, մինչև լավ գտնեմ'; }
+      else { rotMsg = '🔄 ' + sel + ' ' + g.why + ' (' + (pay0 === null ? '?' : pay0) + '%)՝ մնում եմ'; evalAt = now + 15000; return; }
     }
     { const ph = pairHits[sel] || []; if (!must && ph.length >= 25 && ph.reduce((a, b) => a + b, 0) / ph.length < 0.44) { must = true; badUntil[sel] = now + BAD_MIN * 60000; pairHits[sel] = []; rotMsg = '🔄 ' + sel + '՝ AI-ի ճշգրտությունը այս զույգի վրա <44%՝ փոխում եմ'; } }
     if (!must && forceSwitch) { must = true; rotMsg = '🔄 ' + sel + '՝ ' + BAD_LOSSES + ' կորուստ իրար հետևից՝ զույգը ' + BAD_MIN + ' րոպե դուրս եմ թողնում'; }
@@ -978,7 +984,7 @@
       if (id) await switchTo(id);
       if (hide) box.style.visibility = 'visible';
     } catch (e) { rotMsg = '🔄 սխալ՝ ' + (e && e.message); }
-    forceSwitch = false; lastSwitch = Date.now(); evalAt = Date.now() + ROT_WARM * 1000; rotBusy = false;
+    forceSwitch = false; freshPair = true; trendBad = 0; lastSwitch = Date.now(); evalAt = Date.now() + 8000; rotBusy = false;
   }, 4000);
   // ---- WebSocket ----
   const Orig = window.WebSocket;

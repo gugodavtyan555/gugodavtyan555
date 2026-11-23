@@ -671,7 +671,7 @@
       }
     }
   } catch (e) {}
-  let aiErr = '';
+  let aiErr = '', aiReg = null;
   let lSec = 0, lPend = [], lSavedAt = 0, aiLast = null;
   const sigm = (z) => 1 / (1 + Math.exp(-Math.max(-30, Math.min(30, z))));
   const aiZ = (x) => x.map((v, i) => (v - ai.mu[i]) / (Math.sqrt(ai.m2[i] / Math.max(1, ai.n)) + 1e-9));
@@ -696,6 +696,16 @@
     const ups = r.filter((v) => v > 0).length / r.length - 0.5; // վերջին 20 վրկ-ի աճող քայլերի մասնաբաժին
     return r.map((v) => v / sd).concat([(last - pm) / psd, Math.log(sd / Math.abs(last) + 1e-12), /_otc$/i.test(sel || '') ? 1 : 0]).concat(ms).concat([ups]);
   }
+  // ռեժիմ՝ «ծուռ/կողքային» (լավ) թե «թրենդային» (վատ)՝ Kaufman-ի արդյունավետության գործակից (ER = զուտ շարժում / անցած ճանապարհ)
+  const ER_W = 120, ER_MAX = 0.12, ER_MAX_S = 0.22;
+  function regimeOf(asset) {
+    const arr = ticks[asset]; if (!arr || !arr.length) return { ok: false, er: NaN, why: 'տիկեր չկան' };
+    const tl = Math.floor(arr[arr.length - 1].t), px = [];
+    for (let j = ER_W; j >= 0; j--) { const v = priceAt(arr, tl - j); if (v === null) return { ok: false, er: NaN, why: 'պատմությունը քիչ է' }; px.push(v); }
+    const er = (w) => { const q = px.slice(-w - 1); let path = 0; for (let i = 1; i < q.length; i++) path += Math.abs(q[i] - q[i - 1]); return path ? Math.abs(q[q.length - 1] - q[0]) / path : 1; };
+    const eL = er(ER_W), eS = er(40);
+    return { ok: eL <= ER_MAX && eS <= ER_MAX_S, er: eL, why: 'ER ' + eL.toFixed(2) + '/' + eS.toFixed(2) };
+  }
   function aiRate() { const h = ai.hits; return h.length ? h.reduce((a, b) => a + b, 0) / h.length : 0; }
   function aiLow() { // Wilson ստորին սահման (90%)՝ ճշգրտության «վատագույն հավանական» արժեքը
     const n = ai.hits.length; if (!n) return 0; const p = aiRate(), z = 1.28, z2 = z * z;
@@ -703,7 +713,7 @@
   }
   function aiValid() { return ai.n >= L_MINN && ai.hits.length >= L_MINHITS && aiLow() >= L_BE; }
   function aiLine() {
-    return '🧠 AI՝ սովորել է ' + ai.n + ' օրինակ | վստահ կանխ. ' + ai.hits.length + ' · ճշգրտ ' + (ai.hits.length ? (aiRate() * 100).toFixed(1) + '% (ստորին ' + (aiLow() * 100).toFixed(1) + '%)' : '—') + ' | ' + (aiValid() ? '✅ առևտուր թույլատրված' : '🧪 առևտուր միայն ամենավստահ սիգնալներով (ստորին ≥' + (L_BE * 100).toFixed(1) + '%՝ երբ բոլոր սիգնալները)') + (aiLast !== null ? ' | հիմա p=' + aiLast.toFixed(2) : '');
+    return '🧠 AI՝ սովորել է ' + ai.n + ' օրինակ | վստահ կանխ. ' + ai.hits.length + ' · ճշգրտ ' + (ai.hits.length ? (aiRate() * 100).toFixed(1) + '% (ստորին ' + (aiLow() * 100).toFixed(1) + '%)' : '—') + ' | ' + (aiValid() ? '✅ առևտուր թույլատրված' : '🧪 առևտուր միայն ամենավստահ սիգնալներով (ստորին ≥' + (L_BE * 100).toFixed(1) + '%՝ երբ բոլոր սիգնալները)') + (aiReg ? ' | ' + (aiReg.ok ? '✅ ծուռ գրաֆիկ' : '⛔ թրենդ՝ սպասում եմ') + ' (' + aiReg.why + ')' : '') + (aiLast !== null ? ' | p=' + aiLast.toFixed(2) : '');
   }
   function learnTick(asset, t) {
     if (sel && asset !== sel) return;
@@ -727,7 +737,8 @@
     if (Date.now() - lSavedAt > 30000) { lSavedAt = Date.now(); try { localStorage.setItem(AIK, JSON.stringify(ai)); } catch (e) {} }
     const valid = aiValid();
     const probOk = !valid && PROB && Math.abs(p - 0.5) >= L_PROB; // մինչև AI-ի ապացուցումը՝ միայն ամենավստահ կանխատեսումներ
-    const busy = !!(parPend || prep) || !running; // գործարքի ընթացքում կամ գումարը դեռ չի դրվել՝ սիգնալ չենք տալիս
+    const rg = regimeOf(asset); aiReg = rg;
+    const busy = !!(parPend || prep) || !running || !rg.ok; // թրենդային գրաֆիկում առևտուր չենք անում // գործարքի ընթացքում կամ գումարը դեռ չի դրվել՝ սիգնալ չենք տալիս
     if (!busy && ((conf && valid) || probOk) && t - (lastSig['AI_' + asset] || 0) >= L_GAP) {
       lastSig['AI_' + asset] = t; lastSigWall = Date.now(); nSig++;
       const dir = p > 0.5 ? 1 : -1;
@@ -942,7 +953,7 @@
     if (ratio < 3) return { ok: false, why: 'միակողմանի վազք (' + ratio.toFixed(1) + ')' };
     return { ok: true, why: 'լավ՝ ' + w.length + ' տիկ, ծուռ ' + ratio.toFixed(1) };
   }
-  let evalAt = Date.now() + 5000;
+  let evalAt = Date.now() + 5000, trendBad = 0;
   setInterval(async () => {
     if (!ROTATE || !AUTO || !running || rotBusy || parPend || prep) return;
     const now = Date.now();
@@ -951,7 +962,8 @@
     if (pay0 !== null && pay0 < ROT_PAY) { must = true; rotMsg = '🔄 ' + sel + ' եկամտ. ' + pay0 + '% < ' + ROT_PAY + '%՝ փոխում եմ'; }
     else if (now >= evalAt) {
       const g = chartGood(sel);
-      if (!g.ok) { must = true; rotMsg = '🔄 ' + sel + '՝ վատ գրաֆիկ (' + g.why + ')՝ փոխում եմ'; }
+      const rgm = regimeOf(sel); if (g.ok && !rgm.ok && ++trendBad >= 2) { g.ok = false; g.why = 'թրենդային գրաֆիկ (' + rgm.why + ')'; } if (rgm.ok) trendBad = 0;
+      if (!g.ok) { trendBad = 0; must = true; rotMsg = '🔄 ' + sel + '՝ վատ գրաֆիկ (' + g.why + ')՝ փոխում եմ'; }
       else { rotMsg = '🔄 ' + sel + ' ' + g.why + ' (' + (pay0 === null ? '?' : pay0) + '%)՝ մնում եմ'; evalAt = now + 30000; return; }
     }
     { const ph = pairHits[sel] || []; if (!must && ph.length >= 25 && ph.reduce((a, b) => a + b, 0) / ph.length < 0.44) { must = true; badUntil[sel] = now + BAD_MIN * 60000; pairHits[sel] = []; rotMsg = '🔄 ' + sel + '՝ AI-ի ճշգրտությունը այս զույգի վրա <44%՝ փոխում եմ'; } }

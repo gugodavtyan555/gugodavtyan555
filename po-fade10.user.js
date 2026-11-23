@@ -21,7 +21,7 @@
   const REAL_MAX_STAKE = 10;      // $ REAL-ում ոչ մի գործարք այս գումարից մեծ չէ
   const REAL_LOSS_LIMIT = 1000000000;     // $ երբ հաշվեկշիռը նվազի սկզբնականից այսքանով, ամեն ինչ կանգնում է
   const REAL_MAX_TRADES = 1000000;    // REAL-ում առավելագույն գործարքներ մեկ էջի բեռնման ընթացքում
-  const MIN_PAYOUT = 80;    // % նվազագույն եկամտաբերություն, որի դեպքում սեղմում է
+  const MIN_PAYOUT = 92;    // % նվազագույն եկամտաբերություն, որի դեպքում սեղմում է
   const MAX_AUTO = 1000000;     // նվազագույն սահման՝ մեկ էջի բեռնման ընթացքում առավելագույն գործարքներ
   // ---- 8 քայլանոց սանդուղք (parlay)՝ շահածը գնում է հաջորդ գործարքին (միայն Demo) ----
   const PARLAY = true;
@@ -92,7 +92,7 @@
   setInterval(() => {
     const real = !ONLY_REAL || isReal(sel);
     snd.textContent = !soundOn ? ' 🔇 ' : (unlocked ? ' 🔊 ' : ' 🔊? սեղմեք ');
-    body.textContent = (AUTO ? (running ? '▶ ԱՇԽԱՏՈՒՄ Է ' : '⏸ ԿԱՆԳՆԱԾ ') : '') + (AUTO ? (acct() === 'real' ? '💰REAL' + (realOk ? '' : '(չհաստատված)') + ' ' : '') + '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + (ROTATE ? '\n🔄 ' + (rotMsg ? rotMsg.replace(/^🔄 /, '') : 'հերթափոխ՝ հաջորդ փոխում ' + Math.max(0, Math.ceil((ROT_SEC * 1000 - (Date.now() - lastSwitch)) / 1000)) + ' վրկ հետո') : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (sel ? (isReal(sel) ? ' (REAL)' : ' (OTC)') : '') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
+    body.textContent = (AUTO ? (running ? '▶ ԱՇԽԱՏՈՒՄ Է ' : '⏸ ԿԱՆԳՆԱԾ ') : '') + (AUTO ? (acct() === 'real' ? '💰REAL' + (realOk ? '' : '(չհաստատված)') + ' ' : '') + '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + (ROTATE ? '\n🔄 ' + (rotMsg ? rotMsg.replace(/^🔄 /, '') : 'գրաֆիկի գնահատում ' + Math.max(0, Math.ceil((evalAt - Date.now()) / 1000)) + ' վրկ հետո') : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (sel ? (isReal(sel) ? ' (REAL)' : ' (OTC)') : '') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
       '\n' + featText() + '\nարդյունք ըստ ձեր ուշացման (շահույթի շեմ ≥' + (isReal(sel) ? 53.5 : 52.1) + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
       '';
@@ -799,10 +799,32 @@
     try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); } catch (e) {}
     return false;
   }
+  const ROT_PAY = 92;      // % նվազագույն եկամտաբերություն
+  const ROT_WARM = 16;     // վրկ. տիկ կուտակել նոր զույգի վրա՝ գրաֆիկը գնահատելու համար
+  function chartGood(asset) { // էվրիստիկ՝ բավարար տիկեր, ոչ հարթ, ոչ մեկ ուղղությամբ սուր վազք
+    const arr = ticks[asset]; if (!arr || !arr.length) return { ok: false, why: 'տիկեր չկան' };
+    const tl = arr[arr.length - 1].t, w = arr.filter((x) => x.t >= tl - 20);
+    if (w.length < 15) return { ok: false, why: 'քիչ տիկեր (' + w.length + '/20վրկ)' };
+    const ps = w.map((x) => x.p), dist = new Set(ps).size;
+    if (dist < 4) return { ok: false, why: 'գրաֆիկը հարթ է' };
+    let path = 0; for (let i = 1; i < ps.length; i++) path += Math.abs(ps[i] - ps[i - 1]);
+    const net = Math.abs(ps[ps.length - 1] - ps[0]) || 1e-12, ratio = path / net;
+    if (ratio < 3) return { ok: false, why: 'միակողմանի վազք (' + ratio.toFixed(1) + ')' };
+    return { ok: true, why: 'լավ՝ ' + w.length + ' տիկ, ծուռ ' + ratio.toFixed(1) };
+  }
+  let evalAt = Date.now() + 5000;
   setInterval(async () => {
     if (!ROTATE || !AUTO || !running || rotBusy || parPend || prep) return;
     const now = Date.now();
-    if (now - lastSigWall < 4000 || now - lastSwitch < ROT_SEC * 1000) return;
+    let must = false;
+    const pay0 = payoutNow();
+    if (pay0 !== null && pay0 < ROT_PAY) { must = true; rotMsg = '🔄 ' + sel + ' եկամտ. ' + pay0 + '% < ' + ROT_PAY + '%՝ փոխում եմ'; }
+    else if (now >= evalAt) {
+      const g = chartGood(sel);
+      if (!g.ok) { must = true; rotMsg = '🔄 ' + sel + '՝ վատ գրաֆիկ (' + g.why + ')՝ փոխում եմ'; }
+      else { rotMsg = '🔄 ' + sel + ' ' + g.why + ' (' + (pay0 === null ? '?' : pay0) + '%)՝ մնում եմ'; evalAt = now + 30000; return; }
+    }
+    if (!must || now - lastSwitch < 6000) return;
     rotBusy = true;
     try {
       const hide = box && box.style; if (hide) box.style.visibility = 'hidden';
@@ -811,7 +833,7 @@
       if (id) await switchTo(id);
       if (hide) box.style.visibility = 'visible';
     } catch (e) { rotMsg = '🔄 սխալ՝ ' + (e && e.message); }
-    lastSwitch = Date.now(); rotBusy = false;
+    lastSwitch = Date.now(); evalAt = Date.now() + ROT_WARM * 1000; rotBusy = false;
   }, 4000);
   // ---- WebSocket ----
   const Orig = window.WebSocket;

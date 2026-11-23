@@ -942,6 +942,33 @@
     });
     return out;
   }
+  const idOf = (d) => d.replace(/\s*OTC$/i, '').replace('/', '') + (/OTC$/i.test(d) ? '_otc' : '');
+  async function switchAuto() { // բացում է զույգերի ցանկը և վերցնում ՎԵՐԵՎԻՑ առաջին ≥92% զույգը (որ վատ չէ ու ընթացիկը չէ)
+    const cur = sel ? dispName(sel) : '';
+    const openers = cur ? findByText(cur, null).filter((e) => e.getBoundingClientRect().top < innerHeight * 0.4) : [];
+    if (!openers.length) return false;
+    const tapEl = (e) => { const r = e.getBoundingClientRect(); tapPt([r.left + r.width / 2, r.top + r.height / 2]); fire(e); };
+    tapEl(openers[0]); await sleep(900);
+    const rows = [];
+    document.querySelectorAll('*').forEach((e) => {
+      if (e.children.length > 3 || (box && box.contains(e))) return;
+      const t = normT(e); if (!/^[A-Z]{2,4}\/[A-Z]{2,4}( OTC)?$/.test(t)) return;
+      const r = e.getBoundingClientRect(); if (!(r.width > 0 && r.height > 0)) return;
+      let par = e, pay = null;
+      for (let k = 0; k < 5 && par && pay === null; k++) { par = par.parentElement; const m = par && String(par.textContent || '').match(/\+\s*(\d{2,3})\s*%/); if (m) pay = +m[1]; }
+      rows.push({ el: e, name: t, pay, top: r.top, id: idOf(t) });
+    });
+    rows.sort((a, b) => a.top - b.top);
+    const now = Date.now();
+    const pick = rows.find((r) => r.name !== cur.toUpperCase() && r.pay !== null && r.pay >= ROT_PAY && !(badUntil[r.id] && badUntil[r.id] > now) && !(r.top > innerHeight * 0.9));
+    if (!pick) { rotMsg = '🔄 ցանկում հարմար ≥' + ROT_PAY + '% զույգ չգտա (' + rows.length + ' տող)'; try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); } catch (e) {} return false; }
+    delete ticks[pick.id]; lPend = lPend.filter((q) => q.asset !== pick.id);
+    tapEl(pick.el); await sleep(1500);
+    if (sel === pick.id || (sel && dispName(sel).toUpperCase() === pick.name)) { rotMsg = '🔄 անցա ' + pick.name + ' (' + pick.pay + '%, ցանկի վերևից)'; return true; }
+    rotMsg = '🔄 «' + pick.name + '»-ին չանցավ (ընթացիկ՝ ' + sel + ')';
+    try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); } catch (e) {}
+    return true; // ցանկը մշակվեց, պահեստայինը չի պետք
+  }
   async function switchTo(id) {
     delete ticks[id]; lPend = lPend.filter((q) => q.asset !== id); // հին (հնացած) տիկերը չեն խառնվում նոր պատմությանը
     const cur = sel ? dispName(sel) : '', want = dispName(id);
@@ -987,7 +1014,7 @@
       if (!g.ok && !freshPair && ++trendBad < 2) { g.ok = true; g.why = 'սպասում եմ՝ վատ նշան (' + g.why + ')'; evalAt = now + 12000; rotMsg = '🔄 ' + sel + '՝ ' + g.why; return; } // արդեն ընտրված զույգ՝ փոխում ենք 2-րդ վատ գնահատականից
       freshPair = false;
       if (g.ok) trendBad = 0;
-      if (!g.ok) { trendBad = 0; must = true; rotMsg = '🔄 ' + sel + '՝ վատ գրաֆիկ (' + g.why + ')՝ փոխում եմ, մինչև լավ գտնեմ'; }
+      if (!g.ok) { trendBad = 0; must = true; badUntil[sel] = now + 3 * 60000; rotMsg = '🔄 ' + sel + '՝ վատ գրաֆիկ (' + g.why + ')՝ փոխում եմ, մինչև լավ գտնեմ'; }
       else { rotMsg = '🔄 ' + sel + ' ' + g.why + ' (' + (pay0 === null ? '?' : pay0) + '%)՝ մնում եմ'; evalAt = now + 15000; return; }
     }
     { const ph = pairHits[sel] || []; if (!must && ph.length >= 15 && ph.reduce((a, b) => a + b, 0) / ph.length < 0.42) { must = true; badUntil[sel] = now + BAD_MIN * 60000; pairHits[sel] = []; rotMsg = '🔄 ' + sel + '՝ AI-ի ճշգրտությունը այս զույգի վրա <42%՝ փոխում եմ'; } }
@@ -999,7 +1026,8 @@
       const hide = box && box.style; if (hide) box.style.visibility = 'hidden';
       let id = null;
       for (let k = 0; k < ROT_LIST.length; k++) { const c = ROT_LIST[(rotI + k) % ROT_LIST.length]; if (c !== sel && !(badUntil[c] && badUntil[c] > Date.now())) { id = c; rotI = (rotI + k + 1) % ROT_LIST.length; break; } }
-      if (id) await switchTo(id);
+      const okAuto = await switchAuto();
+      if (!okAuto && id) await switchTo(id); // պահեստային՝ ֆիքսված ցանկով
       if (hide) box.style.visibility = 'visible';
     } catch (e) { rotMsg = '🔄 սխալ՝ ' + (e && e.message); }
     forceSwitch = false; freshPair = true; trendBad = 0; lastSwitch = Date.now(); evalAt = Date.now() + 8000; rotBusy = false;

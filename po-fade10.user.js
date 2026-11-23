@@ -45,7 +45,7 @@
 
   // ---- վահանակ ----
   const box = document.createElement('div');
-  box.style.cssText = 'position:fixed;bottom:90px;left:4px;z-index:99999;background:#000c;color:#0f0;font:11px monospace;padding:4px;max-width:80vw;white-space:pre-wrap';
+  box.style.cssText = 'position:fixed;bottom:90px;left:4px;z-index:99999;background:#000c;color:#0f0;font:11px monospace;padding:4px;max-width:80vw;max-height:38vh;overflow:auto;white-space:pre-wrap';
   const body = document.createElement('div');
   const grip = document.createElement('span');
   grip.textContent = ' ✥ ';
@@ -394,10 +394,13 @@
   }
   async function setStakeAsync(v) { // միայն ստուգված ցուցանակով եղանակ՝ DOM-ի կեղծ հաջողություններ չկան
     const str = String(v);
+    const hide = typeof box !== 'undefined' && box && box.style;
     try {
+      if (hide) box.style.visibility = 'hidden'; // վահանակը չի ծածկում դաշտը/ստեղները սեղմման ժամանակ
       const pr = await typeProp(str);
       return pr.ok ? { ok: true, how: 'P', info: pr.info } : { ok: false, how: 'fail', info: pr.info };
     } catch (x) { return { ok: false, how: 'err', info: 'սխալ՝ ' + (x && x.message) }; }
+    finally { if (hide) box.style.visibility = 'visible'; }
   }
   function readBalance() {
     try {

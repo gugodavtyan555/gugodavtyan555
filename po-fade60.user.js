@@ -752,8 +752,6 @@
     const reasons = [];
     if (ratio < V_MIN) reasons.push('սեղմված ' + ratio.toFixed(2) + '<' + V_MIN);
     if (act < ACT_MIN) reasons.push('քիչ ակտիվ ' + Math.round(act * 100) + '%');
-    if (W >= 90 && trend > TREND_MAX) reasons.push('թրենդ ' + trend.toFixed(2) + '>' + TREND_MAX);
-    if (W >= 90 && (pos < POS_LO || pos > POS_HI)) reasons.push('տիրույթի ծայրում ' + Math.round(pos * 100) + '%');
     return { ok: reasons.length === 0, er: ratio, why: reasons.length ? reasons.join(', ') : 'կենդանություն ' + ratio.toFixed(2) + ', թրենդ ' + trend.toFixed(2) + ', դիրք ' + Math.round(pos * 100) + '%' };
   }
   function aiRate() { const h = ai.hits; return h.length ? h.reduce((a, b) => a + b, 0) / h.length : 0; }

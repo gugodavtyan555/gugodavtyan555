@@ -564,14 +564,22 @@
             if (bal1 === null) { if (now > tEnd + 1600) { clearInterval(poll); pp.byBal = false; } return; }
             const diff = Math.round((bal1 - bal0) * 100) / 100;
             const ew = pp.stake * pp.pay / 100;
-            const win = diff > ew * 0.5;
-            let waitMore = false; // եթե գինը ասում է «շահել է», բայց փողը դեռ չի հաշվեկշռում՝ սպասում ենք (հարթակը երբեմն ուշացնում է վճարումը)
-            if (!win && now <= tEnd + 5000) { try { const ar = ticks[pp.asset], xp = ar ? priceAt(ar, pp.t + HOLD + 0.3) : null; if (xp !== null && (xp - pp.entry) * pp.dir > 0) waitMore = true; } catch (e) {} }
-            if (win || (!waitMore && now > tEnd + 1600 && (balStable() || now > tEnd + 3500))) {
+            const win = diff > ew * 0.5, lossBal = diff < -pp.stake * 0.5;
+            // հաշվեկշռի ցուցադրումը հարթակում ուշանում է՝ հաշվեկշռի «0»-ն չի նշանակում ոչ-ոքի։ Երկիմաստ դեպքում որոշում է ԳԻՆԸ (հարթակի նույն տիկային հոսքով, ժամկետի պահին)
+            let xp = null; try { const ar = ticks[pp.asset]; xp = ar ? priceAt(ar, pp.t + HOLD + 0.3) : null; } catch (e) {}
+            const mvP = xp !== null ? (xp - pp.entry) * pp.dir : null;
+            let res = null, how = '';
+            if (win) { res = 1; how = 'հաշվեկշիռ'; }
+            else if (now > tEnd + 1600 && (balStable() || now > tEnd + 3500)) {
+              if (mvP === null) { res = lossBal ? -1 : 0; how = 'հաշվեկշիռ'; }
+              else if (mvP > 0) { if (now > tEnd + 5000) { if (lossBal) { res = -1; how = 'հաշվեկշիռ (գինը մոտ էր)'; } else { res = 1; how = 'գին (վճարումը ուշացավ)'; } } } // սպասում ենք վճարմանը
+              else if (mvP < 0) { res = -1; how = lossBal ? 'հաշվեկշիռ+գին' : 'գին'; }
+              else { res = 0; how = 'գին՝ հավասար'; }
+            }
+            if (res !== null) {
               clearInterval(poll);
-              const res = win ? 1 : diff < -pp.stake * 0.5 ? -1 : 0; // շահ / կորուստ / վերադարձ (ոչ-ոքի)
               ledger = Math.round((bal0 + (res > 0 ? ew : res < 0 ? -pp.stake : 0)) * 100) / 100;
-              parMsg = 'հաշվեկշիռ ' + bal0 + ' → ' + bal1 + ' (' + (diff > 0 ? '+' : '') + diff + ') ' + (res > 0 ? 'ՇԱՀ' : res < 0 ? 'կորուստ' : 'ոչ-ոքի (վերադարձ)');
+              parMsg = 'արդյունք՝ ' + (res > 0 ? 'ՇԱՀ' : res < 0 ? 'կորուստ' : 'ոչ-ոքի') + ' [' + how + '] · հաշվեկշիռ ' + bal0 + ' → ' + bal1 + ' (' + (diff > 0 ? '+' : '') + diff + ')';
               applyParlay(res, pp.pay, 0);
             }
           }, 200);

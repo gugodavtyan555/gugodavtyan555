@@ -655,9 +655,9 @@
   let ai = { w: new Array(L_DIM + 1).fill(0), mu: new Array(L_DIM).fill(0), m2: new Array(L_DIM).fill(1), n: 0, hits: [] };
   try { const o = JSON.parse(localStorage.getItem(AIK) || 'null'); if (o && o.w && o.w.length === L_DIM + 1) ai = o; } catch (e) {}
   try { // հին (v1) մոդելի գիտելիքը պահպանում ենք՝ առաջին 23 հատկանիշները նույնն են, նորերը՝ զրոյական կշռով
-    if (ai.n === 0) {
+    {
       const o = JSON.parse(localStorage.getItem('po_fade10_ai_v1') || 'null');
-      if (o && o.w && o.w.length === 24 && o.n > 0) {
+      if (o && o.w && o.w.length === 24 && o.n > ai.n) {
         const add = L_DIM - 23;
         ai = { w: o.w.slice(0, 23).concat(new Array(add).fill(0), [o.w[23]]), mu: o.mu.concat(new Array(add).fill(0)), m2: o.m2.concat(new Array(add).fill(o.n)), n: o.n, hits: [] };
       }
@@ -910,7 +910,7 @@
     try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); } catch (e) {}
     return false;
   }
-  const ROT_STAY = 120;    // վրկ. առավելագույնը մեկ զույգի վրա
+  const ROT_STAY = 600;    // վրկ. առավելագույնը մեկ զույգի վրա
   const ROT_PAY = 92;      // % նվազագույն եկամտաբերություն
   const ROT_WARM = 16;     // վրկ. տիկ կուտակել նոր զույգի վրա՝ գրաֆիկը գնահատելու համար
   function chartGood(asset) { // էվրիստիկ՝ բավարար տիկեր, ոչ հարթ, ոչ մեկ ուղղությամբ սուր վազք

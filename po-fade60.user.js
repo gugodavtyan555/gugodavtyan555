@@ -7,7 +7,7 @@
 (function () {
   // ===== կարգավորումներ =====
   const LOOK = 2;          // վրկ. նայում ենք վերջին շարժմանը
-  const WITH_IMPULSE = false; // true՝ իմպուլսի ՀԵՏ (շարունակություն), false՝ հակառակ (fade)
+  const WITH_IMPULSE = true; // true՝ իմպուլսի ՀԵՏ (շարունակություն), false՝ հակառակ (fade)
   const BB_N = 30;         // վրկ. Bollinger-ի պատուհան
   const BB_K = 2.0;        // σ շեմ
   const RATIO_MIN = 2.5;   // շարժումը պետք է լինի ≥ այդքան անգամ ավելի մեծ, քան վերջին 5 րոպեի 75%-ը

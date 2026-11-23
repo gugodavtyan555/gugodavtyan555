@@ -448,7 +448,7 @@
     }
     parPend = null; savePar();
     prepareNext(); // անմիջապես դնել հաջորդ գումարը, որ պատրաստ լինի հաջորդ սիգնալին
-    { const q = queuedSig; queuedSig = null; if (q && Date.now() - q.w < 5000 && (!sel || q.asset === sel)) { try { autoClick(q.dir, q.asset, q.prob); } catch (e) {} } } // հերթում սպասող սիգնալը
+    queuedSig = null;
   }
   function prepareNext() {
     if (!PARLAY || !AUTO || !running) return;
@@ -526,7 +526,6 @@
     if (!b) { autoMsg = 'կոճակը չի գտնվել'; return; }
     if (PARLAY) {
       if (parPend) {
-        if (parPend.wall && Date.now() - parPend.wall > HOLD * 1000 - 1000) queuedSig = { dir, asset, w: Date.now(), prob }; // գործարքը վերջանում է՝ սիգնալը հերթում է
         autoMsg = 'սպասում եմ նախորդ գործարքի արդյունքին'; return;
       }
       const bal0 = getBal0();
@@ -724,7 +723,8 @@
     if (Date.now() - lSavedAt > 30000) { lSavedAt = Date.now(); try { localStorage.setItem(AIK, JSON.stringify(ai)); } catch (e) {} }
     const valid = aiValid();
     const probOk = !valid && PROB && Math.abs(p - 0.5) >= L_PROB; // մինչև AI-ի ապացուցումը՝ միայն ամենավստահ կանխատեսումներ
-    if (((conf && valid) || probOk) && t - (lastSig['AI_' + asset] || 0) >= L_GAP) {
+    const busy = !!(parPend || prep) || !running; // գործարքի ընթացքում կամ գումարը դեռ չի դրվել՝ սիգնալ չենք տալիս
+    if (!busy && ((conf && valid) || probOk) && t - (lastSig['AI_' + asset] || 0) >= L_GAP) {
       lastSig['AI_' + asset] = t; lastSigWall = Date.now(); nSig++;
       const dir = p > 0.5 ? 1 : -1;
       autoClick(dir, asset); showOverlay(dir, asset, p);

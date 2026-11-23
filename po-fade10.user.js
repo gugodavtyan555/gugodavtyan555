@@ -64,7 +64,7 @@
       if (a === 'unknown') { autoMsg = 'հաշիվը չի որոշվել՝ չեմ սկսում'; return; }
       if (a === 'real') {
         if (!ALLOW_REAL) { autoMsg = 'REAL հաշիվ՝ արգելված է'; return; }
-        const ok = confirm('⚠ REAL հաշիվ՝ ավտոմատ առևտուրը ՍԿՍՎՈՒՄ Է։\n\nՍահմաններ՝\n• մեկ գործարք՝ առավելագույնը $' + REAL_MAX_STAKE + '\n• կորստի սահման՝ $' + REAL_LOSS_LIMIT + ' (հետո կանգնում է)\n• առավելագույնը ' + REAL_MAX_TRADES + ' գործարք\n• սանդուղք՝ ' + STEPS + ' քայլ, սկսած $' + STAKE0 + '\n\nԱռավելությունը ապացուցված չէ։ Շարունակե՞լ։');
+        const ok = confirm('⚠ REAL հաշիվ՝ ավտոմատ առևտուրը ՍԿՍՎՈՒՄ Է։\n\nՍահմաններ՝\n• մեկ գործարք՝ առավելագույնը $' + REAL_MAX_STAKE + '\n• կորստի սահման՝ $' + REAL_LOSS_LIMIT + ' (հետո կանգնում է)\n• գործարքների քանակ՝ ' + (REAL_MAX_TRADES >= 1000000 ? 'անսահմանափակ' : REAL_MAX_TRADES)\n• սանդուղք՝ ' + STEPS + ' քայլ, սկսած $' + STAKE0 + '\n\nԱռավելությունը ապացուցված չէ։ Շարունակե՞լ։');
         if (!ok) { autoMsg = 'REAL՝ չեղարկվեց'; return; }
         realOk = true; sessBal0 = readBalance();
       } else { realOk = false; }

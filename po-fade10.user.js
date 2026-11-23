@@ -426,6 +426,7 @@
       return isNaN(v) ? null : v;
     } catch (e) { return null; }
   }
+  const pairRes = {}, pairHits = {}; // զույգի վերջին արդյունքները / AI-ի կանխատեսումների ճշգրտությունը զույգով
   const pairLoss = {}, badUntil = {}; let forceSwitch = false;
   const BAD_LOSSES = 3, BAD_MIN = 10; // 3 իրար հետևից կորուստ → զույգը 10 րոպե խուսափել
   function applyParlay(res, pay, profit) { // res՝ 1 շահ, -1 կորուստ, 0 ոչ-ոքի
@@ -437,7 +438,9 @@
     { const A = parPend && parPend.asset;
       if (A) {
         if (res > 0) pairLoss[A] = 0; else if (res < 0) pairLoss[A] = (pairLoss[A] || 0) + 1;
-        if ((pairLoss[A] || 0) >= BAD_LOSSES) { badUntil[A] = Date.now() + BAD_MIN * 60000; pairLoss[A] = 0; forceSwitch = true; }
+        if (res !== 0) { const h = pairRes[A] || (pairRes[A] = []); h.push(res); if (h.length > 8) h.shift(); }
+        const h6 = (pairRes[A] || []).slice(-6), l6 = h6.filter((v) => v < 0).length, sum8 = (pairRes[A] || []).reduce((a, b) => a + b, 0);
+        if ((pairLoss[A] || 0) >= BAD_LOSSES || (h6.length >= 6 && l6 >= 4) || ((pairRes[A] || []).length >= 8 && sum8 <= -4)) { badUntil[A] = Date.now() + BAD_MIN * 60000; pairLoss[A] = 0; pairRes[A] = []; forceSwitch = true; }
       } }
     if (res > 0) {
       par.wins++; par.streak++; par.best = Math.max(par.best, par.streak);
@@ -713,6 +716,7 @@
       if (e === null || xv === null || xv === e) continue;
       const y = xv > e ? 1 : 0;
       aiUpdate(q.x, y);
+      if (q.conf) { const ph = pairHits[asset] || (pairHits[asset] = []); ph.push((q.p > 0.5) === (y === 1) ? 1 : 0); if (ph.length > 40) ph.shift(); }
       if (q.conf) { ai.hits.push((q.p > 0.5) === (y === 1) ? 1 : 0); if (ai.hits.length > L_WIN) ai.hits.shift(); }
     }
     const x = aiFeats(arr, sec); if (!x) return;
@@ -950,6 +954,7 @@
       if (!g.ok) { must = true; rotMsg = '🔄 ' + sel + '՝ վատ գրաֆիկ (' + g.why + ')՝ փոխում եմ'; }
       else { rotMsg = '🔄 ' + sel + ' ' + g.why + ' (' + (pay0 === null ? '?' : pay0) + '%)՝ մնում եմ'; evalAt = now + 30000; return; }
     }
+    { const ph = pairHits[sel] || []; if (!must && ph.length >= 25 && ph.reduce((a, b) => a + b, 0) / ph.length < 0.44) { must = true; badUntil[sel] = now + BAD_MIN * 60000; pairHits[sel] = []; rotMsg = '🔄 ' + sel + '՝ AI-ի ճշգրտությունը այս զույգի վրա <44%՝ փոխում եմ'; } }
     if (!must && forceSwitch) { must = true; rotMsg = '🔄 ' + sel + '՝ ' + BAD_LOSSES + ' կորուստ իրար հետևից՝ զույգը ' + BAD_MIN + ' րոպե դուրս եմ թողնում'; }
     if (!must && now - lastSwitch > ROT_STAY * 1000) { must = true; rotMsg = '🔄 ' + sel + '՝ ' + ROT_STAY + ' վրկ անցավ՝ փոխում եմ հաջորդ զույգի'; }
     if (!must || now - lastSwitch < 6000) return;

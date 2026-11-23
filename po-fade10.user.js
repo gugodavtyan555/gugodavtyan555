@@ -92,7 +92,7 @@
   setInterval(() => {
     const real = !ONLY_REAL || isReal(sel);
     snd.textContent = !soundOn ? ' 🔇 ' : (unlocked ? ' 🔊 ' : ' 🔊? սեղմեք ');
-    body.textContent = (AUTO ? (running ? '▶ ԱՇԽԱՏՈՒՄ Է ' : '⏸ ԿԱՆԳՆԱԾ ') : '') + (AUTO ? (acct() === 'real' ? '💰REAL' + (realOk ? '' : '(չհաստատված)') + ' ' : '') + '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + (ROTATE ? '\n🔄 ' + (rotMsg ? rotMsg.replace(/^🔄 /, '') : 'գրաֆիկի գնահատում ' + Math.max(0, Math.ceil((evalAt - Date.now()) / 1000)) + ' վրկ հետո') : '') + '\n' : '') + (LEARN ? aiLine() + (aiErr ? ' ⚠' + aiErr : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (sel ? (isReal(sel) ? ' (REAL)' : ' (OTC)') : '') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
+    body.textContent = (AUTO ? (running ? '▶ ԱՇԽԱՏՈՒՄ Է ' : '⏸ ԿԱՆԳՆԱԾ ') : '') + (AUTO ? (acct() === 'real' ? '💰REAL' + (realOk ? '' : '(չհաստատված)') + ' ' : '') + '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + (tradeLog.length ? '\n🧾 ' + tradeLog.join(' | ') : '') + (ROTATE ? '\n🔄 ' + (rotMsg ? rotMsg.replace(/^🔄 /, '') : 'գրաֆիկի գնահատում ' + Math.max(0, Math.ceil((evalAt - Date.now()) / 1000)) + ' վրկ հետո') : '') + '\n' : '') + (LEARN ? aiLine() + (aiErr ? ' ⚠' + aiErr : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (sel ? (isReal(sel) ? ' (REAL)' : ' (OTC)') : '') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
       '\n' + featText() + '\nարդյունք ըստ ձեր ուշացման (շահույթի շեմ ≥' + (isReal(sel) ? 53.5 : 52.1) + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
       '';
@@ -102,7 +102,7 @@
   // ---- parlay վիճակ ----
   let par = { stake: STAKE0, streak: 0, attempts: 1, best: 0, done: 0, wins: 0, losses: 0 };
   try { const o = JSON.parse(localStorage.getItem('po_parlay') || 'null'); if (o) par = Object.assign(par, o); } catch (e) {}
-  let queuedSig = null;
+  let queuedSig = null; const tradeLog = [];
   // հաշվեկշռի «մատյան»՝ հաշվեկշռի անիմացիան (աճող թիվ) չի խեղաթյուրում գործարքի արդյունքը
   let ledger = null, lastBalV = null, lastBalChg = Date.now();
   setInterval(() => { try { const v = readBalance(); if (v !== lastBalV) { lastBalV = v; lastBalChg = Date.now(); } } catch (e) {} }, 200);
@@ -541,9 +541,19 @@
         if (parPend !== pp) return;
         if (!r.ok) { parPend = null; parMsg = '⚠ գումարը չդրվեց՝ ' + r.info; autoMsg = 'չսեղմեցի՝ գումարը չի փոխվում (սխալ գումարով գործարք չեմ բացում)'; return; }
         parMsg = 'գումար $' + par.stake + ' դրվեց (' + r.how + ')';
+        { // վերջին պաշտպանություն՝ կլիկից առաջ դաշտի թիվը պետք է հավասար լինի սանդուղքի գումարին
+          let fn = null; try { const fc1 = fieldCenter(); fn = calcOpenNow(fc1) ? null : fieldNum(fc1); } catch (e) {}
+          if (fn !== null && Math.abs(fn - par.stake) > 1e-9) {
+            parPend = null; parMsg = '⚠ դաշտում $' + fn + ', սանդուղքը՝ $' + par.stake + '՝ գործարք չբացեցի, ուղղում եմ'; autoMsg = 'չսեղմեցի՝ գումարը չէր համընկնում'; prepareNext(); return;
+          }
+          pp.fieldAtClick = fn;
+        }
         pp.wall = Date.now();
         fire(b);
         if (bal0 !== null) {
+          setTimeout(() => { // իրական գանձված գումարը՝ հաշվեկշռի անկումից (թողարկումից ~1.5 վրկ հետո)
+            try { const b1 = readBalance(); if (b1 !== null && balStable()) { const drop = Math.round((bal0 - b1) * 100) / 100; tradeLog.push('#' + (nAuto) + ' սանդ. $' + pp.stake + ' · դաշտ ' + pp.fieldAtClick + ' · գանձվեց $' + drop + (Math.abs(drop - pp.stake) > 0.06 ? ' ⚠' : '')); if (tradeLog.length > 4) tradeLog.shift(); } } catch (e) {}
+          }, 1800);
           const tEnd = Date.now() + HOLD * 1000;
           const poll = setInterval(() => { // շահումը որսում ենք հենց ժամկետի ավարտին, կորուստը՝ վերջնաժամկետում
             if (parPend !== pp) { clearInterval(poll); return; }

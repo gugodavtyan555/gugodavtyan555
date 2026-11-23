@@ -507,6 +507,7 @@
   }
   function autoClick(dir, asset, prob) {
     if (!AUTO) return;
+    if (forceSwitch && ROTATE) { autoMsg = '🔄 վատ արդյունքներ՝ սիգնալը բաց թողեցի, զույգը փոխվում է…'; return; } // որ հերթափոխը չսովի (անընդհատ գործարքներից հետո դադար չի լինում)
     if (!running) { autoMsg = '⏸ կանգնեցված՝ սեղմեք ▶ սկսելու համար'; return; }
     const a = acct();
     if (a === 'unknown') { autoMsg = 'հաշիվը չի որոշվել՝ չեմ սեղմում'; return; }
@@ -756,7 +757,7 @@
     const valid = aiValid();
     const probOk = !valid && PROB && Math.abs(p - 0.5) >= L_PROB; // մինչև AI-ի ապացուցումը՝ միայն ամենավստահ կանխատեսումներ
     const rg = regimeOf(asset); aiReg = rg;
-    const busy = !!(parPend || prep) || !running || !rg.ok; // մեռած/սեղմված գրաֆիկում առևտուր չենք անում // գործարքի ընթացքում կամ գումարը դեռ չի դրվել՝ սիգնալ չենք տալիս
+    const busy = !!(parPend || prep) || !running || !rg.ok || forceSwitch; // մեռած/սեղմված գրաֆիկում առևտուր չենք անում // գործարքի ընթացքում կամ գումարը դեռ չի դրվել՝ սիգնալ չենք տալիս
     if (!busy && ((conf && valid) || probOk) && t - (lastSig['AI_' + asset] || 0) >= L_GAP) {
       lastSig['AI_' + asset] = t; lastSigWall = Date.now(); nSig++;
       const dir = p > 0.5 ? 1 : -1;

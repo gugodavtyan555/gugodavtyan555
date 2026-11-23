@@ -429,6 +429,11 @@
   const pairLoss = {}, badUntil = {}; let forceSwitch = false;
   const BAD_LOSSES = 3, BAD_MIN = 10; // 3 իրար հետևից կորուստ → զույգը 10 րոպե խուսափել
   function applyParlay(res, pay, profit) { // res՝ 1 շահ, -1 կորուստ, 0 ոչ-ոքի
+    if (parPend && parPend.prob) { // փորձաշրջան՝ ֆիքսված փոքր գումար, առանց սանդուղքի աճի
+      if (res > 0) par.wins++; else if (res < 0) par.losses++;
+      par.stake = STAKE0; par.streak = 0; parPend = null; savePar(); prepareNext();
+      return;
+    }
     { const A = parPend && parPend.asset;
       if (A) {
         if (res > 0) pairLoss[A] = 0; else if (res < 0) pairLoss[A] = (pairLoss[A] || 0) + 1;
@@ -443,7 +448,7 @@
     }
     parPend = null; savePar();
     prepareNext(); // անմիջապես դնել հաջորդ գումարը, որ պատրաստ լինի հաջորդ սիգնալին
-    { const q = queuedSig; queuedSig = null; if (q && Date.now() - q.w < 5000 && (!sel || q.asset === sel)) { try { autoClick(q.dir, q.asset); } catch (e) {} } } // հերթում սպասող սիգնալը
+    { const q = queuedSig; queuedSig = null; if (q && Date.now() - q.w < 5000 && (!sel || q.asset === sel)) { try { autoClick(q.dir, q.asset, q.prob); } catch (e) {} } } // հերթում սպասող սիգնալը
   }
   function prepareNext() {
     if (!PARLAY || !AUTO || !running) return;
@@ -497,7 +502,7 @@
       try { el.dispatchEvent(n.startsWith('pointer') ? new PointerEvent(n, o) : new MouseEvent(n, o)); } catch (e) {}
     });
   }
-  function autoClick(dir, asset) {
+  function autoClick(dir, asset, prob) {
     if (!AUTO) return;
     if (!running) { autoMsg = '⏸ կանգնեցված՝ սեղմեք ▶ սկսելու համար'; return; }
     const a = acct();
@@ -521,11 +526,11 @@
     if (!b) { autoMsg = 'կոճակը չի գտնվել'; return; }
     if (PARLAY) {
       if (parPend) {
-        if (parPend.wall && Date.now() - parPend.wall > HOLD * 1000 - 1000) queuedSig = { dir, asset, w: Date.now() }; // գործարքը վերջանում է՝ սիգնալը հերթում է
+        if (parPend.wall && Date.now() - parPend.wall > HOLD * 1000 - 1000) queuedSig = { dir, asset, w: Date.now(), prob }; // գործարքը վերջանում է՝ սիգնալը հերթում է
         autoMsg = 'սպասում եմ նախորդ գործարքի արդյունքին'; return;
       }
       const bal0 = getBal0();
-      const pp = { asset, dir, t: lastTickT, entry: lastTickP, pay: pay || 92, byBal: bal0 !== null, stake: par.stake };
+      const pp = { asset, dir, t: lastTickT, entry: lastTickP, pay: pay || 92, byBal: bal0 !== null, stake: par.stake, prob: !!prob };
       parPend = pp; // արգելափակում է նոր սիգնալները, մինչև այս գործարքի արդյունքը
       autoMsg = 'դնում եմ գումար $' + par.stake + '…';
       let fast = false; // արագ ճանապարհ՝ գումարն արդեն ճիշտ է դրված → սեղմում ենք ԱՆՄԻՋԱՊԵՍ, առանց ասինխրոն սպասման
@@ -650,6 +655,7 @@
   // Առևտուր է անում ՄԻԱՅՆ երբ մոդելը վստահ է ԵՎ իր վերջին վստահ կանխատեսումների իրական (դեռ չտեսած տվյալների վրա) ճշգրտությունը ≥ շեմի։
   const LEARN = true, LEARN_ONLY = true; // LEARN_ONLY՝ BB սիգնալները միայն վիճակագրության համար, առևտուր անում է AI-ն
   const L_LAG = 20, L_D = 1, L_TH = 0.04, L_MINVAL = 0.535, L_BE = 0.521, L_WIN = 300, L_MINHITS = 200, L_MINN = 400, L_GAP = 10, L_LR = 0.02, L_L2 = 0.0005;
+  const PROB = true, L_PROB = 0.10; // փորձաշրջան՝ մինչև AI-ն ապացուցի իրեն՝ առևտուր միայն p≥0.60/≤0.40 սիգնալներով, ֆիքսված $1
   const L_DIM = L_LAG + 3 + 6;
   const AIK = 'po_fade10_ai_v2';
   let ai = { w: new Array(L_DIM + 1).fill(0), mu: new Array(L_DIM).fill(0), m2: new Array(L_DIM).fill(1), n: 0, hits: [] };
@@ -695,7 +701,7 @@
   }
   function aiValid() { return ai.n >= L_MINN && ai.hits.length >= L_MINHITS && aiLow() >= L_BE; }
   function aiLine() {
-    return '🧠 AI՝ սովորել է ' + ai.n + ' օրինակ | վստահ կանխ. ' + ai.hits.length + ' · ճշգրտ ' + (ai.hits.length ? (aiRate() * 100).toFixed(1) + '% (ստորին ' + (aiLow() * 100).toFixed(1) + '%)' : '—') + ' | ' + (aiValid() ? '✅ առևտուր թույլատրված' : '⏳ սովորում է (պետք է ստորին ≥' + (L_BE * 100).toFixed(1) + '%, ' + L_MINHITS + '+ կանխ.)') + (aiLast !== null ? ' | հիմա p=' + aiLast.toFixed(2) : '');
+    return '🧠 AI՝ սովորել է ' + ai.n + ' օրինակ | վստահ կանխ. ' + ai.hits.length + ' · ճշգրտ ' + (ai.hits.length ? (aiRate() * 100).toFixed(1) + '% (ստորին ' + (aiLow() * 100).toFixed(1) + '%)' : '—') + ' | ' + (aiValid() ? '✅ առևտուր թույլատրված' : '🧪 փորձաշրջան՝ միայն ամենավստահ սիգնալներ, ֆիքս. $' + STAKE0 + ' (լիարժեք՝ երբ ստորին ≥' + (L_BE * 100).toFixed(1) + '%)') + (aiLast !== null ? ' | հիմա p=' + aiLast.toFixed(2) : '');
   }
   function learnTick(asset, t) {
     if (sel && asset !== sel) return;
@@ -716,10 +722,12 @@
     lPend.push({ sec, asset, x, p, conf });
     if (lPend.length > 60) lPend.shift();
     if (Date.now() - lSavedAt > 30000) { lSavedAt = Date.now(); try { localStorage.setItem(AIK, JSON.stringify(ai)); } catch (e) {} }
-    if (conf && aiValid() && t - (lastSig['AI_' + asset] || 0) >= L_GAP) {
+    const valid = aiValid();
+    const probOk = !valid && PROB && Math.abs(p - 0.5) >= L_PROB && par.stake <= STAKE0 + 1e-9; // փորձաշրջան՝ միայն ամենավստահ կանխատեսումներ, $STAKE0
+    if (((conf && valid) || probOk) && t - (lastSig['AI_' + asset] || 0) >= L_GAP) {
       lastSig['AI_' + asset] = t; lastSigWall = Date.now(); nSig++;
       const dir = p > 0.5 ? 1 : -1;
-      autoClick(dir, asset); showOverlay(dir, asset, p);
+      autoClick(dir, asset, !valid); showOverlay(dir, asset, p);
     }
   }
   function onTick(asset, t, p) {

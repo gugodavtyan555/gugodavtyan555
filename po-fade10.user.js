@@ -787,10 +787,13 @@
     const cur = sel ? dispName(sel) : '', want = dispName(id);
     const openers = cur ? findByText(cur, null).filter((e) => e.getBoundingClientRect().top < innerHeight * 0.4) : [];
     if (!openers.length) { rotMsg = '🔄 ընթացիկ զույգի կոճակը չգտնվեց (' + cur + ')'; return false; }
-    fire(openers[0]); await sleep(700);
+    const tapEl = (e) => { const r = e.getBoundingClientRect(); const pt = [r.left + r.width / 2, r.top + r.height / 2]; if (!tapPt(pt)) fire(e); else fire(e); };
+    tapEl(openers[0]); await sleep(900);
     let cands = findByText(want, openers[0]);
-    if (!cands.length) { rotMsg = '🔄 «' + want + '» ցանկում չգտնվեց'; try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); } catch (e) {} return false; }
-    fire(cands[cands.length - 1]); await sleep(1200);
+    if (!cands.length) {
+      const seen = []; document.querySelectorAll('*').forEach((e) => { if (e.children.length === 0 && !(box && box.contains(e))) { const t = normT(e); const r = e.getBoundingClientRect(); if (t && t.length < 22 && r.width > 0 && r.top >= 0 && r.top < innerHeight && !seen.includes(t)) seen.push(t); } });
+      rotMsg = '🔄 «' + want + '» ցանկում չգտնվեց. տեսնում եմ՝ ' + seen.slice(0, 40).join(' | '); try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); } catch (e) {} return false; }
+    tapEl(cands[cands.length - 1]); await sleep(1500);
     if (sel === id) { rotMsg = '🔄 անցա ' + want; return true; }
     rotMsg = '🔄 «' + want + '»-ին չանցավ (ընթացիկ՝ ' + sel + ')';
     try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); } catch (e) {}

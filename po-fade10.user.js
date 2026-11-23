@@ -701,7 +701,7 @@
   }
   function aiValid() { return ai.n >= L_MINN && ai.hits.length >= L_MINHITS && aiLow() >= L_BE; }
   function aiLine() {
-    return '🧠 AI՝ սովորել է ' + ai.n + ' օրինակ | վստահ կանխ. ' + ai.hits.length + ' · ճշգրտ ' + (ai.hits.length ? (aiRate() * 100).toFixed(1) + '% (ստորին ' + (aiLow() * 100).toFixed(1) + '%)' : '—') + ' | ' + (aiValid() ? '✅ առևտուր թույլատրված' : '🧪 փորձաշրջան՝ միայն ամենավստահ սիգնալներ, ֆիքս. $' + STAKE0 + ' (լիարժեք՝ երբ ստորին ≥' + (L_BE * 100).toFixed(1) + '%)') + (aiLast !== null ? ' | հիմա p=' + aiLast.toFixed(2) : '');
+    return '🧠 AI՝ սովորել է ' + ai.n + ' օրինակ | վստահ կանխ. ' + ai.hits.length + ' · ճշգրտ ' + (ai.hits.length ? (aiRate() * 100).toFixed(1) + '% (ստորին ' + (aiLow() * 100).toFixed(1) + '%)' : '—') + ' | ' + (aiValid() ? '✅ առևտուր թույլատրված' : '🧪 առևտուր միայն ամենավստահ սիգնալներով (ստորին ≥' + (L_BE * 100).toFixed(1) + '%՝ երբ բոլոր սիգնալները)') + (aiLast !== null ? ' | հիմա p=' + aiLast.toFixed(2) : '');
   }
   function learnTick(asset, t) {
     if (sel && asset !== sel) return;
@@ -723,11 +723,11 @@
     if (lPend.length > 60) lPend.shift();
     if (Date.now() - lSavedAt > 30000) { lSavedAt = Date.now(); try { localStorage.setItem(AIK, JSON.stringify(ai)); } catch (e) {} }
     const valid = aiValid();
-    const probOk = !valid && PROB && Math.abs(p - 0.5) >= L_PROB && par.stake <= STAKE0 + 1e-9; // փորձաշրջան՝ միայն ամենավստահ կանխատեսումներ, $STAKE0
+    const probOk = !valid && PROB && Math.abs(p - 0.5) >= L_PROB; // մինչև AI-ի ապացուցումը՝ միայն ամենավստահ կանխատեսումներ
     if (((conf && valid) || probOk) && t - (lastSig['AI_' + asset] || 0) >= L_GAP) {
       lastSig['AI_' + asset] = t; lastSigWall = Date.now(); nSig++;
       const dir = p > 0.5 ? 1 : -1;
-      autoClick(dir, asset, !valid); showOverlay(dir, asset, p);
+      autoClick(dir, asset); showOverlay(dir, asset, p);
     }
   }
   function onTick(asset, t, p) {

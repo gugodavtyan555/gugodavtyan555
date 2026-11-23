@@ -697,16 +697,20 @@
     return r.map((v) => v / sd).concat([(last - pm) / psd, Math.log(sd / Math.abs(last) + 1e-12), /_otc$/i.test(sel || '') ? 1 : 0]).concat(ms).concat([ups]);
   }
   // ռեժիմ՝ «ծուռ/կողքային» (լավ) թե «թրենդային» (վատ)՝ Kaufman-ի արդյունավետության գործակից (ER = զուտ շարժում / անցած ճանապարհ)
-  const ER_W = 90, ER_MAX = 0.14, ER_MAX_S = 0.25;
+  // ռեժիմ՝ «կենդանի» գրաֆիկ (մեծ, ակտիվ ծուռ/շարժ)՝ լավ, «մեռած/սեղմված» (մանր, գրեթե հարթ մոմեր)՝ վատ.
+  // կենդանություն = վերջին 20 վրկ-ի ցրվածություն ÷ վերջին ~90 վրկ-ի ցրվածություն (սեղմումը՝ ցածր) + ակտիվ քայլերի մասնաբաժին
+  const ER_W = 90, V_MIN = 0.6, ACT_MIN = 0.5;
   function regimeOf(asset) {
     const arr = ticks[asset]; if (!arr || !arr.length) return { ok: false, er: NaN, why: 'տիկեր չկան' };
     const tl = Math.floor(arr[arr.length - 1].t), px = [];
     const span = tl - arr[0].t; if (span < 45) return { ok: false, er: NaN, why: 'պատմությունը քիչ է (' + Math.max(0, Math.floor(span)) + 'վրկ/45)' };
     const W = Math.min(ER_W, Math.floor(span));
     for (let j = W; j >= 0; j--) { const v = priceAt(arr, tl - j); if (v === null) return { ok: false, er: NaN, why: 'պատմությունը քիչ է' }; px.push(v); }
-    const er = (w) => { const q = px.slice(-w - 1); let path = 0; for (let i = 1; i < q.length; i++) path += Math.abs(q[i] - q[i - 1]); return path ? Math.abs(q[q.length - 1] - q[0]) / path : 1; };
-    const eL = er(W), eS = er(30);
-    return { ok: eL <= ER_MAX && eS <= ER_MAX_S, er: eL, why: 'ER ' + eL.toFixed(2) + '/' + eS.toFixed(2) };
+    const rr = []; for (let i = 1; i < px.length; i++) rr.push(px[i] - px[i - 1]);
+    const sdOf = (a) => { const m = a.reduce((x, y) => x + y, 0) / a.length; return Math.sqrt(a.reduce((x, y) => x + (y - m) * (y - m), 0) / a.length); };
+    const r20 = rr.slice(-20), sS = sdOf(r20), sL = sdOf(rr) || 1e-12, ratio = sS / sL;
+    const act = r20.filter((v) => v !== 0).length / r20.length;
+    return { ok: ratio >= V_MIN && act >= ACT_MIN, er: ratio, why: 'կենդանություն ' + ratio.toFixed(2) + ' (≥' + V_MIN + '), ակտիվ ' + Math.round(act * 100) + '%' };
   }
   function aiRate() { const h = ai.hits; return h.length ? h.reduce((a, b) => a + b, 0) / h.length : 0; }
   function aiLow() { // Wilson ստորին սահման (90%)՝ ճշգրտության «վատագույն հավանական» արժեքը
@@ -715,7 +719,7 @@
   }
   function aiValid() { return ai.n >= L_MINN && ai.hits.length >= L_MINHITS && aiLow() >= L_BE; }
   function aiLine() {
-    return '🧠 AI՝ սովորել է ' + ai.n + ' օրինակ | վստահ կանխ. ' + ai.hits.length + ' · ճշգրտ ' + (ai.hits.length ? (aiRate() * 100).toFixed(1) + '% (ստորին ' + (aiLow() * 100).toFixed(1) + '%)' : '—') + ' | ' + (aiValid() ? '✅ առևտուր թույլատրված' : '🧪 առևտուր միայն ամենավստահ սիգնալներով (ստորին ≥' + (L_BE * 100).toFixed(1) + '%՝ երբ բոլոր սիգնալները)') + (aiReg ? ' | ' + (aiReg.ok ? '✅ ծուռ գրաֆիկ' : '⛔ թրենդ՝ սպասում եմ') + ' (' + aiReg.why + ')' : '') + (aiLast !== null ? ' | p=' + aiLast.toFixed(2) : '') + (histNote ? ' | պատմ.՝ ' + histNote : '');
+    return '🧠 AI՝ սովորել է ' + ai.n + ' օրինակ | վստահ կանխ. ' + ai.hits.length + ' · ճշգրտ ' + (ai.hits.length ? (aiRate() * 100).toFixed(1) + '% (ստորին ' + (aiLow() * 100).toFixed(1) + '%)' : '—') + ' | ' + (aiValid() ? '✅ առևտուր թույլատրված' : '🧪 առևտուր միայն ամենավստահ սիգնալներով (ստորին ≥' + (L_BE * 100).toFixed(1) + '%՝ երբ բոլոր սիգնալները)') + (aiReg ? ' | ' + (aiReg.ok ? '✅ կենդանի գրաֆիկ' : '⛔ մեռած/սեղմված՝ սպասում եմ') + ' (' + aiReg.why + ')' : '') + (aiLast !== null ? ' | p=' + aiLast.toFixed(2) : '') + (histNote ? ' | պատմ.՝ ' + histNote : '');
   }
   function learnTick(asset, t) {
     if (sel && asset !== sel) return;
@@ -740,7 +744,7 @@
     const valid = aiValid();
     const probOk = !valid && PROB && Math.abs(p - 0.5) >= L_PROB; // մինչև AI-ի ապացուցումը՝ միայն ամենավստահ կանխատեսումներ
     const rg = regimeOf(asset); aiReg = rg;
-    const busy = !!(parPend || prep) || !running || !rg.ok; // թրենդային գրաֆիկում առևտուր չենք անում // գործարքի ընթացքում կամ գումարը դեռ չի դրվել՝ սիգնալ չենք տալիս
+    const busy = !!(parPend || prep) || !running || !rg.ok; // մեռած/սեղմված գրաֆիկում առևտուր չենք անում // գործարքի ընթացքում կամ գումարը դեռ չի դրվել՝ սիգնալ չենք տալիս
     if (!busy && ((conf && valid) || probOk) && t - (lastSig['AI_' + asset] || 0) >= L_GAP) {
       lastSig['AI_' + asset] = t; lastSigWall = Date.now(); nSig++;
       const dir = p > 0.5 ? 1 : -1;
@@ -953,7 +957,6 @@
     if (dist < 4) return { ok: false, why: 'գրաֆիկը հարթ է' };
     let path = 0; for (let i = 1; i < ps.length; i++) path += Math.abs(ps[i] - ps[i - 1]);
     const net = Math.abs(ps[ps.length - 1] - ps[0]) || 1e-12, ratio = path / net;
-    if (ratio < 3) return { ok: false, why: 'միակողմանի վազք (' + ratio.toFixed(1) + ')' };
     return { ok: true, why: 'լավ՝ ' + w.length + ' տիկ, ծուռ ' + ratio.toFixed(1) };
   }
   let evalAt = Date.now() + 5000, trendBad = 0, freshPair = true;
@@ -967,7 +970,7 @@
       const rgm = regimeOf(sel);
       if (isNaN(rgm.er)) { evalAt = now + 4000; rotMsg = '🔄 ' + sel + '՝ հավաքում եմ գրաֆիկի պատմություն (' + rgm.why + ')…'; return; } // նոր զույգ՝ դեռ չի կարելի գնահատել
       const g = chartGood(sel);
-      if (g.ok && !rgm.ok) { g.ok = false; g.why = 'թրենդային գրաֆիկ (' + rgm.why + ')'; }
+      if (g.ok && !rgm.ok) { g.ok = false; g.why = 'մեռած/սեղմված գրաֆիկ (' + rgm.why + ')'; }
       if (!g.ok && !freshPair && ++trendBad < 2) { g.ok = true; g.why = 'սպասում եմ՝ վատ նշան (' + g.why + ')'; evalAt = now + 12000; rotMsg = '🔄 ' + sel + '՝ ' + g.why; return; } // արդեն ընտրված զույգ՝ փոխում ենք 2-րդ վատ գնահատականից
       freshPair = false;
       if (g.ok) trendBad = 0;

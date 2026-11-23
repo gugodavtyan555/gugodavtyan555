@@ -34,6 +34,7 @@
   const ticks = {};        // asset -> [{t,p}]
   const moves = {};        // asset -> [|move|, ...] (վերջին ~300)
   const pend = [];
+  let lastSigWall = 0;
   let sel = '', lastSig = {}, nSig = 0, lastTickT = 0, lastTickP = 0, lastWall = 0;
   let stat = {};
   DELAYS.forEach((d) => (stat[d] = [0, 0]));
@@ -91,7 +92,7 @@
   setInterval(() => {
     const real = !ONLY_REAL || isReal(sel);
     snd.textContent = !soundOn ? ' 🔇 ' : (unlocked ? ' 🔊 ' : ' 🔊? սեղմեք ');
-    body.textContent = (AUTO ? (running ? '▶ ԱՇԽԱՏՈՒՄ Է ' : '⏸ ԿԱՆԳՆԱԾ ') : '') + (AUTO ? (acct() === 'real' ? '💰REAL' + (realOk ? '' : '(չհաստատված)') + ' ' : '') + '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (sel ? (isReal(sel) ? ' (REAL)' : ' (OTC)') : '') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
+    body.textContent = (AUTO ? (running ? '▶ ԱՇԽԱՏՈՒՄ Է ' : '⏸ ԿԱՆԳՆԱԾ ') : '') + (AUTO ? (acct() === 'real' ? '💰REAL' + (realOk ? '' : '(չհաստատված)') + ' ' : '') + '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + (rotMsg ? '\n' + rotMsg : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (sel ? (isReal(sel) ? ' (REAL)' : ' (OTC)') : '') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
       '\n' + featText() + '\nարդյունք ըստ ձեր ուշացման (շահույթի շեմ ≥' + (isReal(sel) ? 53.5 : 52.1) + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
       '';
@@ -654,7 +655,7 @@
     const gd = GATE ? gateDecide(feats) : { pass: true, why: 'ֆիլտրն անջատված է' };
     lastGateMsg = (gd.pass ? 'անցավ՝ ' : 'մերժվեց՝ ') + gd.why + ' [' + feats.sent + ',' + feats.sec + ',' + feats.vol + ']';
     nSig++;
-    if (gd.pass) { nPass++; autoClick(dir, asset); showOverlay(dir, asset, ratio); }
+    if (gd.pass) { nPass++; lastSigWall = Date.now(); autoClick(dir, asset); showOverlay(dir, asset, ratio); }
     pend.push({ asset, dir, t, entry: { 0: p }, done: {}, feat: feats, pass: gd.pass }); // 0 վրկ՝ ակնթարթային մուտք՝ ընթացիկ գնով
   }
 
@@ -765,6 +766,50 @@
       if (n < 3) { setReload(n + 1); autoMsg = '⚠ հոսքը կանգնեց, թարմացնում եմ…'; setTimeout(() => location.reload(), 800); }
     }
   }, 10000);
+  // ---- հերթափոխ (rotate)՝ ավտոմատ փոխում է զույգը, երբ սիգնալ չկա ----
+  const ROTATE = true;
+  const ROT_SEC = 35; // վրկ. մեկ զույգի վրա, եթե սիգնալ չկա
+  const ROT_LIST = ['EURUSD_otc', 'GBPUSD_otc', 'AUDUSD_otc', 'EURJPY_otc', 'EURCHF_otc', 'AUDCHF_otc', 'EURGBP_otc', 'CADCHF_otc', 'EURRUB_otc', 'CHFJPY_otc'];
+  let rotMsg = '', rotBusy = false, lastSwitch = Date.now(), rotI = 0;
+  const dispName = (id) => id.slice(0, 3) + '/' + id.slice(3, 6) + (/_otc$/i.test(id) ? ' OTC' : '');
+  const normT = (e) => String(e.textContent || '').replace(/\s+/g, ' ').trim().toUpperCase();
+  function findByText(txt, skip) {
+    const out = [];
+    document.querySelectorAll('*').forEach((e) => {
+      if (e === skip || (box && box.contains(e)) || e.children.length > 3) return;
+      if (normT(e) !== txt.toUpperCase()) return;
+      const r = e.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) out.push(e);
+    });
+    return out;
+  }
+  async function switchTo(id) {
+    const cur = sel ? dispName(sel) : '', want = dispName(id);
+    const openers = cur ? findByText(cur, null).filter((e) => e.getBoundingClientRect().top < innerHeight * 0.4) : [];
+    if (!openers.length) { rotMsg = '🔄 ընթացիկ զույգի կոճակը չգտնվեց (' + cur + ')'; return false; }
+    fire(openers[0]); await sleep(700);
+    let cands = findByText(want, openers[0]);
+    if (!cands.length) { rotMsg = '🔄 «' + want + '» ցանկում չգտնվեց'; try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); } catch (e) {} return false; }
+    fire(cands[cands.length - 1]); await sleep(1200);
+    if (sel === id) { rotMsg = '🔄 անցա ' + want; return true; }
+    rotMsg = '🔄 «' + want + '»-ին չանցավ (ընթացիկ՝ ' + sel + ')';
+    try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); } catch (e) {}
+    return false;
+  }
+  setInterval(async () => {
+    if (!ROTATE || !AUTO || !running || rotBusy || parPend || prep) return;
+    const now = Date.now();
+    if (now - lastSigWall < 15000 || now - lastSwitch < ROT_SEC * 1000) return;
+    rotBusy = true;
+    try {
+      const hide = box && box.style; if (hide) box.style.visibility = 'hidden';
+      let id = null;
+      for (let k = 0; k < ROT_LIST.length; k++) { const c = ROT_LIST[(rotI + k) % ROT_LIST.length]; if (c !== sel) { id = c; rotI = (rotI + k + 1) % ROT_LIST.length; break; } }
+      if (id) await switchTo(id);
+      if (hide) box.style.visibility = 'visible';
+    } catch (e) { rotMsg = '🔄 սխալ՝ ' + (e && e.message); }
+    lastSwitch = Date.now(); rotBusy = false;
+  }, 4000);
   // ---- WebSocket ----
   const Orig = window.WebSocket;
   window.WebSocket = function (...a) {

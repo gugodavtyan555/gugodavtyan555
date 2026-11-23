@@ -877,6 +877,12 @@
       if (n < 3) { setReload(n + 1); autoMsg = '⚠ հոսքը կանգնեց, թարմացնում եմ…'; setTimeout(() => location.reload(), 800); }
     }
   }, 10000);
+  const t0Wall = Date.now();
+  setInterval(() => { // վերջին պահեստ՝ եթե հոսքն անընդհատ բացակայում է, 3 փորձից հետո էլ թարմացնել (ամեն ≥90 վրկ)
+    const noStream = nTicks === 0 && Date.now() - t0Wall > 90000;
+    const stalled = nTicks > 0 && lastWall && Date.now() - lastWall > 120000;
+    if (noStream || stalled) { autoMsg = '⚠ հոսքը բացակայում է՝ թարմացնում եմ…'; setReload(0); setTimeout(() => location.reload(), 500); }
+  }, 15000);
   // ---- հերթափոխ (rotate)՝ ավտոմատ փոխում է զույգը, երբ սիգնալ չկա ----
   const ROTATE = true;
   const ROT_SEC = 35; // վրկ. մեկ զույգի վրա, եթե սիգնալ չկա

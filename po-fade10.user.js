@@ -92,7 +92,7 @@
   setInterval(() => {
     const real = !ONLY_REAL || isReal(sel);
     snd.textContent = !soundOn ? ' 🔇 ' : (unlocked ? ' 🔊 ' : ' 🔊? սեղմեք ');
-    body.textContent = (AUTO ? (running ? '▶ ԱՇԽԱՏՈՒՄ Է ' : '⏸ ԿԱՆԳՆԱԾ ') : '') + (AUTO ? (acct() === 'real' ? '💰REAL' + (realOk ? '' : '(չհաստատված)') + ' ' : '') + '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + (ROTATE ? '\n🔄 ' + (rotMsg ? rotMsg.replace(/^🔄 /, '') : 'գրաֆիկի գնահատում ' + Math.max(0, Math.ceil((evalAt - Date.now()) / 1000)) + ' վրկ հետո') : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (sel ? (isReal(sel) ? ' (REAL)' : ' (OTC)') : '') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
+    body.textContent = (AUTO ? (running ? '▶ ԱՇԽԱՏՈՒՄ Է ' : '⏸ ԿԱՆԳՆԱԾ ') : '') + (AUTO ? (acct() === 'real' ? '💰REAL' + (realOk ? '' : '(չհաստատված)') + ' ' : '') + '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + (ROTATE ? '\n🔄 ' + (rotMsg ? rotMsg.replace(/^🔄 /, '') : 'գրաֆիկի գնահատում ' + Math.max(0, Math.ceil((evalAt - Date.now()) / 1000)) + ' վրկ հետո') : '') + '\n' : '') + (LEARN ? aiLine() + (aiErr ? ' ⚠' + aiErr : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (sel ? (isReal(sel) ? ' (REAL)' : ' (OTC)') : '') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
       '\n' + featText() + '\nարդյունք ըստ ձեր ուշացման (շահույթի շեմ ≥' + (isReal(sel) ? 53.5 : 52.1) + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
       '';
@@ -645,12 +645,74 @@
     return null;
   }
 
+  // ===== AI (առցանց սովորող մոդել) =====
+  // Ամեն վայրկյանի համար կանխատեսում է՝ 10 վրկ հետո գինը կբարձրանա՞. պիտակը ստանում է, երբ ժամանակը գալիս է, ու սովորում (logistic regression, SGD):
+  // Առևտուր է անում ՄԻԱՅՆ երբ մոդելը վստահ է ԵՎ իր վերջին վստահ կանխատեսումների իրական (դեռ չտեսած տվյալների վրա) ճշգրտությունը ≥ շեմի։
+  const LEARN = true, LEARN_ONLY = true; // LEARN_ONLY՝ BB սիգնալները միայն վիճակագրության համար, առևտուր անում է AI-ն
+  const L_LAG = 20, L_D = 1, L_TH = 0.04, L_MINVAL = 0.535, L_WIN = 150, L_MINHITS = 60, L_MINN = 400, L_GAP = 10, L_LR = 0.02, L_L2 = 0.0005;
+  const L_DIM = L_LAG + 3;
+  const AIK = 'po_fade10_ai_v1';
+  let ai = { w: new Array(L_DIM + 1).fill(0), mu: new Array(L_DIM).fill(0), m2: new Array(L_DIM).fill(1), n: 0, hits: [] };
+  try { const o = JSON.parse(localStorage.getItem(AIK) || 'null'); if (o && o.w && o.w.length === L_DIM + 1) ai = o; } catch (e) {}
+  let aiErr = '';
+  let lSec = 0, lPend = [], lSavedAt = 0, aiLast = null;
+  const sigm = (z) => 1 / (1 + Math.exp(-Math.max(-30, Math.min(30, z))));
+  const aiZ = (x) => x.map((v, i) => (v - ai.mu[i]) / (Math.sqrt(ai.m2[i] / Math.max(1, ai.n)) + 1e-9));
+  function aiPredict(x) { const z = aiZ(x); let a = ai.w[L_DIM]; for (let i = 0; i < L_DIM; i++) a += ai.w[i] * z[i]; return sigm(a); }
+  function aiUpdate(x, y) {
+    ai.n++;
+    for (let i = 0; i < L_DIM; i++) { const d = x[i] - ai.mu[i]; ai.mu[i] += d / ai.n; ai.m2[i] += d * (x[i] - ai.mu[i]); }
+    const z = aiZ(x), p = (() => { let a = ai.w[L_DIM]; for (let i = 0; i < L_DIM; i++) a += ai.w[i] * z[i]; return sigm(a); })();
+    const g = p - y;
+    for (let i = 0; i < L_DIM; i++) ai.w[i] -= L_LR * (g * z[i] + L_L2 * ai.w[i]);
+    ai.w[L_DIM] -= L_LR * g;
+  }
+  function aiFeats(arr, sec) {
+    const px = [];
+    for (let j = L_LAG; j >= 0; j--) { const v = priceAt(arr, sec - j); if (v === null) return null; px.push(v); }
+    const r = []; for (let i = 1; i < px.length; i++) r.push(px[i] - px[i - 1]);
+    const m = r.reduce((a, b) => a + b, 0) / r.length, sd = Math.sqrt(r.reduce((a, b) => a + (b - m) * (b - m), 0) / r.length);
+    if (!sd) return null;
+    const pm = px.reduce((a, b) => a + b, 0) / px.length, psd = Math.sqrt(px.reduce((a, b) => a + (b - pm) * (b - pm), 0) / px.length) || 1e-12;
+    return r.map((v) => v / sd).concat([(px[px.length - 1] - pm) / psd, Math.log(sd / Math.abs(px[px.length - 1]) + 1e-12), /_otc$/i.test(sel || '') ? 1 : 0]);
+  }
+  function aiRate() { const h = ai.hits; return h.length ? h.reduce((a, b) => a + b, 0) / h.length : 0; }
+  function aiValid() { return ai.n >= L_MINN && ai.hits.length >= L_MINHITS && aiRate() >= L_MINVAL; }
+  function aiLine() {
+    return '🧠 AI՝ սովորել է ' + ai.n + ' օրինակ | վստահ կանխ. ' + ai.hits.length + ' · ճշգրտ ' + (ai.hits.length ? (aiRate() * 100).toFixed(1) + '%' : '—') + ' | ' + (aiValid() ? '✅ առևտուր թույլատրված' : '⏳ սովորում է (պետք է ≥' + (L_MINVAL * 100).toFixed(1) + '%, ' + L_MINHITS + '+ կանխ.)') + (aiLast !== null ? ' | հիմա p=' + aiLast.toFixed(2) : '');
+  }
+  function learnTick(asset, t) {
+    if (sel && asset !== sel) return;
+    const sec = Math.floor(t); if (sec === lSec) return; lSec = sec;
+    const arr = ticks[asset]; if (!arr || arr.length < 5) return;
+    while (lPend.length && lPend[0].sec + L_D + HOLD <= sec) {
+      const q = lPend.shift();
+      if (q.asset !== asset) continue;
+      const e = priceAt(arr, q.sec + L_D), xv = priceAt(arr, q.sec + L_D + HOLD);
+      if (e === null || xv === null || xv === e) continue;
+      const y = xv > e ? 1 : 0;
+      aiUpdate(q.x, y);
+      if (q.conf) { ai.hits.push((q.p > 0.5) === (y === 1) ? 1 : 0); if (ai.hits.length > L_WIN) ai.hits.shift(); }
+    }
+    const x = aiFeats(arr, sec); if (!x) return;
+    const p = aiPredict(x); aiLast = p;
+    const conf = Math.abs(p - 0.5) >= L_TH && ai.n >= 100;
+    lPend.push({ sec, asset, x, p, conf });
+    if (lPend.length > 60) lPend.shift();
+    if (Date.now() - lSavedAt > 30000) { lSavedAt = Date.now(); try { localStorage.setItem(AIK, JSON.stringify(ai)); } catch (e) {} }
+    if (conf && aiValid() && t - (lastSig['AI_' + asset] || 0) >= L_GAP) {
+      lastSig['AI_' + asset] = t; lastSigWall = Date.now(); nSig++;
+      const dir = p > 0.5 ? 1 : -1;
+      autoClick(dir, asset); showOverlay(dir, asset, p);
+    }
+  }
   function onTick(asset, t, p) {
     const arr = ticks[asset] || (ticks[asset] = []);
     arr.push({ t, p });
     if (arr.length > 900) arr.splice(0, 300);
     nTicks++; lastWall = Date.now();
     if (asset === sel || !sel) { lastTickT = t; lastTickP = p; }
+    if (LEARN) { try { learnTick(asset, t); } catch (e) { aiErr = e.message; } }
     if (PARLAY) parlayResolve(p, t, asset);
     // ---- արդյունքների հետևում ----
     for (let i = pend.length - 1; i >= 0; i--) {
@@ -688,7 +750,7 @@
     const gd = GATE ? gateDecide(feats) : { pass: true, why: 'ֆիլտրն անջատված է' };
     lastGateMsg = (gd.pass ? 'անցավ՝ ' : 'մերժվեց՝ ') + gd.why + ' [' + feats.sent + ',' + feats.sec + ',' + feats.vol + ']';
     nSig++;
-    if (gd.pass) { nPass++; lastSigWall = Date.now(); autoClick(dir, asset); showOverlay(dir, asset, ratio); }
+    if (gd.pass) { nPass++; if (!LEARN_ONLY) { lastSigWall = Date.now(); autoClick(dir, asset); showOverlay(dir, asset, ratio); } }
     pend.push({ asset, dir, t, entry: { 0: p }, done: {}, feat: feats, pass: gd.pass }); // 0 վրկ՝ ակնթարթային մուտք՝ ընթացիկ գնով
   }
 

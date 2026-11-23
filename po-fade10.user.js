@@ -531,7 +531,7 @@
             if (diff > 0.001 || now > tEnd + 1600) {
               clearInterval(poll);
               parMsg = 'հաշվեկշիռ ' + bal0 + ' → ' + bal1 + ' (' + (diff > 0 ? '+' : '') + diff + ') ' + (diff > 0 ? 'ՇԱՀ' : diff < 0 ? 'կորուստ' : 'ոչ-ոքի');
-              applyParlay(diff > 0.001 ? 1 : diff < -0.001 ? -1 : 0, pp.pay, diff);
+              applyParlay(diff > 0.001 ? 1 : diff < -0.001 ? -1 : 0, pp.pay, 0); // շահույթը՝ ճշգրիտ գումարից (հաշվեկշռի անիմացիան կեղծ մասնակի թիվ է տալիս)
             }
           }, 200);
         }

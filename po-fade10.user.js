@@ -92,7 +92,7 @@
   setInterval(() => {
     const real = !ONLY_REAL || isReal(sel);
     snd.textContent = !soundOn ? ' 🔇 ' : (unlocked ? ' 🔊 ' : ' 🔊? սեղմեք ');
-    body.textContent = (AUTO ? (running ? '▶ ԱՇԽԱՏՈՒՄ Է ' : '⏸ ԿԱՆԳՆԱԾ ') : '') + (AUTO ? (acct() === 'real' ? '💰REAL' + (realOk ? '' : '(չհաստատված)') + ' ' : '') + '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + (tradeLog.length ? '\n🧾 ' + tradeLog.join(' | ') : '') + (ROTATE ? '\n🔄 ' + (rotMsg ? rotMsg.replace(/^🔄 /, '') : 'գրաֆիկի գնահատում ' + Math.max(0, Math.ceil((evalAt - Date.now()) / 1000)) + ' վրկ հետո') : '') + '\n' : '') + (LEARN ? aiLine() + (aiErr ? ' ⚠' + aiErr : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (sel ? (isReal(sel) ? ' (REAL)' : ' (OTC)') : '') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
+    body.textContent = (AUTO ? (running ? '▶ ԱՇԽԱՏՈՒՄ Է ' : '⏸ ԿԱՆԳՆԱԾ ') : '') + (AUTO ? (acct() === 'real' ? '💰REAL' + (realOk ? '' : '(չհաստատված)') + ' ' : '') + '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + (tradeLog.length ? '\n🧾 ' + tradeLog.join(' | ') : '') + (sel && pairRes[sel] && pairRes[sel].length ? '\n📊 ' + sel + ': ' + pairRes[sel].map((v) => (v > 0 ? '✅' : '❌')).join('') : '') + (ROTATE ? '\n🔄 ' + (rotMsg ? rotMsg.replace(/^🔄 /, '') : 'գրաֆիկի գնահատում ' + Math.max(0, Math.ceil((evalAt - Date.now()) / 1000)) + ' վրկ հետո') : '') + '\n' : '') + (LEARN ? aiLine() + (aiErr ? ' ⚠' + aiErr : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (sel ? (isReal(sel) ? ' (REAL)' : ' (OTC)') : '') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
       '\n' + featText() + '\nարդյունք ըստ ձեր ուշացման (շահույթի շեմ ≥' + (isReal(sel) ? 53.5 : 52.1) + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
       '';
@@ -428,7 +428,7 @@
   }
   const pairRes = {}, pairHits = {}; // զույգի վերջին արդյունքները / AI-ի կանխատեսումների ճշգրտությունը զույգով
   const pairLoss = {}, badUntil = {}; let forceSwitch = false;
-  const BAD_LOSSES = 3, BAD_MIN = 10; // 3 իրար հետևից կորուստ → զույգը 10 րոպե խուսափել
+  const BAD_LOSSES = 2, BAD_MIN = 20; // 3 իրար հետևից կորուստ → զույգը 10 րոպե խուսափել
   function applyParlay(res, pay, profit) { // res՝ 1 շահ, -1 կորուստ, 0 ոչ-ոքի
     if (parPend && parPend.prob) { // փորձաշրջան՝ ֆիքսված փոքր գումար, առանց սանդուղքի աճի
       if (res > 0) par.wins++; else if (res < 0) par.losses++;
@@ -439,8 +439,8 @@
       if (A) {
         if (res > 0) pairLoss[A] = 0; else if (res < 0) pairLoss[A] = (pairLoss[A] || 0) + 1;
         if (res !== 0) { const h = pairRes[A] || (pairRes[A] = []); h.push(res); if (h.length > 8) h.shift(); }
-        const h6 = (pairRes[A] || []).slice(-6), l6 = h6.filter((v) => v < 0).length, sum8 = (pairRes[A] || []).reduce((a, b) => a + b, 0);
-        if ((pairLoss[A] || 0) >= BAD_LOSSES || (h6.length >= 6 && l6 >= 4) || ((pairRes[A] || []).length >= 8 && sum8 <= -4)) { badUntil[A] = Date.now() + BAD_MIN * 60000; pairLoss[A] = 0; pairRes[A] = []; forceSwitch = true; }
+        const h4 = (pairRes[A] || []).slice(-4), l4 = h4.filter((v) => v < 0).length, sum8 = (pairRes[A] || []).reduce((a, b) => a + b, 0);
+        if ((pairLoss[A] || 0) >= BAD_LOSSES || (h4.length >= 4 && l4 >= 3) || ((pairRes[A] || []).length >= 6 && sum8 <= -3)) { badUntil[A] = Date.now() + BAD_MIN * 60000; pairLoss[A] = 0; pairRes[A] = []; forceSwitch = true; }
       } }
     if (res > 0) {
       par.wins++; par.streak++; par.best = Math.max(par.best, par.streak);
@@ -987,8 +987,8 @@
       if (!g.ok) { trendBad = 0; must = true; rotMsg = '🔄 ' + sel + '՝ վատ գրաֆիկ (' + g.why + ')՝ փոխում եմ, մինչև լավ գտնեմ'; }
       else { rotMsg = '🔄 ' + sel + ' ' + g.why + ' (' + (pay0 === null ? '?' : pay0) + '%)՝ մնում եմ'; evalAt = now + 15000; return; }
     }
-    { const ph = pairHits[sel] || []; if (!must && ph.length >= 25 && ph.reduce((a, b) => a + b, 0) / ph.length < 0.44) { must = true; badUntil[sel] = now + BAD_MIN * 60000; pairHits[sel] = []; rotMsg = '🔄 ' + sel + '՝ AI-ի ճշգրտությունը այս զույգի վրա <44%՝ փոխում եմ'; } }
-    if (!must && forceSwitch) { must = true; rotMsg = '🔄 ' + sel + '՝ ' + BAD_LOSSES + ' կորուստ իրար հետևից՝ զույգը ' + BAD_MIN + ' րոպե դուրս եմ թողնում'; }
+    { const ph = pairHits[sel] || []; if (!must && ph.length >= 15 && ph.reduce((a, b) => a + b, 0) / ph.length < 0.42) { must = true; badUntil[sel] = now + BAD_MIN * 60000; pairHits[sel] = []; rotMsg = '🔄 ' + sel + '՝ AI-ի ճշգրտությունը այս զույգի վրա <42%՝ փոխում եմ'; } }
+    if (!must && forceSwitch) { must = true; rotMsg = '🔄 ' + sel + '՝ ' + 'վատ արդյունքներ՝ զույգը ' + BAD_MIN + ' րոպե դուրս եմ թողնում'; }
     if (!must && now - lastSwitch > ROT_STAY * 1000) { must = true; rotMsg = '🔄 ' + sel + '՝ ' + ROT_STAY + ' վրկ անցավ՝ փոխում եմ հաջորդ զույգի'; }
     if (!must || now - lastSwitch < 6000) return;
     rotBusy = true;

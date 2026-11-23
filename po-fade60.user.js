@@ -505,6 +505,19 @@
       try { el.dispatchEvent(n.startsWith('pointer') ? new PointerEvent(n, o) : new MouseEvent(n, o)); } catch (e) {}
     });
   }
+  function expirySecs() { // «Время» դաշտի ընթացիկ արժեքը վայրկյաններով (null՝ եթե չի կարդացվում)
+    try {
+      const s = window.innerWidth / SSW;
+      const l = [...document.querySelectorAll('div,span,label,p')].find((e) => /^(Время|Time)$/i.test((e.textContent || '').trim()) && e.getBoundingClientRect().width > 10 && e.getBoundingClientRect().top >= 0 && e.getBoundingClientRect().top < window.innerHeight);
+      if (!l) return null;
+      const r = l.getBoundingClientRect();
+      const t = hitXY([r.left + 187.5 * s, r.top + r.height / 2 + 67 * s]);
+      if (!t) return null;
+      const raw = (t.value !== undefined && t.value !== '' ? String(t.value) : String(t.textContent || '')).trim();
+      const m = raw.match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+      return m ? (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]) : null;
+    } catch (e) { return null; }
+  }
   function autoClick(dir, asset, prob) {
     if (!AUTO) return;
     if (forceSwitch && ROTATE) { autoMsg = '🔄 վատ արդյունքներ՝ սիգնալը բաց թողեցի, զույգը փոխվում է…'; return; } // որ հերթափոխը չսովի (անընդհատ գործարքներից հետո դադար չի լինում)
@@ -524,6 +537,7 @@
     if (nAuto >= MAX_AUTO) { autoMsg = 'գործարքների սահմանը լրացավ (' + MAX_AUTO + ')'; return; }
     const pay = payoutNow();
     if (pay !== null && pay < MIN_PAYOUT) { autoMsg = 'եկամտաբերություն ' + pay + '% < ' + MIN_PAYOUT + '%՝ չեմ սեղմում'; return; }
+    { const ex = expirySecs(); if (ex !== null && ex !== HOLD) { autoMsg = '⚠ ժամկետը ' + ex + ' վրկ է, սկրիպտի համար պետք է ' + HOLD + ' վրկ՝ չեմ սեղմում'; return; } }
     if (!btnBuy || !document.contains(btnBuy)) btnBuy = findBtn(['купить', 'buy', 'higher']);
     if (!btnSell || !document.contains(btnSell)) btnSell = findBtn(['продать', 'sell', 'lower']);
     const b = dir > 0 ? btnBuy : btnSell;
@@ -549,7 +563,7 @@
           }
           pp.fieldAtClick = fn;
         }
-        pp.wall = Date.now();
+        pp.wall = Date.now(); pp.t = lastTickT; pp.entry = lastTickP; pp.tc = lastTickT + (Date.now() - lastWall) / 1000; // մուտքի գինը/ժամանակը՝ իրական սեղմման պահին (ոչ հաշվիչով գումար դնելուց առաջ)
         fire(b);
         if (bal0 !== null) {
           setTimeout(() => { // իրական գանձված գումարը՝ հաշվեկշռի անկումից (թողարկումից ~1.5 վրկ հետո)
@@ -566,7 +580,7 @@
             const ew = pp.stake * pp.pay / 100;
             const win = diff > ew * 0.5, lossBal = diff < -pp.stake * 0.5;
             // հաշվեկշռի ցուցադրումը հարթակում ուշանում է՝ հաշվեկշռի «0»-ն չի նշանակում ոչ-ոքի։ Երկիմաստ դեպքում որոշում է ԳԻՆԸ (հարթակի նույն տիկային հոսքով, ժամկետի պահին)
-            let xp = null; try { const ar = ticks[pp.asset]; xp = ar ? priceAt(ar, pp.t + HOLD + 0.3) : null; } catch (e) {}
+            let xp = null; try { const ar = ticks[pp.asset]; xp = ar ? priceAt(ar, (pp.tc || pp.t) + HOLD) : null; } catch (e) {}
             const mvP = xp !== null ? (xp - pp.entry) * pp.dir : null;
             let res = null, how = '';
             if (win) { res = 1; how = 'հաշվեկշիռ'; }
@@ -760,7 +774,7 @@
     const p = aiPredict(x); aiLast = p;
     const conf = Math.abs(p - 0.5) >= L_TH && ai.n >= 100;
     lPend.push({ sec, asset, x, p, conf });
-    if (lPend.length > 60) lPend.shift();
+    if (lPend.length > HOLD * 3 + 30) lPend.shift(); // պիտակի սպասման ցանկը պետք է լինի ավելի երկար, քան գործարքի ժամկետը
     if (Date.now() - lSavedAt > 30000) { lSavedAt = Date.now(); try { localStorage.setItem(AIK, JSON.stringify(ai)); } catch (e) {} }
     const valid = aiValid();
     const probOk = !valid && PROB && Math.abs(p - 0.5) >= L_PROB; // մինչև AI-ի ապացուցումը՝ միայն ամենավստահ կանխատեսումներ

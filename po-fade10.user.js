@@ -658,16 +658,16 @@
   const LEARN = true, LEARN_ONLY = true; // LEARN_ONLY՝ BB սիգնալները միայն վիճակագրության համար, առևտուր անում է AI-ն
   const L_LAG = 20, L_D = 1, L_TH = 0.04, L_MINVAL = 0.535, L_BE = 0.521, L_WIN = 300, L_MINHITS = 200, L_MINN = 400, L_GAP = 10, L_LR = 0.02, L_L2 = 0.0005;
   const PROB = true, L_PROB = 0.10; // փորձաշրջան՝ մինչև AI-ն ապացուցի իրեն՝ առևտուր միայն p≥0.60/≤0.40 սիգնալներով, ֆիքսված $1
-  const L_DIM = L_LAG + 3 + 6;
-  const AIK = 'po_fade10_ai_v2';
+  const L_DIM = L_LAG + 3 + 6 + 8;
+  const AIK = 'po_fade10_ai_v3';
   let ai = { w: new Array(L_DIM + 1).fill(0), mu: new Array(L_DIM).fill(0), m2: new Array(L_DIM).fill(1), n: 0, hits: [] };
   try { const o = JSON.parse(localStorage.getItem(AIK) || 'null'); if (o && o.w && o.w.length === L_DIM + 1) ai = o; } catch (e) {}
-  try { // հին (v1) մոդելի գիտելիքը պահպանում ենք՝ առաջին 23 հատկանիշները նույնն են, նորերը՝ զրոյական կշռով
-    {
-      const o = JSON.parse(localStorage.getItem('po_fade10_ai_v1') || 'null');
-      if (o && o.w && o.w.length === 24 && o.n > ai.n) {
-        const add = L_DIM - 23;
-        ai = { w: o.w.slice(0, 23).concat(new Array(add).fill(0), [o.w[23]]), mu: o.mu.concat(new Array(add).fill(0)), m2: o.m2.concat(new Array(add).fill(o.n)), n: o.n, hits: [] };
+  try { // հին մոդելների գիտելիքը պահպանում ենք՝ հին հատկանիշների դիրքերը նույնն են, նորերը՝ զրոյական կշռով
+    for (const key of ['po_fade10_ai_v2', 'po_fade10_ai_v1']) {
+      const o = JSON.parse(localStorage.getItem(key) || 'null');
+      if (o && o.w && o.n > ai.n && o.w.length - 1 < L_DIM) {
+        const k = o.w.length - 1, add = L_DIM - k;
+        ai = { w: o.w.slice(0, k).concat(new Array(add).fill(0), [o.w[k]]), mu: o.mu.concat(new Array(add).fill(0)), m2: o.m2.concat(new Array(add).fill(o.n)), n: o.n, hits: [] };
       }
     }
   } catch (e) {}
@@ -684,6 +684,24 @@
     for (let i = 0; i < L_DIM; i++) ai.w[i] -= L_LR * (g * z[i] + L_L2 * ai.w[i]);
     ai.w[L_DIM] -= L_LR * g;
   }
+  function emaS(a, n) { const k = 2 / (n + 1); const out = [a[0]]; for (let i = 1; i < a.length; i++) out.push(a[i] * k + out[i - 1] * (1 - k)); return out; }
+  function aiInd(arr, sec, sd) { // ստանդարտ ինդիկատորներ (RSI, Stochastic, MACD, Bollinger %b, EMA, ATR-ռեժիմ, բարձրագույն)՝ 1-վրկ գներից
+    const px = []; for (let j = 80; j >= 0; j--) { const v = priceAt(arr, sec - j); if (v === null) return null; px.push(v); }
+    const last = px[px.length - 1], n = px.length;
+    let up = 0, dn = 0; for (let i = n - 14; i < n; i++) { const d = px[i] - px[i - 1]; if (d > 0) up += d; else dn -= d; }
+    const rsi = up + dn > 0 ? up / (up + dn) - 0.5 : 0;
+    const w14 = px.slice(-14), hi = Math.max.apply(null, w14), lo = Math.min.apply(null, w14), stoch = hi > lo ? (last - lo) / (hi - lo) - 0.5 : 0;
+    const e12 = emaS(px, 12), e26 = emaS(px, 26), macdS = e12.map((v, i) => v - e26[i]), sigS = emaS(macdS, 9);
+    const macd = macdS[n - 1] / sd, hist = (macdS[n - 1] - sigS[n - 1]) / sd;
+    const w20 = px.slice(-20), m20 = w20.reduce((a, b) => a + b, 0) / 20, s20 = Math.sqrt(w20.reduce((a, b) => a + (b - m20) * (b - m20), 0) / 20) || 1e-12, pb = (last - m20) / (2 * s20);
+    const emaD = (emaS(px, 9)[n - 1] - emaS(px, 21)[n - 1]) / sd;
+    const sdOf = (a) => { const m = a.reduce((x, y) => x + y, 0) / a.length; return Math.sqrt(a.reduce((x, y) => x + (y - m) * (y - m), 0) / a.length) || 1e-12; };
+    const rr = []; for (let i = 1; i < n; i++) rr.push(px[i] - px[i - 1]);
+    const volR = sdOf(rr.slice(-5)) / sdOf(rr.slice(-40)) - 1;
+    const high60 = (last - Math.max.apply(null, px.slice(-60))) / (sd * 4);
+    const cl = (v) => Math.max(-5, Math.min(5, v));
+    return [rsi, stoch, cl(macd), cl(hist), cl(pb), cl(emaD), cl(volR), cl(high60)];
+  }
   function aiFeats(arr, sec) {
     const px = [];
     for (let j = L_LAG; j >= 0; j--) { const v = priceAt(arr, sec - j); if (v === null) return null; px.push(v); }
@@ -694,7 +712,7 @@
     const last = px[px.length - 1], ms = [];
     for (const k of [3, 5, 10, 30, 60]) { const v = priceAt(arr, sec - k); if (v === null) return null; ms.push((last - v) / (sd * Math.sqrt(k))); } // բազմամասշտաբ թրենդ
     const ups = r.filter((v) => v > 0).length / r.length - 0.5; // վերջին 20 վրկ-ի աճող քայլերի մասնաբաժին
-    return r.map((v) => v / sd).concat([(last - pm) / psd, Math.log(sd / Math.abs(last) + 1e-12), /_otc$/i.test(sel || '') ? 1 : 0]).concat(ms).concat([ups]);
+    return r.map((v) => v / sd).concat([(last - pm) / psd, Math.log(sd / Math.abs(last) + 1e-12), /_otc$/i.test(sel || '') ? 1 : 0]).concat(ms).concat([ups]).concat(aiInd(arr, sec, sd) || new Array(8).fill(NaN));
   }
   function aiRate() { const h = ai.hits; return h.length ? h.reduce((a, b) => a + b, 0) / h.length : 0; }
   function aiLow() { // Wilson ստորին սահման (90%)՝ ճշգրտության «վատագույն հավանական» արժեքը
@@ -719,7 +737,7 @@
       if (q.conf) { const ph = pairHits[asset] || (pairHits[asset] = []); ph.push((q.p > 0.5) === (y === 1) ? 1 : 0); if (ph.length > 40) ph.shift(); }
       if (q.conf) { ai.hits.push((q.p > 0.5) === (y === 1) ? 1 : 0); if (ai.hits.length > L_WIN) ai.hits.shift(); }
     }
-    const x = aiFeats(arr, sec); if (!x) return;
+    const x = aiFeats(arr, sec); if (!x || x.some((v) => !isFinite(v))) return;
     const p = aiPredict(x); aiLast = p;
     const conf = Math.abs(p - 0.5) >= L_TH && ai.n >= 100;
     lPend.push({ sec, asset, x, p, conf });

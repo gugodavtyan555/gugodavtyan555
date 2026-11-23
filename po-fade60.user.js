@@ -734,8 +734,10 @@
   // ռեժիմ՝ «ծուռ/կողքային» (լավ) թե «թրենդային» (վատ)՝ Kaufman-ի արդյունավետության գործակից (ER = զուտ շարժում / անցած ճանապարհ)
   // ռեժիմ՝ «կենդանի» գրաֆիկ (մեծ, ակտիվ ծուռ/շարժ)՝ լավ, «մեռած/սեղմված» (մանր, գրեթե հարթ մոմեր)՝ վատ.
   // կենդանություն = վերջին 20 վրկ-ի ցրվածություն ÷ վերջին ~90 վրկ-ի ցրվածություն (սեղմումը՝ ցածր) + ակտիվ քայլերի մասնաբաժին
-  const ER_W = 90, V_MIN = 0.6, ACT_MIN = 0.5;
+  const ER_W = 180, V_MIN = 0.65, ACT_MIN = 0.5, TREND_MAX = 0.55, POS_LO = 0.12, POS_HI = 0.88;
   function regimeOf(asset) {
+    // 1) «կենդանություն»՝ վերջին ~20 վրկ-ի ցրվածությունը (առանց վերջին 5 վրկ-ի, որ հենց սիգնալի իմպուլսը չխաբի) ÷ երկար ցրվածություն
+    // 2) թրենդ՝ զուտ շարժում ÷ պատուհանի տիրույթ (բարձր՝ գինը մեկ ուղղությամբ է գնացել). 3) դիրք՝ տիրույթի ծայրում (թրենդից հետո «սեղմված» հատակ/առաստաղ)՝ վատ
     const arr = ticks[asset]; if (!arr || !arr.length) return { ok: false, er: NaN, why: 'տիկեր չկան' };
     const tl = Math.floor(arr[arr.length - 1].t), px = [];
     const span = tl - arr[0].t; if (span < 45) return { ok: false, er: NaN, why: 'պատմությունը քիչ է (' + Math.max(0, Math.floor(span)) + 'վրկ/45)' };
@@ -743,9 +745,16 @@
     for (let j = W; j >= 0; j--) { const v = priceAt(arr, tl - j); if (v === null) return { ok: false, er: NaN, why: 'պատմությունը քիչ է' }; px.push(v); }
     const rr = []; for (let i = 1; i < px.length; i++) rr.push(px[i] - px[i - 1]);
     const sdOf = (a) => { const m = a.reduce((x, y) => x + y, 0) / a.length; return Math.sqrt(a.reduce((x, y) => x + (y - m) * (y - m), 0) / a.length); };
-    const r20 = rr.slice(-20), sS = sdOf(r20), sL = sdOf(rr) || 1e-12, ratio = sS / sL;
-    const act = r20.filter((v) => v !== 0).length / r20.length;
-    return { ok: ratio >= V_MIN && act >= ACT_MIN, er: ratio, why: 'կենդանություն ' + ratio.toFixed(2) + ' (≥' + V_MIN + '), ակտիվ ' + Math.round(act * 100) + '%' };
+    const mid = rr.slice(-25, -5), sM = sdOf(mid), sL = sdOf(rr) || 1e-12, ratio = sM / sL;
+    const act = mid.filter((v) => v !== 0).length / mid.length;
+    const hi = Math.max.apply(null, px), lo = Math.min.apply(null, px), rng = hi - lo || 1e-12;
+    const last = px[px.length - 1], trend = Math.abs(last - px[0]) / rng, pos = (last - lo) / rng;
+    const reasons = [];
+    if (ratio < V_MIN) reasons.push('սեղմված ' + ratio.toFixed(2) + '<' + V_MIN);
+    if (act < ACT_MIN) reasons.push('քիչ ակտիվ ' + Math.round(act * 100) + '%');
+    if (W >= 90 && trend > TREND_MAX) reasons.push('թրենդ ' + trend.toFixed(2) + '>' + TREND_MAX);
+    if (W >= 90 && (pos < POS_LO || pos > POS_HI)) reasons.push('տիրույթի ծայրում ' + Math.round(pos * 100) + '%');
+    return { ok: reasons.length === 0, er: ratio, why: reasons.length ? reasons.join(', ') : 'կենդանություն ' + ratio.toFixed(2) + ', թրենդ ' + trend.toFixed(2) + ', դիրք ' + Math.round(pos * 100) + '%' };
   }
   function aiRate() { const h = ai.hits; return h.length ? h.reduce((a, b) => a + b, 0) / h.length : 0; }
   function aiLow() { // Wilson ստորին սահման (90%)՝ ճշգրտության «վատագույն հավանական» արժեքը

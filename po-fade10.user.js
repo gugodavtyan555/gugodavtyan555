@@ -46,12 +46,12 @@
 
   // ---- վահանակ ----
   const box = document.createElement('div');
-  box.style.cssText = 'position:fixed;bottom:90px;left:4px;z-index:99999;background:#000c;color:#0f0;font:11px monospace;padding:4px;max-width:80vw;max-height:38vh;overflow:auto;white-space:pre-wrap';
+  box.style.cssText = 'position:fixed;top:150px;left:4px;z-index:99999;background:#000c;color:#0f0;font:11px monospace;padding:4px;max-width:80vw;max-height:29vh;overflow:auto;white-space:pre-wrap';
   const body = document.createElement('div');
   const grip = document.createElement('span');
   grip.textContent = ' ✥ ';
   grip.style.cssText = 'padding:4px 8px;background:#333;font-size:14px';
-  grip.addEventListener('touchmove', (e) => { const t = e.touches[0]; box.style.bottom = 'auto'; box.style.left = Math.max(0, t.clientX - 20) + 'px'; box.style.top = Math.max(0, t.clientY - 10) + 'px'; e.preventDefault(); }, { passive: false });
+  grip.addEventListener('touchmove', (e) => { const t = e.touches[0]; box.style.left = Math.max(0, t.clientX - 20) + 'px'; box.style.top = Math.max(0, t.clientY - 10) + 'px'; e.preventDefault(); }, { passive: false });
   const reset = document.createElement('span');
   reset.textContent = ' ⟲ ';
   reset.style.cssText = 'padding:4px 8px;background:#533;font-size:14px;margin-left:4px';

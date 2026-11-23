@@ -649,9 +649,9 @@
   // Ամեն վայրկյանի համար կանխատեսում է՝ 10 վրկ հետո գինը կբարձրանա՞. պիտակը ստանում է, երբ ժամանակը գալիս է, ու սովորում (logistic regression, SGD):
   // Առևտուր է անում ՄԻԱՅՆ երբ մոդելը վստահ է ԵՎ իր վերջին վստահ կանխատեսումների իրական (դեռ չտեսած տվյալների վրա) ճշգրտությունը ≥ շեմի։
   const LEARN = true, LEARN_ONLY = true; // LEARN_ONLY՝ BB սիգնալները միայն վիճակագրության համար, առևտուր անում է AI-ն
-  const L_LAG = 20, L_D = 1, L_TH = 0.04, L_MINVAL = 0.535, L_WIN = 150, L_MINHITS = 60, L_MINN = 400, L_GAP = 10, L_LR = 0.02, L_L2 = 0.0005;
-  const L_DIM = L_LAG + 3;
-  const AIK = 'po_fade10_ai_v1';
+  const L_LAG = 20, L_D = 1, L_TH = 0.04, L_MINVAL = 0.535, L_BE = 0.521, L_WIN = 300, L_MINHITS = 200, L_MINN = 400, L_GAP = 10, L_LR = 0.02, L_L2 = 0.0005;
+  const L_DIM = L_LAG + 3 + 6;
+  const AIK = 'po_fade10_ai_v2';
   let ai = { w: new Array(L_DIM + 1).fill(0), mu: new Array(L_DIM).fill(0), m2: new Array(L_DIM).fill(1), n: 0, hits: [] };
   try { const o = JSON.parse(localStorage.getItem(AIK) || 'null'); if (o && o.w && o.w.length === L_DIM + 1) ai = o; } catch (e) {}
   let aiErr = '';
@@ -674,12 +674,19 @@
     const m = r.reduce((a, b) => a + b, 0) / r.length, sd = Math.sqrt(r.reduce((a, b) => a + (b - m) * (b - m), 0) / r.length);
     if (!sd) return null;
     const pm = px.reduce((a, b) => a + b, 0) / px.length, psd = Math.sqrt(px.reduce((a, b) => a + (b - pm) * (b - pm), 0) / px.length) || 1e-12;
-    return r.map((v) => v / sd).concat([(px[px.length - 1] - pm) / psd, Math.log(sd / Math.abs(px[px.length - 1]) + 1e-12), /_otc$/i.test(sel || '') ? 1 : 0]);
+    const last = px[px.length - 1], ms = [];
+    for (const k of [3, 5, 10, 30, 60]) { const v = priceAt(arr, sec - k); if (v === null) return null; ms.push((last - v) / (sd * Math.sqrt(k))); } // բազմամասշտաբ թրենդ
+    const ups = r.filter((v) => v > 0).length / r.length - 0.5; // վերջին 20 վրկ-ի աճող քայլերի մասնաբաժին
+    return r.map((v) => v / sd).concat([(last - pm) / psd, Math.log(sd / Math.abs(last) + 1e-12), /_otc$/i.test(sel || '') ? 1 : 0]).concat(ms).concat([ups]);
   }
   function aiRate() { const h = ai.hits; return h.length ? h.reduce((a, b) => a + b, 0) / h.length : 0; }
-  function aiValid() { return ai.n >= L_MINN && ai.hits.length >= L_MINHITS && aiRate() >= L_MINVAL; }
+  function aiLow() { // Wilson ստորին սահման (90%)՝ ճշգրտության «վատագույն հավանական» արժեքը
+    const n = ai.hits.length; if (!n) return 0; const p = aiRate(), z = 1.28, z2 = z * z;
+    return (p + z2 / (2 * n) - z * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n))) / (1 + z2 / n);
+  }
+  function aiValid() { return ai.n >= L_MINN && ai.hits.length >= L_MINHITS && aiLow() >= L_BE; }
   function aiLine() {
-    return '🧠 AI՝ սովորել է ' + ai.n + ' օրինակ | վստահ կանխ. ' + ai.hits.length + ' · ճշգրտ ' + (ai.hits.length ? (aiRate() * 100).toFixed(1) + '%' : '—') + ' | ' + (aiValid() ? '✅ առևտուր թույլատրված' : '⏳ սովորում է (պետք է ≥' + (L_MINVAL * 100).toFixed(1) + '%, ' + L_MINHITS + '+ կանխ.)') + (aiLast !== null ? ' | հիմա p=' + aiLast.toFixed(2) : '');
+    return '🧠 AI՝ սովորել է ' + ai.n + ' օրինակ | վստահ կանխ. ' + ai.hits.length + ' · ճշգրտ ' + (ai.hits.length ? (aiRate() * 100).toFixed(1) + '% (ստորին ' + (aiLow() * 100).toFixed(1) + '%)' : '—') + ' | ' + (aiValid() ? '✅ առևտուր թույլատրված' : '⏳ սովորում է (պետք է ստորին ≥' + (L_BE * 100).toFixed(1) + '%, ' + L_MINHITS + '+ կանխ.)') + (aiLast !== null ? ' | հիմա p=' + aiLast.toFixed(2) : '');
   }
   function learnTick(asset, t) {
     if (sel && asset !== sel) return;

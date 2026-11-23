@@ -505,7 +505,9 @@
       const pp = { asset, dir, t: lastTickT, entry: lastTickP, pay: pay || 92, byBal: bal0 !== null };
       parPend = pp; // արգելափակում է նոր սիգնալները, մինչև այս գործարքի արդյունքը
       autoMsg = 'դնում եմ գումար $' + par.stake + '…';
-      (prep || Promise.resolve()).then(() => setStakeAsync(String(par.stake))).then((r) => {
+      let fast = false; // արագ ճանապարհ՝ գումարն արդեն ճիշտ է դրված → սեղմում ենք ԱՆՄԻՋԱՊԵՍ, առանց ասինխրոն սպասման
+      try { if (!prep) { const fc0 = fieldCenter(); fast = !calcOpenNow(fc0) && fieldNum(fc0) === par.stake; } } catch (e) { fast = false; }
+      const go = (r) => {
         if (parPend !== pp) return;
         if (!r.ok) { parPend = null; parMsg = '⚠ գումարը չդրվեց՝ ' + r.info; autoMsg = 'չսեղմեցի՝ գումարը չի փոխվում (սխալ գումարով գործարք չեմ բացում)'; return; }
         parMsg = 'գումար $' + par.stake + ' դրվեց (' + r.how + ')';
@@ -522,7 +524,10 @@
         }
         nAuto++;
         autoMsg = 'սեղմվեց ' + (dir > 0 ? 'Купить' : 'Продать') + ' #' + nAuto + ' (գումար $' + par.stake + ')';
-      }).catch((x) => { if (parPend === pp) parPend = null; parMsg = '⚠ սխալ՝ ' + (x && x.message); });
+      };
+      const fail = (x) => { if (parPend === pp) parPend = null; parMsg = '⚠ սխալ՝ ' + (x && x.message); };
+      if (fast) { try { go({ ok: true, how: 'fast' }); } catch (x) { fail(x); } }
+      else (prep || Promise.resolve()).then(() => setStakeAsync(String(par.stake))).then(go).catch(fail);
       return;
     }
     fire(b);

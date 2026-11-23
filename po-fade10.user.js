@@ -426,7 +426,14 @@
       return isNaN(v) ? null : v;
     } catch (e) { return null; }
   }
+  const pairLoss = {}, badUntil = {}; let forceSwitch = false;
+  const BAD_LOSSES = 3, BAD_MIN = 10; // 3 իրար հետևից կորուստ → զույգը 10 րոպե խուսափել
   function applyParlay(res, pay, profit) { // res՝ 1 շահ, -1 կորուստ, 0 ոչ-ոքի
+    { const A = parPend && parPend.asset;
+      if (A) {
+        if (res > 0) pairLoss[A] = 0; else if (res < 0) pairLoss[A] = (pairLoss[A] || 0) + 1;
+        if ((pairLoss[A] || 0) >= BAD_LOSSES) { badUntil[A] = Date.now() + BAD_MIN * 60000; pairLoss[A] = 0; forceSwitch = true; }
+      } }
     if (res > 0) {
       par.wins++; par.streak++; par.best = Math.max(par.best, par.streak);
       par.stake = Math.round((profit && profit > 0 ? par.stake + profit : par.stake * (1 + pay / 100)) * 100) / 100;
@@ -851,17 +858,18 @@
       if (!g.ok) { must = true; rotMsg = '🔄 ' + sel + '՝ վատ գրաֆիկ (' + g.why + ')՝ փոխում եմ'; }
       else { rotMsg = '🔄 ' + sel + ' ' + g.why + ' (' + (pay0 === null ? '?' : pay0) + '%)՝ մնում եմ'; evalAt = now + 30000; return; }
     }
+    if (!must && forceSwitch) { must = true; rotMsg = '🔄 ' + sel + '՝ ' + BAD_LOSSES + ' կորուստ իրար հետևից՝ զույգը ' + BAD_MIN + ' րոպե դուրս եմ թողնում'; }
     if (!must && now - lastSwitch > ROT_STAY * 1000) { must = true; rotMsg = '🔄 ' + sel + '՝ ' + ROT_STAY + ' վրկ անցավ՝ փոխում եմ հաջորդ զույգի'; }
     if (!must || now - lastSwitch < 6000) return;
     rotBusy = true;
     try {
       const hide = box && box.style; if (hide) box.style.visibility = 'hidden';
       let id = null;
-      for (let k = 0; k < ROT_LIST.length; k++) { const c = ROT_LIST[(rotI + k) % ROT_LIST.length]; if (c !== sel) { id = c; rotI = (rotI + k + 1) % ROT_LIST.length; break; } }
+      for (let k = 0; k < ROT_LIST.length; k++) { const c = ROT_LIST[(rotI + k) % ROT_LIST.length]; if (c !== sel && !(badUntil[c] && badUntil[c] > Date.now())) { id = c; rotI = (rotI + k + 1) % ROT_LIST.length; break; } }
       if (id) await switchTo(id);
       if (hide) box.style.visibility = 'visible';
     } catch (e) { rotMsg = '🔄 սխալ՝ ' + (e && e.message); }
-    lastSwitch = Date.now(); evalAt = Date.now() + ROT_WARM * 1000; rotBusy = false;
+    forceSwitch = false; lastSwitch = Date.now(); evalAt = Date.now() + ROT_WARM * 1000; rotBusy = false;
   }, 4000);
   // ---- WebSocket ----
   const Orig = window.WebSocket;

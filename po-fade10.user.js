@@ -19,7 +19,7 @@
   const AUTO = true;        // true՝ սիգնալի պահին ինքնաբերաբար սեղմել Купить/Продать
   const ALLOW_REAL = true;        // true՝ աշխատում է նաև REAL հաշվի վրա (հաստատումով և սահմաններով)
   const REAL_MAX_STAKE = 10;      // $ REAL-ում ոչ մի գործարք այս գումարից մեծ չէ
-  const REAL_LOSS_LIMIT = 10;     // $ երբ հաշվեկշիռը նվազի սկզբնականից այսքանով, ամեն ինչ կանգնում է
+  const REAL_LOSS_LIMIT = 1000000000;     // $ երբ հաշվեկշիռը նվազի սկզբնականից այսքանով, ամեն ինչ կանգնում է
   const REAL_MAX_TRADES = 1000000;    // REAL-ում առավելագույն գործարքներ մեկ էջի բեռնման ընթացքում
   const MIN_PAYOUT = 80;    // % նվազագույն եկամտաբերություն, որի դեպքում սեղմում է
   const MAX_AUTO = 1000000;     // նվազագույն սահման՝ մեկ էջի բեռնման ընթացքում առավելագույն գործարքներ
@@ -64,7 +64,7 @@
       if (a === 'unknown') { autoMsg = 'հաշիվը չի որոշվել՝ չեմ սկսում'; return; }
       if (a === 'real') {
         if (!ALLOW_REAL) { autoMsg = 'REAL հաշիվ՝ արգելված է'; return; }
-        const ok = confirm('⚠ REAL հաշիվ՝ ավտոմատ առևտուրը ՍԿՍՎՈՒՄ Է։\n\nՍահմաններ՝\n• մեկ գործարք՝ առավելագույնը $' + REAL_MAX_STAKE + '\n• կորստի սահման՝ $' + REAL_LOSS_LIMIT + ' (հետո կանգնում է)\n• գործարքների քանակ՝ ' + (REAL_MAX_TRADES >= 1000000 ? 'անսահմանափակ' : REAL_MAX_TRADES) + '\n• սանդուղք՝ ' + STEPS + ' քայլ, սկսած $' + STAKE0 + '\n\nԱռավելությունը ապացուցված չէ։ Շարունակե՞լ։');
+        const ok = confirm('⚠ REAL հաշիվ՝ ավտոմատ առևտուրը ՍԿՍՎՈՒՄ Է։\n\nՍահմաններ՝\n• մեկ գործարք՝ առավելագույնը $' + REAL_MAX_STAKE + '\n• կորստի սահման՝ ' + (REAL_LOSS_LIMIT >= 1000000 ? 'ԱՆՋԱՏՎԱԾ' : '$' + REAL_LOSS_LIMIT + ' (հետո կանգնում է)') + '\n• գործարքների քանակ՝ ' + (REAL_MAX_TRADES >= 1000000 ? 'անսահմանափակ' : REAL_MAX_TRADES) + '\n• սանդուղք՝ ' + STEPS + ' քայլ, սկսած $' + STAKE0 + '\n\nԱռավելությունը ապացուցված չէ։ Շարունակե՞լ։');
         if (!ok) { autoMsg = 'REAL՝ չեղարկվեց'; return; }
         realOk = true; sessBal0 = readBalance();
       } else { realOk = false; }
@@ -486,6 +486,7 @@
       if (nAuto >= REAL_MAX_TRADES) { autoMsg = 'REAL գործարքների սահմանը լրացավ (' + REAL_MAX_TRADES + ')'; return; }
       const bnow = readBalance();
       if (sessBal0 !== null && bnow !== null && bnow - par.stake < sessBal0 - REAL_LOSS_LIMIT) { autoMsg = '🛑 կորստի սահմանը ($' + REAL_LOSS_LIMIT + ') հասավ կամ հաջորդ գործարքը կանցնի այն՝ կանգնեցի'; return; }
+      if (bnow !== null && bnow < par.stake) { autoMsg = 'հաշվեկշիռը ($' + bnow + ') < գումար $' + par.stake + '՝ կանգնեցի'; return; }
       if (par.stake > REAL_MAX_STAKE) { autoMsg = 'գումարը $' + par.stake + ' > սահմանի $' + REAL_MAX_STAKE + '՝ չեմ սեղմում'; return; }
     }
     if (nAuto >= MAX_AUTO) { autoMsg = 'գործարքների սահմանը լրացավ (' + MAX_AUTO + ')'; return; }

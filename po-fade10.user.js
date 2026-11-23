@@ -102,6 +102,7 @@
   // ---- parlay վիճակ ----
   let par = { stake: STAKE0, streak: 0, attempts: 1, best: 0, done: 0, wins: 0, losses: 0 };
   try { const o = JSON.parse(localStorage.getItem('po_parlay') || 'null'); if (o) par = Object.assign(par, o); } catch (e) {}
+  let queuedSig = null;
   let parPend = null, parMsg = '', prep = null;
   let realOk = false, realAsked = false, sessBal0 = null, parAcct = '', running = false;
   function parKey() { return 'po_parlay_' + (parAcct || 'demo'); }
@@ -425,6 +426,7 @@
     }
     parPend = null; savePar();
     prepareNext(); // անմիջապես դնել հաջորդ գումարը, որ պատրաստ լինի հաջորդ սիգնալին
+    { const q = queuedSig; queuedSig = null; if (q && Date.now() - q.w < 5000 && (!sel || q.asset === sel)) { try { autoClick(q.dir, q.asset); } catch (e) {} } } // հերթում սպասող սիգնալը
   }
   function prepareNext() {
     if (!PARLAY || !AUTO || !running) return;
@@ -501,7 +503,10 @@
     const b = dir > 0 ? btnBuy : btnSell;
     if (!b) { autoMsg = 'կոճակը չի գտնվել'; return; }
     if (PARLAY) {
-      if (parPend) { autoMsg = 'սպասում եմ նախորդ գործարքի արդյունքին'; return; }
+      if (parPend) {
+        if (parPend.wall && Date.now() - parPend.wall > HOLD * 1000 - 1000) queuedSig = { dir, asset, w: Date.now() }; // գործարքը վերջանում է՝ սիգնալը հերթում է
+        autoMsg = 'սպասում եմ նախորդ գործարքի արդյունքին'; return;
+      }
       const bal0 = readBalance();
       const pp = { asset, dir, t: lastTickT, entry: lastTickP, pay: pay || 92, byBal: bal0 !== null };
       parPend = pp; // արգելափակում է նոր սիգնալները, մինչև այս գործարքի արդյունքը
@@ -512,16 +517,23 @@
         if (parPend !== pp) return;
         if (!r.ok) { parPend = null; parMsg = '⚠ գումարը չդրվեց՝ ' + r.info; autoMsg = 'չսեղմեցի՝ գումարը չի փոխվում (սխալ գումարով գործարք չեմ բացում)'; return; }
         parMsg = 'գումար $' + par.stake + ' դրվեց (' + r.how + ')';
+        pp.wall = Date.now();
         fire(b);
         if (bal0 !== null) {
-          setTimeout(() => {
-            if (parPend !== pp) return;
+          const tEnd = Date.now() + HOLD * 1000;
+          const poll = setInterval(() => { // շահումը որսում ենք հենց ժամկետի ավարտին, կորուստը՝ վերջնաժամկետում
+            if (parPend !== pp) { clearInterval(poll); return; }
+            const now = Date.now();
+            if (now < tEnd + 150) return;
             const bal1 = readBalance();
-            if (bal1 === null) { pp.byBal = false; return; }
+            if (bal1 === null) { if (now > tEnd + 1600) { clearInterval(poll); pp.byBal = false; } return; }
             const diff = Math.round((bal1 - bal0) * 100) / 100;
-            parMsg = 'հաշվեկշիռ ' + bal0 + ' → ' + bal1 + ' (' + (diff > 0 ? '+' : '') + diff + ') ' + (diff > 0 ? 'ՇԱՀ' : diff < 0 ? 'կորուստ' : 'ոչ-ոքի');
-            applyParlay(diff > 0.001 ? 1 : diff < -0.001 ? -1 : 0, pp.pay, diff);
-          }, HOLD * 1000 + 1600);
+            if (diff > 0.001 || now > tEnd + 1600) {
+              clearInterval(poll);
+              parMsg = 'հաշվեկշիռ ' + bal0 + ' → ' + bal1 + ' (' + (diff > 0 ? '+' : '') + diff + ') ' + (diff > 0 ? 'ՇԱՀ' : diff < 0 ? 'կորուստ' : 'ոչ-ոքի');
+              applyParlay(diff > 0.001 ? 1 : diff < -0.001 ? -1 : 0, pp.pay, diff);
+            }
+          }, 200);
         }
         nAuto++;
         autoMsg = 'սեղմվեց ' + (dir > 0 ? 'Купить' : 'Продать') + ' #' + nAuto + ' (գումար $' + par.stake + ')';

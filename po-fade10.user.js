@@ -671,7 +671,7 @@
       }
     }
   } catch (e) {}
-  let aiErr = '', aiReg = null;
+  let aiErr = '', aiReg = null, histNote = '';
   let lSec = 0, lPend = [], lSavedAt = 0, aiLast = null;
   const sigm = (z) => 1 / (1 + Math.exp(-Math.max(-30, Math.min(30, z))));
   const aiZ = (x) => x.map((v, i) => (v - ai.mu[i]) / (Math.sqrt(ai.m2[i] / Math.max(1, ai.n)) + 1e-9));
@@ -701,9 +701,11 @@
   function regimeOf(asset) {
     const arr = ticks[asset]; if (!arr || !arr.length) return { ok: false, er: NaN, why: 'տիկեր չկան' };
     const tl = Math.floor(arr[arr.length - 1].t), px = [];
-    for (let j = ER_W; j >= 0; j--) { const v = priceAt(arr, tl - j); if (v === null) return { ok: false, er: NaN, why: 'պատմությունը քիչ է' }; px.push(v); }
+    const span = tl - arr[0].t; if (span < 45) return { ok: false, er: NaN, why: 'պատմությունը քիչ է (' + Math.max(0, Math.floor(span)) + 'վրկ/45)' };
+    const W = Math.min(ER_W, Math.floor(span));
+    for (let j = W; j >= 0; j--) { const v = priceAt(arr, tl - j); if (v === null) return { ok: false, er: NaN, why: 'պատմությունը քիչ է' }; px.push(v); }
     const er = (w) => { const q = px.slice(-w - 1); let path = 0; for (let i = 1; i < q.length; i++) path += Math.abs(q[i] - q[i - 1]); return path ? Math.abs(q[q.length - 1] - q[0]) / path : 1; };
-    const eL = er(ER_W), eS = er(30);
+    const eL = er(W), eS = er(30);
     return { ok: eL <= ER_MAX && eS <= ER_MAX_S, er: eL, why: 'ER ' + eL.toFixed(2) + '/' + eS.toFixed(2) };
   }
   function aiRate() { const h = ai.hits; return h.length ? h.reduce((a, b) => a + b, 0) / h.length : 0; }
@@ -713,7 +715,7 @@
   }
   function aiValid() { return ai.n >= L_MINN && ai.hits.length >= L_MINHITS && aiLow() >= L_BE; }
   function aiLine() {
-    return '🧠 AI՝ սովորել է ' + ai.n + ' օրինակ | վստահ կանխ. ' + ai.hits.length + ' · ճշգրտ ' + (ai.hits.length ? (aiRate() * 100).toFixed(1) + '% (ստորին ' + (aiLow() * 100).toFixed(1) + '%)' : '—') + ' | ' + (aiValid() ? '✅ առևտուր թույլատրված' : '🧪 առևտուր միայն ամենավստահ սիգնալներով (ստորին ≥' + (L_BE * 100).toFixed(1) + '%՝ երբ բոլոր սիգնալները)') + (aiReg ? ' | ' + (aiReg.ok ? '✅ ծուռ գրաֆիկ' : '⛔ թրենդ՝ սպասում եմ') + ' (' + aiReg.why + ')' : '') + (aiLast !== null ? ' | p=' + aiLast.toFixed(2) : '');
+    return '🧠 AI՝ սովորել է ' + ai.n + ' օրինակ | վստահ կանխ. ' + ai.hits.length + ' · ճշգրտ ' + (ai.hits.length ? (aiRate() * 100).toFixed(1) + '% (ստորին ' + (aiLow() * 100).toFixed(1) + '%)' : '—') + ' | ' + (aiValid() ? '✅ առևտուր թույլատրված' : '🧪 առևտուր միայն ամենավստահ սիգնալներով (ստորին ≥' + (L_BE * 100).toFixed(1) + '%՝ երբ բոլոր սիգնալները)') + (aiReg ? ' | ' + (aiReg.ok ? '✅ ծուռ գրաֆիկ' : '⛔ թրենդ՝ սպասում եմ') + ' (' + aiReg.why + ')' : '') + (aiLast !== null ? ' | p=' + aiLast.toFixed(2) : '') + (histNote ? ' | պատմ.՝ ' + histNote : '');
   }
   function learnTick(asset, t) {
     if (sel && asset !== sel) return;
@@ -1006,7 +1008,17 @@
         if (last === 'updateStream' && d[0] === '[') {
           try { const a = JSON.parse(d); for (const r of a) if (r && r[0]) onTick(r[0], r[1], r[2]); } catch (e) {}
         } else if (last === 'updateHistoryNewFast' && d[0] === '{') {
-          try { const h = JSON.parse(d); if (h.asset) { sel = h.asset; setMkt(sel); } } catch (e) {}
+          try {
+            const h = JSON.parse(d); if (h.asset) { sel = h.asset; setMkt(sel); }
+            // հարթակի պատմությունը անմիջապես ներմուծում ենք՝ նոր զույգի վրա սպասելու կարիք չկա
+            if (h.asset && Array.isArray(h.history) && h.history.length > 20 && Array.isArray(h.history[0]) && isFinite(+h.history[0][0]) && isFinite(+h.history[0][1])) {
+              const hs = h.history.map((r) => ({ t: +r[0], p: +r[1] })).filter((r) => isFinite(r.t) && isFinite(r.p) && r.p > 0).sort((a, b) => a.t - b.t);
+              if (hs.length > 20 && (hs[hs.length - 1].t - hs[0].t) / (hs.length - 1) <= 3) { // միայն տիկային (≤3 վրկ քայլ) պատմություն
+                const cur = (ticks[h.asset] || []).filter((r) => r.t > hs[hs.length - 1].t);
+                ticks[h.asset] = hs.slice(-600).concat(cur); histNote = h.asset + ' ' + hs.length;
+              }
+            }
+          } catch (e) {}
         }
       }).catch(() => {});
     });

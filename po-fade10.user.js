@@ -103,6 +103,16 @@
   let par = { stake: STAKE0, streak: 0, attempts: 1, best: 0, done: 0, wins: 0, losses: 0 };
   try { const o = JSON.parse(localStorage.getItem('po_parlay') || 'null'); if (o) par = Object.assign(par, o); } catch (e) {}
   let queuedSig = null;
+  // հաշվեկշռի «մատյան»՝ հաշվեկշռի անիմացիան (աճող թիվ) չի խեղաթյուրում գործարքի արդյունքը
+  let ledger = null, lastBalV = null, lastBalChg = Date.now();
+  setInterval(() => { try { const v = readBalance(); if (v !== lastBalV) { lastBalV = v; lastBalChg = Date.now(); } } catch (e) {} }, 200);
+  const balStable = () => Date.now() - lastBalChg >= 500;
+  function getBal0() {
+    const cur = readBalance();
+    if (cur === null) return null;
+    if (ledger === null || (balStable() && Math.abs(cur - ledger) > 0.3)) ledger = cur; // առաջին անգամ կամ արտաքին փոփոխություն
+    return ledger;
+  }
   let parPend = null, parMsg = '', prep = null;
   let realOk = false, realAsked = false, sessBal0 = null, parAcct = '', running = false;
   function parKey() { return 'po_parlay_' + (parAcct || 'demo'); }
@@ -507,8 +517,8 @@
         if (parPend.wall && Date.now() - parPend.wall > HOLD * 1000 - 1000) queuedSig = { dir, asset, w: Date.now() }; // գործարքը վերջանում է՝ սիգնալը հերթում է
         autoMsg = 'սպասում եմ նախորդ գործարքի արդյունքին'; return;
       }
-      const bal0 = readBalance();
-      const pp = { asset, dir, t: lastTickT, entry: lastTickP, pay: pay || 92, byBal: bal0 !== null };
+      const bal0 = getBal0();
+      const pp = { asset, dir, t: lastTickT, entry: lastTickP, pay: pay || 92, byBal: bal0 !== null, stake: par.stake };
       parPend = pp; // արգելափակում է նոր սիգնալները, մինչև այս գործարքի արդյունքը
       autoMsg = 'դնում եմ գումար $' + par.stake + '…';
       let fast = false; // արագ ճանապարհ՝ գումարն արդեն ճիշտ է դրված → սեղմում ենք ԱՆՄԻՋԱՊԵՍ, առանց ասինխրոն սպասման
@@ -528,10 +538,14 @@
             const bal1 = readBalance();
             if (bal1 === null) { if (now > tEnd + 1600) { clearInterval(poll); pp.byBal = false; } return; }
             const diff = Math.round((bal1 - bal0) * 100) / 100;
-            if (diff > 0.001 || now > tEnd + 1600) {
+            const ew = pp.stake * pp.pay / 100;
+            const win = diff > ew * 0.5;
+            if (win || (now > tEnd + 1600 && (balStable() || now > tEnd + 3500))) {
               clearInterval(poll);
-              parMsg = 'հաշվեկշիռ ' + bal0 + ' → ' + bal1 + ' (' + (diff > 0 ? '+' : '') + diff + ') ' + (diff > 0 ? 'ՇԱՀ' : diff < 0 ? 'կորուստ' : 'ոչ-ոքի');
-              applyParlay(diff > 0.001 ? 1 : diff < -0.001 ? -1 : 0, pp.pay, 0); // շահույթը՝ ճշգրիտ գումարից (հաշվեկշռի անիմացիան կեղծ մասնակի թիվ է տալիս)
+              const res = win ? 1 : diff < -pp.stake * 0.5 ? -1 : 0; // շահ / կորուստ / վերադարձ (ոչ-ոքի)
+              ledger = Math.round((bal0 + (res > 0 ? ew : res < 0 ? -pp.stake : 0)) * 100) / 100;
+              parMsg = 'հաշվեկշիռ ' + bal0 + ' → ' + bal1 + ' (' + (diff > 0 ? '+' : '') + diff + ') ' + (res > 0 ? 'ՇԱՀ' : res < 0 ? 'կորուստ' : 'ոչ-ոքի (վերադարձ)');
+              applyParlay(res, pp.pay, 0);
             }
           }, 200);
         }
@@ -811,6 +825,7 @@
     try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); } catch (e) {}
     return false;
   }
+  const ROT_STAY = 120;    // վրկ. առավելագույնը մեկ զույգի վրա
   const ROT_PAY = 92;      // % նվազագույն եկամտաբերություն
   const ROT_WARM = 16;     // վրկ. տիկ կուտակել նոր զույգի վրա՝ գրաֆիկը գնահատելու համար
   function chartGood(asset) { // էվրիստիկ՝ բավարար տիկեր, ոչ հարթ, ոչ մեկ ուղղությամբ սուր վազք
@@ -836,6 +851,7 @@
       if (!g.ok) { must = true; rotMsg = '🔄 ' + sel + '՝ վատ գրաֆիկ (' + g.why + ')՝ փոխում եմ'; }
       else { rotMsg = '🔄 ' + sel + ' ' + g.why + ' (' + (pay0 === null ? '?' : pay0) + '%)՝ մնում եմ'; evalAt = now + 30000; return; }
     }
+    if (!must && now - lastSwitch > ROT_STAY * 1000) { must = true; rotMsg = '🔄 ' + sel + '՝ ' + ROT_STAY + ' վրկ անցավ՝ փոխում եմ հաջորդ զույգի'; }
     if (!must || now - lastSwitch < 6000) return;
     rotBusy = true;
     try {

@@ -807,7 +807,7 @@
     const gd = GATE ? gateDecide(feats) : { pass: true, why: 'ֆիլտրն անջատված է' };
     lastGateMsg = (gd.pass ? 'անցավ՝ ' : 'մերժվեց՝ ') + gd.why + ' [' + feats.sent + ',' + feats.sec + ',' + feats.vol + ']';
     nSig++;
-    if (gd.pass) { nPass++; if (!LEARN_ONLY) { lastSigWall = Date.now(); autoClick(dir, asset); showOverlay(dir, asset, ratio); } }
+    if (gd.pass) { nPass++; if (!LEARN_ONLY && !parPend && !prep && regimeOf(asset).ok) { lastSigWall = Date.now(); autoClick(dir, asset); showOverlay(dir, asset, ratio); } }
     pend.push({ asset, dir, t, entry: { 0: p }, done: {}, feat: feats, pass: gd.pass }); // 0 վրկ՝ ակնթարթային մուտք՝ ընթացիկ գնով
   }
 

@@ -667,7 +667,7 @@
   // ===== AI (առցանց սովորող մոդել) =====
   // Ամեն վայրկյանի համար կանխատեսում է՝ 10 վրկ հետո գինը կբարձրանա՞. պիտակը ստանում է, երբ ժամանակը գալիս է, ու սովորում (logistic regression, SGD):
   // Առևտուր է անում ՄԻԱՅՆ երբ մոդելը վստահ է ԵՎ իր վերջին վստահ կանխատեսումների իրական (դեռ չտեսած տվյալների վրա) ճշգրտությունը ≥ շեմի։
-  const LEARN = true, LEARN_ONLY = true; // LEARN_ONLY՝ BB սիգնալները միայն վիճակագրության համար, առևտուր անում է AI-ն
+  const LEARN = true, LEARN_ONLY = false; // LEARN_ONLY՝ BB սիգնալները միայն վիճակագրության համար, առևտուր անում է AI-ն
   const L_LAG = 20, L_D = 1, L_TH = 0.04, L_MINVAL = 0.535, L_BE = 0.521, L_WIN = 300, L_MINHITS = 200, L_MINN = 400, L_GAP = 60, L_LR = 0.02, L_L2 = 0.0005;
   const PROB = true, L_PROB = 0.10; // փորձաշրջան՝ մինչև AI-ն ապացուցի իրեն՝ առևտուր միայն p≥0.60/≤0.40 սիգնալներով, ֆիքսված $1
   const L_DIM = L_LAG + 3 + 6;
@@ -807,7 +807,7 @@
     const gd = GATE ? gateDecide(feats) : { pass: true, why: 'ֆիլտրն անջատված է' };
     lastGateMsg = (gd.pass ? 'անցավ՝ ' : 'մերժվեց՝ ') + gd.why + ' [' + feats.sent + ',' + feats.sec + ',' + feats.vol + ']';
     nSig++;
-    if (gd.pass) { nPass++; if (!LEARN_ONLY) { lastSigWall = Date.now(); autoClick(dir, asset); showOverlay(dir, asset, ratio); } }
+    if (gd.pass) { nPass++; if (!LEARN_ONLY && !parPend && !prep && regimeOf(asset).ok) { lastSigWall = Date.now(); autoClick(dir, asset); showOverlay(dir, asset, ratio); } }
     pend.push({ asset, dir, t, entry: { 0: p }, done: {}, feat: feats, pass: gd.pass }); // 0 վրկ՝ ակնթարթային մուտք՝ ընթացիկ գնով
   }
 

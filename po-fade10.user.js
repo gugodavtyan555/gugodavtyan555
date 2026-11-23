@@ -40,7 +40,7 @@
   let mkt = 'otc';
   const KEY = () => 'po_fade10_' + 'bb' + (WITH_IMPULSE ? 'w' : 'f') + '_' + mkt;
   const loadStat = () => { stat = {}; DELAYS.forEach((d) => (stat[d] = [0, 0])); nSig = 0; try { const o = JSON.parse(localStorage.getItem(KEY()) || 'null'); if (o) { stat = o.stat || stat; nSig = o.nSig || 0; } } catch (e) {} };
-  const setMkt = (a) => { const m = isReal(a) ? 'real' : 'otc'; if (m !== mkt) { try { localStorage.setItem(KEY(), JSON.stringify({ stat, nSig })); } catch (e) {} mkt = m; pend.length = 0; loadStat(); } };
+  const setMkt = (a) => { const m = isReal(a) ? 'real' : 'otc'; if (m !== mkt) { try { localStorage.setItem(KEY(), JSON.stringify({ stat, nSig })); } catch (e) {} try { saveFeat(); } catch (e) {} mkt = m; pend.length = 0; loadStat(); try { loadFeat(); } catch (e) {} } };
   loadStat();
 
   // ---- վահանակ ----
@@ -92,7 +92,7 @@
     const real = !ONLY_REAL || isReal(sel);
     snd.textContent = !soundOn ? ' 🔇 ' : (unlocked ? ' 🔊 ' : ' 🔊? սեղմեք ');
     body.textContent = (AUTO ? (running ? '▶ ԱՇԽԱՏՈՒՄ Է ' : '⏸ ԿԱՆԳՆԱԾ ') : '') + (AUTO ? (acct() === 'real' ? '💰REAL' + (realOk ? '' : '(չհաստատված)') + ' ' : '') + '🤖 ավտո: ' + (autoMsg || '—') + '\n' : '') + (PARLAY ? '🪜 ' + par.streak + '/' + STEPS + ' · գումար $' + par.stake + ' · փորձ #' + par.attempts + ' · լավագույն ' + par.best + ' · անցած ' + par.done + ' (շահ ' + par.wins + ' / կոր. ' + par.losses + ')' + (parMsg ? '\n' + parMsg : '') + '\n' : '') + 'BB(' + BB_N + 'վրկ,' + BB_K + 'σ) ' + (WITH_IMPULSE ? 'հետ' : 'հակառակ') + ' | ' + (sel || '…') + (sel ? (isReal(sel) ? ' (REAL)' : ' (OTC)') : '') + ' | տիկեր ' + nTicks + ' | սիգնալներ ' + nSig +
-      '\nարդյունք ըստ ձեր ուշացման (շահույթի շեմ ≥' + (isReal(sel) ? 53.5 : 52.1) + '%)՝' +
+      '\n' + featText() + '\nարդյունք ըստ ձեր ուշացման (շահույթի շեմ ≥' + (isReal(sel) ? 53.5 : 52.1) + '%)՝' +
       DELAYS.map((d) => '\n ' + d + ' վրկ ուշ՝ ' + stat[d][0] + '/' + stat[d][1] + ' ' + pct(stat[d])).join('') +
       '';
     try { localStorage.setItem(KEY(), JSON.stringify({ stat, nSig })); } catch (e) {}
@@ -621,6 +621,7 @@
         if (t >= q.t + d + HOLD) {
           const mv = (p - q.entry[d]) * q.dir;
           if (mv > 0) stat[d][0]++; else if (mv < 0) stat[d][1]++;
+          if (d === FEAT_D && q.feat && mv !== 0) recordFeat(q.feat, mv > 0, q.pass);
           q.done[d] = true;
         } else open++;
       }
@@ -634,18 +635,113 @@
     const mean = wnd.reduce((x, y) => x + y, 0) / BB_N;
     const sd = Math.sqrt(wnd.reduce((x, y) => x + (y - mean) * (y - mean), 0) / BB_N);
     if (!sd) return;
+    { const hk = arrKey(arr), hh = sdHist[hk] || (sdHist[hk] = []); hh.push(sd); if (hh.length > 300) hh.shift(); }
     const zv = (p - mean) / sd;
     if (Math.abs(zv) < BB_K) return;
     if (t - (lastSig[asset] || 0) < GAP) return;
     lastSig[asset] = t;
     const ratio = Math.abs(zv);
     const dir = WITH_IMPULSE ? (zv > 0 ? 1 : -1) : (zv > 0 ? -1 : 1);
-    autoClick(dir, asset);
+    const feats = computeFeats(arr, t, p, dir, zv, sd);
+    const gd = GATE ? gateDecide(feats) : { pass: true, why: 'ֆիլտրն անջատված է' };
+    lastGateMsg = (gd.pass ? 'անցավ՝ ' : 'մերժվեց՝ ') + gd.why + ' [' + feats.sent + ',' + feats.sec + ',' + feats.vol + ']';
     nSig++;
-    showOverlay(dir, asset, ratio);
-    pend.push({ asset, dir, t, entry: { 0: p }, done: {} }); // 0 վրկ՝ ակնթարթային մուտք՝ ընթացիկ գնով
+    if (gd.pass) { nPass++; autoClick(dir, asset); showOverlay(dir, asset, ratio); }
+    pend.push({ asset, dir, t, entry: { 0: p }, done: {}, feat: feats, pass: gd.pass }); // 0 վրկ՝ ակնթարթային մուտք՝ ընթացիկ գնով
   }
 
+  // ---- պայմանների ուսուցում + ֆիլտր (միայն լավ պահերին սիգնալ) ----
+  const GATE = true;        // true՝ սիգնալ/առևտուր միայն ապացուցված լավ պայմաններում
+  const GATE_N = 30;        // նվազագույն փորձ՝ պայմանի դույլը «հայտնի» համարելու համար
+  const GOOD = 0.56, BAD = 0.48; // լավ/վատ շեմեր (արդյունք ըստ 1 վրկ ուշացման)
+  const FEAT_D = 1;
+  let feat = {}, gateStat = { pass: [0, 0], fail: [0, 0] }, lastGateMsg = '', lastOutcome = 'na', nPass = 0, featDirty = 0;
+  const sdHist = {};
+  const FKEY = () => 'po_feat_' + mkt;
+  function loadFeat() { feat = {}; gateStat = { pass: [0, 0], fail: [0, 0] }; try { const o = JSON.parse(localStorage.getItem(FKEY()) || 'null'); if (o) { feat = o.feat || {}; gateStat = o.gateStat || gateStat; } } catch (e) {} }
+  function saveFeat() { try { localStorage.setItem(FKEY(), JSON.stringify({ feat, gateStat })); } catch (e) {} }
+  loadFeat();
+  function readSentiment() { // շուկայի տրամադրության ցուցիչ՝ կանաչ (գնել) % ձախից, կարմիր (վաճառել) % աջից
+    try {
+      const rows = [];
+      document.querySelectorAll('div,span').forEach((e) => {
+        if (e.children.length) return;
+        const tx = (e.textContent || '').trim();
+        if (!/^\d{1,2}%$/.test(tx) || !vis(e)) return;
+        const r = e.getBoundingClientRect();
+        rows.push({ v: parseInt(tx, 10), x: r.left, y: r.top });
+      });
+      for (let i = 0; i < rows.length; i++) for (let j = 0; j < rows.length; j++) {
+        if (i !== j && Math.abs(rows[i].y - rows[j].y) < 8 && rows[i].x < rows[j].x && Math.abs(rows[i].v + rows[j].v - 100) <= 1) return rows[i].v;
+      }
+    } catch (e) {}
+    return null;
+  }
+  function computeFeats(arr, t, p, dir, zv, sd) {
+    const f = {};
+    const az = Math.abs(zv);
+    f.z = az < 2.5 ? 'z2-2.5' : az < 3 ? 'z2.5-3' : az < 4 ? 'z3-4' : 'z4+';
+    f.dir = dir > 0 ? 'up' : 'down';
+    const h = sdHist[arrKey(arr)] || [];
+    let med = 0; if (h.length >= 30) { const so = h.slice().sort((a, b) => a - b); med = so[Math.floor(so.length / 2)]; }
+    const vr = med ? sd / med : 1;
+    f.vol = !med ? 'vol?' : vr < 0.8 ? 'vol-low' : vr < 1.3 ? 'vol-mid' : 'vol-high';
+    f.sec = 's' + Math.floor((t % 60) / 10);
+    let nTk = 0; for (let i = arr.length - 1; i >= 0 && arr[i].t > t - 10; i--) nTk++;
+    f.rate = nTk < 8 ? 'tk-low' : nTk < 16 ? 'tk-mid' : 'tk-high';
+    const p5 = arr[0].t <= t - 300 ? priceAt(arr, t - 300) : null;
+    f.tr5 = p5 === null ? 'tr5?' : ((p - p5) * dir > 0 ? 'tr5-with' : 'tr5-against');
+    let hi = -Infinity, lo = Infinity;
+    for (let i = arr.length - 1; i >= 0 && arr[i].t > t - 60; i--) { if (arr[i].p > hi) hi = arr[i].p; if (arr[i].p < lo) lo = arr[i].p; }
+    if (hi > lo) { let q = (p - lo) / (hi - lo); if (dir < 0) q = 1 - q; f.pos = q > 0.85 ? 'pos-hi' : q < 0.5 ? 'pos-low' : 'pos-mid'; } else f.pos = 'pos?';
+    const sb = readSentiment();
+    if (sb === null) f.sent = 'sent?'; else { const sh = dir > 0 ? sb : 100 - sb; f.sent = sh >= 60 ? 'sent-with' : sh <= 40 ? 'sent-against' : 'sent-neutral'; }
+    f.last = 'last-' + lastOutcome;
+    return f;
+  }
+  function arrKey(arr) { return arr._k || (arr._k = Math.random().toString(36).slice(2)); }
+  function gateDecide(f) {
+    let known = 0, good = 0, badN = 0, badWhy = '';
+    for (const k of Object.keys(f)) {
+      const b = f[k], st = feat[k] && feat[k][b];
+      if (!st) continue;
+      const n = st[0] + st[1];
+      if (n < GATE_N) continue;
+      known++;
+      const r = st[0] / n;
+      if (r >= GOOD) good++;
+      if (r <= BAD) { badN++; badWhy = badWhy || (b + ' ' + Math.round(r * 100) + '%'); }
+    }
+    if (known < 4) return { pass: true, why: 'տաքացում (' + known + ' հայտնի դույլ)' };
+    if (badN >= 1) return { pass: false, why: 'վատ պայման՝ ' + badWhy };
+    if (good < 2) return { pass: false, why: 'քիչ լավ պայման (' + good + '/' + known + ')' };
+    return { pass: true, why: good + ' լավ պայման / ' + known };
+  }
+  function recordFeat(f, win, passed) {
+    for (const k of Object.keys(f)) {
+      const b = f[k];
+      const o = feat[k] || (feat[k] = {});
+      const st = o[b] || (o[b] = [0, 0]);
+      st[win ? 0 : 1]++;
+    }
+    gateStat[passed ? 'pass' : 'fail'][win ? 0 : 1]++;
+    lastOutcome = win ? 'W' : 'L';
+    if (++featDirty >= 10) { featDirty = 0; saveFeat(); }
+  }
+  function featText() {
+    const items = [];
+    for (const k of Object.keys(feat)) for (const b of Object.keys(feat[k])) {
+      const st = feat[k][b], n = st[0] + st[1];
+      if (n >= 25) items.push({ b, n, r: st[0] / n });
+    }
+    items.sort((a, c) => c.r - a.r);
+    const fmt = (x) => x.b + ' ' + Math.round(x.r * 100) + '%(' + x.n + ')';
+    const pc = (a) => (a[0] + a[1] ? Math.round(100 * a[0] / (a[0] + a[1])) + '%' : '—');
+    return '🎛 ֆիլտր՝ անցած ' + gateStat.pass[0] + '/' + gateStat.pass[1] + ' ' + pc(gateStat.pass) + ' | մերժված ' + gateStat.fail[0] + '/' + gateStat.fail[1] + ' ' + pc(gateStat.fail) +
+      '\n✅ ' + (items.slice(0, 4).map(fmt).join(' · ') || 'տվյալ է հավաքվում') +
+      '\n⛔ ' + (items.slice(-3).reverse().map(fmt).join(' · ') || '—') +
+      '\n📌 ' + (lastGateMsg || '—');
+  }
   // ---- watchdog՝ եթե գների հոսքը չի բռնվել կամ կանգնել է, էջը ինքնաբերաբար թարմացնել (առավելագույնը 3 անգամ) ----
   const reloadCount = () => { try { return Number(sessionStorage.getItem('po_rl_f') || 0); } catch (e) { return 0; } };
   const setReload = (n) => { try { sessionStorage.setItem('po_rl_f', String(n)); } catch (e) {} };

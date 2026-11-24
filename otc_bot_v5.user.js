@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         OTC Bot v4
+// @name         OTC Bot v5
 // @match        *://*/*
 // @grant        none
 // @run-at       document-start
@@ -155,7 +155,7 @@ const main = () => {
   document.body.appendChild(box);
   // Քարշելու բռնակ
   const grip = document.createElement('div');
-  grip.textContent = '⠿ տեղափոխել (v4)';
+  grip.textContent = '⠿ տեղափոխել (v5)';
   grip.style.cssText = 'text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none';
   box.prepend(grip);
   let dx = 0, dy = 0, drag = false;

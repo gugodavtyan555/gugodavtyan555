@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         OTC Bot v10
+// @name         OTC Bot v11
 // @match        *://*/*
 // @grant        none
 // @run-at       document-start
@@ -168,9 +168,10 @@ const main = () => {
     const cs = candleSignal();
     const down = [z > 1.2, r > 68, dir > 0 && run >= 4, turnedDown].filter(Boolean).length + 2 * cs.down;
     const up = [z < -1.2, r < 30 + 2, dir < 0 && run >= 4, turnedUp].filter(Boolean).length + 2 * cs.up;
-    // մոմի նմուշը պարտադիր է, ընդհանուր ≥4 միավոր
-    if (cs.down > 0 && down >= 4 && down > up && turnedDown) return 'down';
-    if (cs.up > 0 && up >= 4 && up > down && turnedUp) return 'up';
+    // մոմի նմուշ + ևս 1 հաստատում
+    const noC = cs.n < 6; // մոմեր չկան (սոկետ չկա)՝ աշխատում է առանց նմուշի
+    if ((noC ? down >= 3 : cs.down > 0 && down >= 3) && down > up && turnedDown) return 'down';
+    if ((noC ? up >= 3 : cs.up > 0 && up >= 3) && up > down && turnedUp) return 'up';
     log('մոմեր ' + cs.n + ' | ազդանշան չկա (z ' + z.toFixed(1) + ', RSI ' + r.toFixed(0) + ')'); return null;
   }
 
@@ -206,7 +207,7 @@ const main = () => {
   document.body.appendChild(box);
   // Քարշելու բռնակ
   const grip = document.createElement('div');
-  grip.textContent = '⠿ տեղափոխել (v10)';
+  grip.textContent = '⠿ տեղափոխել (v11)';
   grip.style.cssText = 'text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none';
   box.prepend(grip);
   let dx = 0, dy = 0, drag = false;

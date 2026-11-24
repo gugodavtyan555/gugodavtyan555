@@ -1,10 +1,36 @@
 // ==UserScript==
-// @name         OTC Bot v3
+// @name         OTC Bot v4
 // @match        *://*/*
 // @grant        none
+// @run-at       document-start
 // ==/UserScript==
 // Տեղադրում՝ Tampermonkey-ում։ Սկսիր DEMO հաշվով։
+// WebSocket hook՝ գները ուղիղ սոկետից
+const OTC_WS = {};
 (() => {
+  const feed = d => {
+    const m = String(d).match(/\["([A-Za-z0-9_#]+)",\s*(\d{9,11}(?:\.\d+)?),\s*(\d+(?:\.\d+)?)/g);
+    if (!m) return;
+    m.forEach(x => {
+      const r = x.match(/\["([A-Za-z0-9_#]+)",\s*(\d{9,11}(?:\.\d+)?),\s*(\d+(?:\.\d+)?)/);
+      (OTC_WS[r[1]] = OTC_WS[r[1]] || []).push(parseFloat(r[3]));
+      if (OTC_WS[r[1]].length > 300) OTC_WS[r[1]].shift();
+    });
+  };
+  const handle = d => {
+    if (typeof d === 'string') feed(d);
+    else if (d instanceof Blob) { const f = new FileReader(); f.onload = () => feed(f.result); f.readAsText(d); }
+    else if (d instanceof ArrayBuffer) feed(new TextDecoder().decode(d));
+  };
+  const W = window.WebSocket;
+  if (!W) return;
+  const P = function (...a) { const w = new W(...a); w.addEventListener('message', e => { try { handle(e.data); } catch (_) {} }); return w; };
+  P.prototype = W.prototype;
+  ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'].forEach(k => P[k] = W[k]);
+  window.WebSocket = P;
+})();
+
+const main = () => {
   'use strict';
   const CFG = {
     base: 1,            // սկզբնական գումար
@@ -65,7 +91,16 @@
       hist.set(e, h.slice(-120));
     });
   }, 300);
+  function symKey() {
+    const m = document.body.innerText.match(/([A-Z]{3})\/([A-Z]{3})\s*OTC/);
+    return m ? (m[1] + m[2] + '_otc').toLowerCase() : null;
+  }
   function livePrices() {
+    const k = symKey();
+    let ws = null;
+    Object.keys(OTC_WS).forEach(n => { if (k && n.toLowerCase().replace('#', '') === k) ws = OTC_WS[n]; });
+    if (!ws) { let mx = 0; Object.keys(OTC_WS).forEach(n => { if (OTC_WS[n].length > mx) { mx = OTC_WS[n].length; ws = OTC_WS[n]; } }); }
+    if (ws && ws.length >= 5) return ws.slice();
     let best = [], bu = 1;
     hist.forEach((h, e) => {
       if (!document.contains(e)) { hist.delete(e); return; }
@@ -84,7 +119,7 @@
   function direction() {
     const raw = livePrices();
     const p = raw.filter((x, i) => i === 0 || x !== raw[i - 1]); // միայն փոփոխվող տիկեր
-    if (p.length < 25) { log('սպասում եմ տվյալների (' + p.length + '/25)'); return null; }
+    if (p.length < 12) { log('սպասում եմ տվյալների (' + p.length + '/12)'); return null; }
     const f = ema(p, 5), sl = ema(p, 20), r = rsi(p), l3 = p.slice(-3);
     const up3 = l3[2] >= l3[1] && l3[1] >= l3[0], dn3 = l3[2] <= l3[1] && l3[1] <= l3[0];
     if (f > sl && r > 52 && r < 75 && up3) return 'up';
@@ -120,7 +155,7 @@
   document.body.appendChild(box);
   // Քարշելու բռնակ
   const grip = document.createElement('div');
-  grip.textContent = '⠿ տեղափոխել (v3)';
+  grip.textContent = '⠿ տեղափոխել (v4)';
   grip.style.cssText = 'text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none';
   box.prepend(grip);
   let dx = 0, dy = 0, drag = false;
@@ -136,4 +171,5 @@
     e.target.style.background = running ? '#c22' : '#2a2';
     if (running) loop();
   };
-})();
+};
+if (document.body) main(); else document.addEventListener('DOMContentLoaded', main);

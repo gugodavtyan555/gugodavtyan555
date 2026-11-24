@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         OTC 10s Martingale Bot
+// @name         OTC Bot v3
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -120,7 +120,7 @@
   document.body.appendChild(box);
   // Քարշելու բռնակ
   const grip = document.createElement('div');
-  grip.textContent = '⠿ տեղափոխել';
+  grip.textContent = '⠿ տեղափոխել (v3)';
   grip.style.cssText = 'text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none';
   box.prepend(grip);
   let dx = 0, dy = 0, drag = false;

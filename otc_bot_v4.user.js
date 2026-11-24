@@ -140,7 +140,7 @@ const main = () => {
     await sleep((CFG.expirySec + 3) * 1000);
     const after = bal();
     const win = after > before - amount + 0.001; // վերադարձ > 0 → շահում
-    if (win) { step = 0; streak++; log('✅ Շահեց (' + streak + '/4)'); if (streak >= 4) { running = false; syncBtn(); log('🎯 4 անընդմեջ շահում՝ կանգ'); } }
+    if (win) { step = 0; streak++; log('✅ Շահեց (' + streak + '/1)'); if (streak >= 1) { running = false; syncBtn(); log('🎯 1 շահում՝ կանգ'); } }
     else { streak = 0; step++; if (step >= CFG.maxLoss) { step = 0; log('❌ 4 պարտություն → reset'); } else log('❌ Պարտվեց'); }
   }
 

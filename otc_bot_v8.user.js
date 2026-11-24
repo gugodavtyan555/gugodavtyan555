@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         OTC Bot v7
+// @name         OTC Bot v8
 // @match        *://*/*
 // @grant        none
 // @run-at       document-start
@@ -115,16 +115,24 @@ const main = () => {
     for (let i = 1; i < s.length; i++) { const d = s[i] - s[i - 1]; d > 0 ? g += d : l -= d; }
     return l === 0 ? (g === 0 ? 50 : 100) : 100 - 100 / (1 + g / l);
   }
-  // Մուտք միայն երբ EMA, RSI և վերջին տիկերը համընկնում են, հակառակ դեպքում՝ սպասում
+  // 6 ձայնով ֆիլտր՝ մուտք միայն երբ ≥5-ը նույն կողմն են
   function direction() {
     const raw = livePrices();
-    const p = raw.filter((x, i) => i === 0 || x !== raw[i - 1]); // միայն փոփոխվող տիկեր
-    if (p.length < 12) { log('սպասում եմ տվյալների (' + p.length + '/12)'); return null; }
-    const f = ema(p, 5), sl = ema(p, 20), r = rsi(p), l3 = p.slice(-3);
-    const up3 = l3[2] >= l3[1] && l3[1] >= l3[0], dn3 = l3[2] <= l3[1] && l3[1] <= l3[0];
-    if (f > sl && r > 52 && r < 75 && up3) return 'up';
-    if (f < sl && r < 48 && r > 25 && dn3) return 'down';
-    log('ազդանշան չկա (RSI ' + r.toFixed(0) + ')'); return null;
+    const p = raw.filter((x, i) => i === 0 || x !== raw[i - 1]);
+    if (p.length < 30) { log('սպասում եմ տվյալների (' + p.length + '/30)'); return null; }
+    const n = p.length, last = p[n - 1];
+    const f = ema(p, 5), sl = ema(p, 20), slPrev = ema(p.slice(0, -5), 20);
+    const r = rsi(p);
+    const w = p.slice(-30), mean = w.reduce((x, y) => x + y) / w.length;
+    const sd = Math.sqrt(w.reduce((x, y) => x + (y - mean) ** 2, 0) / w.length) || 1e-9;
+    const z = (last - mean) / sd;
+    const l3 = p.slice(-3);
+    const long = p.slice(-Math.min(n, 60)), lm = long.reduce((x, y) => x + y) / long.length;
+    const up = [f > sl, sl > slPrev, r > 52 && r < 72, l3[2] > l3[0] && l3[2] >= l3[1], z > 0.3 && z < 2, last > lm].filter(Boolean).length;
+    const dn = [f < sl, sl < slPrev, r < 48 && r > 28, l3[2] < l3[0] && l3[2] <= l3[1], z < -0.3 && z > -2, last < lm].filter(Boolean).length;
+    if (up >= 5 && dn === 0) return 'up';
+    if (dn >= 5 && up === 0) return 'down';
+    log('ազդանշան չկա (↑' + up + ' ↓' + dn + ')'); return null;
   }
 
   async function trade() {
@@ -159,7 +167,7 @@ const main = () => {
   document.body.appendChild(box);
   // Քարշելու բռնակ
   const grip = document.createElement('div');
-  grip.textContent = '⠿ տեղափոխել (v7)';
+  grip.textContent = '⠿ տեղափոխել (v8)';
   grip.style.cssText = 'text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none';
   box.prepend(grip);
   let dx = 0, dy = 0, drag = false;

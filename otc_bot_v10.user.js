@@ -1,12 +1,12 @@
 // ==UserScript==
-// @name         OTC Bot v9
+// @name         OTC Bot v10
 // @match        *://*/*
 // @grant        none
 // @run-at       document-start
 // ==/UserScript==
 // Տեղադրում՝ Tampermonkey-ում։ Սկսիր DEMO հաշվով։
 // WebSocket hook՝ գները ուղիղ սոկետից
-const OTC_WS = {};
+const OTC_WS = {}, OTC_WT = {};
 (() => {
   const feed = d => {
     const m = String(d).match(/\["([A-Za-z0-9_#]+)",\s*(\d{9,11}(?:\.\d+)?),\s*(\d+(?:\.\d+)?)/g);
@@ -14,7 +14,8 @@ const OTC_WS = {};
     m.forEach(x => {
       const r = x.match(/\["([A-Za-z0-9_#]+)",\s*(\d{9,11}(?:\.\d+)?),\s*(\d+(?:\.\d+)?)/);
       (OTC_WS[r[1]] = OTC_WS[r[1]] || []).push(parseFloat(r[3]));
-      if (OTC_WS[r[1]].length > 300) OTC_WS[r[1]].shift();
+      (OTC_WT[r[1]] = OTC_WT[r[1]] || []).push(parseFloat(r[2]));
+      if (OTC_WS[r[1]].length > 600) { OTC_WS[r[1]].shift(); OTC_WT[r[1]].shift(); }
     });
   };
   const handle = d => {
@@ -95,11 +96,47 @@ const main = () => {
     const m = document.body.innerText.match(/([A-Z]{3})\/([A-Z]{3})\s*OTC/);
     return m ? (m[1] + m[2] + '_otc').toLowerCase() : null;
   }
+  function wsKey() {
+    const k = symKey(); let best = null, mx = 0;
+    Object.keys(OTC_WS).forEach(n => {
+      if (k && n.toLowerCase().replace('#', '') === k) { best = n; mx = 1e9; }
+      else if (OTC_WS[n].length > mx) { mx = OTC_WS[n].length; best = n; }
+    });
+    return best;
+  }
+  // Տիկերից կառուցում է մոմեր (OHLC)
+  function candles(sec = 5) {
+    const k = wsKey(); if (!k) return [];
+    const P = OTC_WS[k], T = OTC_WT[k], out = [];
+    for (let i = 0; i < P.length; i++) {
+      const b = Math.floor(T[i] / sec), c = out[out.length - 1];
+      if (c && c.b === b) { c.h = Math.max(c.h, P[i]); c.l = Math.min(c.l, P[i]); c.c = P[i]; }
+      else out.push({ b, o: P[i], h: P[i], l: P[i], c: P[i] });
+    }
+    return out.slice(0, -1); // վերջին (չփակված) մոմը հանում ենք
+  }
+  function candleSignal() {
+    const C = candles(5); if (C.length < 6) return { up: 0, down: 0, n: C.length };
+    const a = C[C.length - 2], b = C[C.length - 1];
+    const body = c => Math.abs(c.c - c.o), rng = c => (c.h - c.l) || 1e-9;
+    const col = c => Math.sign(c.c - c.o);
+    const upW = c => c.h - Math.max(c.o, c.c), loW = c => Math.min(c.o, c.c) - c.l;
+    let up = 0, down = 0;
+    // մերժման ստվերներ (pin bar)
+    if (upW(b) >= 2 * body(b) && upW(b) > 0.55 * rng(b)) down++;
+    if (loW(b) >= 2 * body(b) && loW(b) > 0.55 * rng(b)) up++;
+    // կլանում (engulfing)
+    if (col(b) > 0 && col(a) < 0 && b.c >= a.o && b.o <= a.c) up++;
+    if (col(b) < 0 && col(a) > 0 && b.c <= a.o && b.o >= a.c) down++;
+    // ուժասպառում՝ ≥3 նույն գույնի մոմ, հետո հակառակ
+    const prev3 = C.slice(-4, -1);
+    if (prev3.every(c => col(c) > 0) && col(b) <= 0) down++;
+    if (prev3.every(c => col(c) < 0) && col(b) >= 0) up++;
+    return { up, down, n: C.length };
+  }
   function livePrices() {
     const k = symKey();
-    let ws = null;
-    Object.keys(OTC_WS).forEach(n => { if (k && n.toLowerCase().replace('#', '') === k) ws = OTC_WS[n]; });
-    if (!ws) { let mx = 0; Object.keys(OTC_WS).forEach(n => { if (OTC_WS[n].length > mx) { mx = OTC_WS[n].length; ws = OTC_WS[n]; } }); }
+    const ws = OTC_WS[wsKey()];
     if (ws && ws.length >= 5) return ws.slice();
     let best = [], bu = 1;
     hist.forEach((h, e) => {
@@ -128,11 +165,13 @@ const main = () => {
     let run = 0, dir = Math.sign(p[n - 2] - p[n - 3]);
     for (let i = n - 2; i > 0 && Math.sign(p[i] - p[i - 1]) === dir && dir !== 0; i--) run++;
     const turnedDown = p[n - 1] < p[n - 2], turnedUp = p[n - 1] > p[n - 2]; // շրջման սկիզբ
-    const down = [z > 1.5, r > 70, dir > 0 && run >= 4, turnedDown].filter(Boolean).length;
-    const up = [z < -1.5, r < 30, dir < 0 && run >= 4, turnedUp].filter(Boolean).length;
-    if (down >= 3 && turnedDown) return 'down';
-    if (up >= 3 && turnedUp) return 'up';
-    log('OTC ազդանշան չկա (z ' + z.toFixed(1) + ', RSI ' + r.toFixed(0) + ')'); return null;
+    const cs = candleSignal();
+    const down = [z > 1.2, r > 68, dir > 0 && run >= 4, turnedDown].filter(Boolean).length + 2 * cs.down;
+    const up = [z < -1.2, r < 30 + 2, dir < 0 && run >= 4, turnedUp].filter(Boolean).length + 2 * cs.up;
+    // մոմի նմուշը պարտադիր է, ընդհանուր ≥4 միավոր
+    if (cs.down > 0 && down >= 4 && down > up && turnedDown) return 'down';
+    if (cs.up > 0 && up >= 4 && up > down && turnedUp) return 'up';
+    log('մոմեր ' + cs.n + ' | ազդանշան չկա (z ' + z.toFixed(1) + ', RSI ' + r.toFixed(0) + ')'); return null;
   }
 
   async function trade() {
@@ -167,7 +206,7 @@ const main = () => {
   document.body.appendChild(box);
   // Քարշելու բռնակ
   const grip = document.createElement('div');
-  grip.textContent = '⠿ տեղափոխել (v9)';
+  grip.textContent = '⠿ տեղափոխել (v10)';
   grip.style.cssText = 'text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none';
   box.prepend(grip);
   let dx = 0, dy = 0, drag = false;

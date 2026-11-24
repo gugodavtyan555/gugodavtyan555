@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         OTC Bot v13
+// @name         OTC Bot v14
 // @match        *://*/*
 // @grant        none
 // @run-at       document-start
@@ -215,11 +215,11 @@ const main = () => {
   // UI
   const box = document.createElement('div');
   box.id='otcBox'; box.style.cssText = 'position:fixed;top:80px;right:10px;z-index:99999;background:#111;color:#fff;padding:10px;border-radius:8px;font:12px sans-serif;width:210px';
-  box.innerHTML = '<button id="otcBtn" style="width:100%;padding:8px;font-weight:bold;background:#2a2;color:#fff;border:0;border-radius:6px;cursor:pointer">START</button><div id="otcStats" style="margin-top:6px;text-align:center;font-weight:bold"></div><div id="otcLog" style="margin-top:6px;max-height:140px;overflow:auto"></div>';
+  box.innerHTML = '<button id="otcBtn" style="width:100%;padding:8px;font-weight:bold;background:#2a2;color:#fff;border:0;border-radius:6px;cursor:pointer">START</button><div id="otcLog" style="margin-top:6px;max-height:140px;overflow:auto"></div>';
   document.body.appendChild(box);
   // Քարշելու բռնակ
   const grip = document.createElement('div');
-  grip.textContent = '⠿ տեղափոխել (v13)';
+  grip.textContent = '⠿ տեղափոխել (v14)';
   grip.style.cssText = 'text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none';
   box.prepend(grip);
   let dx = 0, dy = 0, drag = false;

@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         OTC Bot v6
+// @name         OTC Bot v7
 // @match        *://*/*
 // @grant        none
 // @run-at       document-start
@@ -144,8 +144,12 @@ const main = () => {
     else { streak = 0; running = false; syncBtn(); step++; if (step >= CFG.maxLoss) { step = 0; log('❌ 4 պարտություն → reset'); } else log('❌ Պարտվեց'); }
   }
 
+  let looping = false;
   async function loop() {
-    while (running) { await trade(); await sleep(1500); }
+    if (looping) return; // երկրորդ ցիկլ չբացել
+    looping = true;
+    try { while (running) { await trade(); await sleep(1500); } }
+    finally { looping = false; }
   }
 
   // UI
@@ -155,7 +159,7 @@ const main = () => {
   document.body.appendChild(box);
   // Քարշելու բռնակ
   const grip = document.createElement('div');
-  grip.textContent = '⠿ տեղափոխել (v6)';
+  grip.textContent = '⠿ տեղափոխել (v7)';
   grip.style.cssText = 'text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none';
   box.prepend(grip);
   let dx = 0, dy = 0, drag = false;
@@ -169,7 +173,7 @@ const main = () => {
     running = !running;
     e.target.textContent = running ? 'STOP' : 'START';
     e.target.style.background = running ? '#c22' : '#2a2';
-    if (running) loop();
+    if (running && !looping) loop();
   };
 };
 if (document.body) main(); else document.addEventListener('DOMContentLoaded', main);

@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         OTC Bot v12
+// @name         OTC Bot v13
 // @match        *://*/*
 // @grant        none
 // @run-at       document-start
@@ -38,7 +38,6 @@ const main = () => {
     mult: 1.92,         // բազմապատկիչ պարտվելուց հետո
     maxLoss: 4,         // 4 անընդմեջ պարտությունից հետո՝ վերադառնալ base
     expirySec: 10,
-    maxDrop: 20,        // սեսիայի կորստի սահման ($), հետո կանգ
     // Սելեկտորներ (եթե կայքը փոխվի՝ ուղղիր այստեղ)
     sel: {
       amount: '.block--bet-amount input[type=text], input.bet-amount, input.input-control__input, input[type=tel], .value__val input',
@@ -171,19 +170,24 @@ const main = () => {
     let run = 0, dir = Math.sign(p[n - 2] - p[n - 3]);
     for (let i = n - 2; i > 0 && Math.sign(p[i] - p[i - 1]) === dir && dir !== 0; i--) run++;
     const turnedDown = p[n - 1] < p[n - 2], turnedUp = p[n - 1] > p[n - 2]; // շրջման սկիզբ
+    const lv = p.slice(-60, -2), hi = Math.max(...lv), lo = Math.min(...lv), R = (hi - lo) || 1e-9;
+    const nearTop = last >= hi - 0.15 * R, nearBot = last <= lo + 0.15 * R; // ճշգրիտ կետ՝ դիմադրություն/աջակցություն
     const cs = candleSignal();
     const down = [z > 1.2, r > 68, dir > 0 && run >= 4, turnedDown].filter(Boolean).length + 2 * cs.down;
     const up = [z < -1.2, r < 30 + 2, dir < 0 && run >= 4, turnedUp].filter(Boolean).length + 2 * cs.up;
     // մոմի նմուշ + ևս 1 հաստատում
     const noC = cs.n < 6; // մոմեր չկան (սոկետ չկա)՝ աշխատում է առանց նմուշի
-    if ((noC ? down >= 3 : cs.down > 0 && down >= 3) && down > up && turnedDown) return 'down';
-    if ((noC ? up >= 3 : cs.up > 0 && up >= 3) && up > down && turnedUp) return 'up';
-    log('մոմեր ' + cs.n + ' | ազդանշան չկա (z ' + z.toFixed(1) + ', RSI ' + r.toFixed(0) + ')'); return null;
+    if ((noC ? down >= 3 : cs.down > 0 && down >= 3) && down > up && turnedDown && nearTop) return 'down';
+    if ((noC ? up >= 3 : cs.up > 0 && up >= 3) && up > down && turnedUp && nearBot) return 'up';
+    log('մոմեր ' + cs.n + (nearTop ? ' | դիմադրության մոտ' : nearBot ? ' | աջակցության մոտ' : ' | մակարդակից հեռու') + ' | ազդանշան չկա (z ' + z.toFixed(1) + ', RSI ' + r.toFixed(0) + ')'); return null;
   }
 
+  // Ճշգրիտ ժամանակ՝ մուտք միայն 5 վրկ մոմի սկզբում (առաջին ~0.4 վրկ)
+  async function waitBoundary() {
+    while (running && Date.now() % 5000 > 400) await sleep(40);
+  }
   async function trade() {
-    if (isNaN(startBal)) startBal = bal();
-    if (startBal - bal() >= CFG.maxDrop) { running = false; syncBtn(); return log('🛑 սահմանաչափ՝ -$' + CFG.maxDrop); }
+    await waitBoundary(); if (!running) return;
     const amount = +(CFG.base * Math.pow(CFG.mult, step)).toFixed(2);
     if (!setAmount(amount)) { running = false; syncBtn(); return log('Գումարի դաշտը չգտնվեց'); }
     const dir = direction();
@@ -215,7 +219,7 @@ const main = () => {
   document.body.appendChild(box);
   // Քարշելու բռնակ
   const grip = document.createElement('div');
-  grip.textContent = '⠿ տեղափոխել (v12)';
+  grip.textContent = '⠿ տեղափոխել (v13)';
   grip.style.cssText = 'text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none';
   box.prepend(grip);
   let dx = 0, dy = 0, drag = false;

@@ -62,7 +62,7 @@
       const t = e.textContent.trim();
       if (!/^\d{1,6}[.,]\d{3,6}$/.test(t)) return;
       const h = hist.get(e) || []; h.push(parseFloat(t.replace(',', '.')));
-      hist.set(e, h.slice(-30));
+      hist.set(e, h.slice(-120));
     });
   }, 300);
   function livePrices() {
@@ -74,22 +74,29 @@
     });
     return best;
   }
+  const ema = (a, n) => { const k = 2 / (n + 1); return a.reduce((e, x, i) => i ? x * k + e * (1 - k) : x, a[0]); };
+  function rsi(a, n = 14) {
+    let g = 0, l = 0; const s = a.slice(-n - 1);
+    for (let i = 1; i < s.length; i++) { const d = s[i] - s[i - 1]; d > 0 ? g += d : l -= d; }
+    return l === 0 ? (g === 0 ? 50 : 100) : 100 - 100 / (1 + g / l);
+  }
+  // Մուտք միայն երբ EMA, RSI և վերջին տիկերը համընկնում են, հակառակ դեպքում՝ սպասում
   function direction() {
-    const p = livePrices();
-    if (p.length >= 6) {
-      const k = Math.min(5, Math.floor(p.length / 2));
-      const a = p.slice(-k).reduce((x, y) => x + y) / k;
-      const b = p.slice(-2 * k, -k).reduce((x, y) => x + y) / k;
-      if (a !== b) return a > b ? 'up' : 'down';
-    }
-    log('⚠ գին չկա → պատահական');
-    return Math.random() < 0.5 ? 'up' : 'down';
+    const raw = livePrices();
+    const p = raw.filter((x, i) => i === 0 || x !== raw[i - 1]); // միայն փոփոխվող տիկեր
+    if (p.length < 25) { log('սպասում եմ տվյալների (' + p.length + '/25)'); return null; }
+    const f = ema(p, 5), sl = ema(p, 20), r = rsi(p), l3 = p.slice(-3);
+    const up3 = l3[2] >= l3[1] && l3[1] >= l3[0], dn3 = l3[2] <= l3[1] && l3[1] <= l3[0];
+    if (f > sl && r > 52 && r < 75 && up3) return 'up';
+    if (f < sl && r < 48 && r > 25 && dn3) return 'down';
+    log('ազդանշան չկա (RSI ' + r.toFixed(0) + ')'); return null;
   }
 
   async function trade() {
     const amount = +(CFG.base * Math.pow(CFG.mult, step)).toFixed(2);
     if (!setAmount(amount)) { running = false; syncBtn(); return log('Գումարի դաշտը չգտնվեց'); }
     const dir = direction();
+    if (!dir) { await sleep(1000); return; }
     const btn = findBtn(dir);
     if (!btn) { running = false; syncBtn(); return log('Կոճակը չգտնվեց'); }
     const before = bal();

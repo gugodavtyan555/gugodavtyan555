@@ -47,7 +47,7 @@ const main = () => {
     },
   };
 
-  let running = false, step = 0, ticks = [], timer = null;
+  let running = false, step = 0, streak = 0, ticks = [], timer = null;
   const $ = s => document.querySelector(s);
   const num = el => el ? parseFloat(el.textContent.replace(/[^0-9.]/g, '')) : NaN;
   const vis = e => e && e.getBoundingClientRect().width > 0;
@@ -140,8 +140,8 @@ const main = () => {
     await sleep((CFG.expirySec + 3) * 1000);
     const after = bal();
     const win = after > before - amount + 0.001; // վերադարձ > 0 → շահում
-    if (win) { step = 0; log('✅ Շահեց → $' + CFG.base); }
-    else { step++; if (step >= CFG.maxLoss) { step = 0; log('❌ 4 պարտություն → reset'); } else log('❌ Պարտվեց'); }
+    if (win) { step = 0; streak++; log('✅ Շահեց (' + streak + '/4)'); if (streak >= 4) { running = false; syncBtn(); log('🎯 4 անընդմեջ շահում՝ կանգ'); } }
+    else { streak = 0; step++; if (step >= CFG.maxLoss) { step = 0; log('❌ 4 պարտություն → reset'); } else log('❌ Պարտվեց'); }
   }
 
   async function loop() {

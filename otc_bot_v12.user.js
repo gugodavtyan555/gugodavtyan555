@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         OTC Bot v11
+// @name         OTC Bot v12
 // @match        *://*/*
 // @grant        none
 // @run-at       document-start
@@ -38,6 +38,7 @@ const main = () => {
     mult: 1.92,         // բազմապատկիչ պարտվելուց հետո
     maxLoss: 4,         // 4 անընդմեջ պարտությունից հետո՝ վերադառնալ base
     expirySec: 10,
+    maxDrop: 20,        // սեսիայի կորստի սահման ($), հետո կանգ
     // Սելեկտորներ (եթե կայքը փոխվի՝ ուղղիր այստեղ)
     sel: {
       amount: '.block--bet-amount input[type=text], input.bet-amount, input.input-control__input, input[type=tel], .value__val input',
@@ -48,6 +49,9 @@ const main = () => {
     },
   };
 
+  let stats = { w: 0, l: 0 }; try { stats = JSON.parse(localStorage.getItem('otcStats')) || stats; } catch (_) {}
+  const showStats = () => { try { localStorage.setItem('otcStats', JSON.stringify(stats)); } catch (_) {} const t = stats.w + stats.l; const e = document.getElementById('otcStats'); if (e) e.textContent = `✅${stats.w} ❌${stats.l} | ` + (t ? Math.round(100 * stats.w / t) + '%' : '—'); };
+  let startBal = NaN;
   let running = false, step = 0, streak = 0, ticks = [], timer = null;
   const $ = s => document.querySelector(s);
   const num = el => el ? parseFloat(el.textContent.replace(/[^0-9.]/g, '')) : NaN;
@@ -161,6 +165,8 @@ const main = () => {
     const w = p.slice(-30), mean = w.reduce((x, y) => x + y) / w.length;
     const sd = Math.sqrt(w.reduce((x, y) => x + (y - mean) ** 2, 0) / w.length) || 1e-9;
     const z = (last - mean) / sd, r = rsi(p, 10);
+    const rangeP = (Math.max(...w) - Math.min(...w)) / (Math.abs(mean) || 1);
+    if (rangeP < 0.00003) { log('շուկան «քնած» է'); return null; } // ֆլեթ՝ մուտք չկա
     // նախորդ շարժման երկարությունը (նույն ուղղությամբ տիկեր՝ առանց վերջինի)
     let run = 0, dir = Math.sign(p[n - 2] - p[n - 3]);
     for (let i = n - 2; i > 0 && Math.sign(p[i] - p[i - 1]) === dir && dir !== 0; i--) run++;
@@ -176,6 +182,8 @@ const main = () => {
   }
 
   async function trade() {
+    if (isNaN(startBal)) startBal = bal();
+    if (startBal - bal() >= CFG.maxDrop) { running = false; syncBtn(); return log('🛑 սահմանաչափ՝ -$' + CFG.maxDrop); }
     const amount = +(CFG.base * Math.pow(CFG.mult, step)).toFixed(2);
     if (!setAmount(amount)) { running = false; syncBtn(); return log('Գումարի դաշտը չգտնվեց'); }
     const dir = direction();
@@ -188,8 +196,8 @@ const main = () => {
     await sleep((CFG.expirySec + 3) * 1000);
     const after = bal();
     const win = after > before - amount + 0.001; // վերադարձ > 0 → շահում
-    if (win) { step = 0; streak++; log('✅ Շահեց (' + streak + '/1)'); if (streak >= 1) { running = false; syncBtn(); log('🎯 1 շահում՝ կանգ'); } }
-    else { streak = 0; running = false; syncBtn(); step++; if (step >= CFG.maxLoss) { step = 0; log('❌ 4 պարտություն → reset'); } else log('❌ Պարտվեց'); }
+    if (win) { stats.w++; showStats(); step = 0; streak++; log('✅ Շահեց (' + streak + '/1)'); if (streak >= 1) { running = false; syncBtn(); log('🎯 1 շահում՝ կանգ'); } }
+    else { stats.l++; showStats(); streak = 0; running = false; syncBtn(); step++; if (step >= CFG.maxLoss) { step = 0; log('❌ 4 պարտություն → reset'); } else log('❌ Պարտվեց'); }
   }
 
   let looping = false;
@@ -203,18 +211,18 @@ const main = () => {
   // UI
   const box = document.createElement('div');
   box.id='otcBox'; box.style.cssText = 'position:fixed;top:80px;right:10px;z-index:99999;background:#111;color:#fff;padding:10px;border-radius:8px;font:12px sans-serif;width:210px';
-  box.innerHTML = '<button id="otcBtn" style="width:100%;padding:8px;font-weight:bold;background:#2a2;color:#fff;border:0;border-radius:6px;cursor:pointer">START</button><div id="otcLog" style="margin-top:6px;max-height:140px;overflow:auto"></div>';
+  box.innerHTML = '<button id="otcBtn" style="width:100%;padding:8px;font-weight:bold;background:#2a2;color:#fff;border:0;border-radius:6px;cursor:pointer">START</button><div id="otcStats" style="margin-top:6px;text-align:center;font-weight:bold"></div><div id="otcLog" style="margin-top:6px;max-height:140px;overflow:auto"></div>';
   document.body.appendChild(box);
   // Քարշելու բռնակ
   const grip = document.createElement('div');
-  grip.textContent = '⠿ տեղափոխել (v11)';
+  grip.textContent = '⠿ տեղափոխել (v12)';
   grip.style.cssText = 'text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none';
   box.prepend(grip);
   let dx = 0, dy = 0, drag = false;
   grip.addEventListener('pointerdown', e => { drag = true; const r = box.getBoundingClientRect(); dx = e.clientX - r.left; dy = e.clientY - r.top; grip.setPointerCapture(e.pointerId); e.preventDefault(); });
   grip.addEventListener('pointermove', e => { if (!drag) return; box.style.left = Math.max(0, e.clientX - dx) + 'px'; box.style.top = Math.max(0, e.clientY - dy) + 'px'; box.style.right = 'auto'; });
   grip.addEventListener('pointerup', () => { drag = false; });
-  const logEl = box.querySelector('#otcLog');
+  const logEl = box.querySelector('#otcLog'); showStats();
   function log(t) { logEl.insertAdjacentHTML('afterbegin', `<div>${t}</div>`); }
   const syncBtn = () => { const b = box.querySelector('#otcBtn'); b.textContent = running ? 'STOP' : 'START'; b.style.background = running ? '#c22' : '#2a2'; };
   box.querySelector('#otcBtn').onclick = e => {

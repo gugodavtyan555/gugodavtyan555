@@ -1,34 +1,47 @@
 // ==UserScript==
-// @name         OTC Bot v14
+// @name         OTC Bot v15
 // @match        *://*/*
 // @grant        none
 // @run-at       document-start
 // ==/UserScript==
 // Տեղադրում՝ Tampermonkey-ում։ Սկսիր DEMO հաշվով։
-// WebSocket hook՝ գները ուղիղ սոկետից
+// WebSocket hook՝ ներարկվում է էջի աշխարհ (page world), գները ուղարկում postMessage-ով
 const OTC_WS = {}, OTC_WT = {};
+let OTC_MSGS = 0;
 (() => {
-  const feed = d => {
-    const m = String(d).match(/\["([A-Za-z0-9_#]+)",\s*(\d{9,11}(?:\.\d+)?),\s*(\d+(?:\.\d+)?)/g);
-    if (!m) return;
-    m.forEach(x => {
-      const r = x.match(/\["([A-Za-z0-9_#]+)",\s*(\d{9,11}(?:\.\d+)?),\s*(\d+(?:\.\d+)?)/);
-      (OTC_WS[r[1]] = OTC_WS[r[1]] || []).push(parseFloat(r[3]));
-      (OTC_WT[r[1]] = OTC_WT[r[1]] || []).push(parseFloat(r[2]));
-      if (OTC_WS[r[1]].length > 600) { OTC_WS[r[1]].shift(); OTC_WT[r[1]].shift(); }
+  const injected = function () {
+    if (window.__otcHooked) return; window.__otcHooked = true;
+    const re = /\["([A-Za-z0-9_#]+)",\s*(\d{9,11}(?:\.\d+)?),\s*(\d+(?:\.\d+)?)/g;
+    const feed = d => {
+      const out = []; let m; re.lastIndex = 0;
+      const str = String(d);
+      while ((m = re.exec(str))) out.push([m[1], parseFloat(m[2]), parseFloat(m[3])]);
+      if (out.length) window.postMessage({ __otc: 1, d: out }, '*');
+    };
+    const handle = d => {
+      if (typeof d === 'string') feed(d);
+      else if (d instanceof Blob) { const f = new FileReader(); f.onload = () => feed(f.result); f.readAsText(d); }
+      else if (d instanceof ArrayBuffer) feed(new TextDecoder().decode(d));
+    };
+    const W = window.WebSocket;
+    const P = function (...a) { const w = new W(...a); w.addEventListener('message', e => { try { handle(e.data); } catch (_) {} }); return w; };
+    P.prototype = W.prototype;
+    ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'].forEach(k => P[k] = W[k]);
+    window.WebSocket = P;
+  };
+  window.addEventListener('message', e => {
+    if (!e.data || !e.data.__otc) return;
+    e.data.d.forEach(([sym, t, p]) => {
+      OTC_MSGS++;
+      (OTC_WS[sym] = OTC_WS[sym] || []).push(p);
+      (OTC_WT[sym] = OTC_WT[sym] || []).push(t);
+      if (OTC_WS[sym].length > 600) { OTC_WS[sym].shift(); OTC_WT[sym].shift(); }
     });
-  };
-  const handle = d => {
-    if (typeof d === 'string') feed(d);
-    else if (d instanceof Blob) { const f = new FileReader(); f.onload = () => feed(f.result); f.readAsText(d); }
-    else if (d instanceof ArrayBuffer) feed(new TextDecoder().decode(d));
-  };
-  const W = window.WebSocket;
-  if (!W) return;
-  const P = function (...a) { const w = new W(...a); w.addEventListener('message', e => { try { handle(e.data); } catch (_) {} }); return w; };
-  P.prototype = W.prototype;
-  ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'].forEach(k => P[k] = W[k]);
-  window.WebSocket = P;
+  });
+  const s = document.createElement('script');
+  s.textContent = '(' + injected.toString() + ')()';
+  (document.head || document.documentElement).appendChild(s);
+  s.remove();
 })();
 
 const main = () => {
@@ -159,7 +172,7 @@ const main = () => {
   function direction() {
     const raw = livePrices();
     const p = raw.filter((x, i) => i === 0 || x !== raw[i - 1]);
-    if (p.length < 30) { log('սպասում եմ տվյալների (' + p.length + '/30)'); return null; }
+    if (p.length < 30) { log('սպասում եմ տվյալների (' + p.length + '/30) ws:' + OTC_MSGS); return null; }
     const n = p.length, last = p[n - 1];
     const w = p.slice(-30), mean = w.reduce((x, y) => x + y) / w.length;
     const sd = Math.sqrt(w.reduce((x, y) => x + (y - mean) ** 2, 0) / w.length) || 1e-9;
@@ -219,7 +232,7 @@ const main = () => {
   document.body.appendChild(box);
   // Քարշելու բռնակ
   const grip = document.createElement('div');
-  grip.textContent = '⠿ տեղափոխել (v14)';
+  grip.textContent = '⠿ տեղափոխել (v15)';
   grip.style.cssText = 'text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none';
   box.prepend(grip);
   let dx = 0, dy = 0, drag = false;

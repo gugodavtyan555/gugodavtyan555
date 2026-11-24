@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         OTC Bot v5
+// @name         OTC Bot v6
 // @match        *://*/*
 // @grant        none
 // @run-at       document-start
@@ -141,7 +141,7 @@ const main = () => {
     const after = bal();
     const win = after > before - amount + 0.001; // վերադարձ > 0 → շահում
     if (win) { step = 0; streak++; log('✅ Շահեց (' + streak + '/1)'); if (streak >= 1) { running = false; syncBtn(); log('🎯 1 շահում՝ կանգ'); } }
-    else { streak = 0; step++; if (step >= CFG.maxLoss) { step = 0; log('❌ 4 պարտություն → reset'); } else log('❌ Պարտվեց'); }
+    else { streak = 0; running = false; syncBtn(); step++; if (step >= CFG.maxLoss) { step = 0; log('❌ 4 պարտություն → reset'); } else log('❌ Պարտվեց'); }
   }
 
   async function loop() {
@@ -155,7 +155,7 @@ const main = () => {
   document.body.appendChild(box);
   // Քարշելու բռնակ
   const grip = document.createElement('div');
-  grip.textContent = '⠿ տեղափոխել (v5)';
+  grip.textContent = '⠿ տեղափոխել (v6)';
   grip.style.cssText = 'text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none';
   box.prepend(grip);
   let dx = 0, dy = 0, drag = false;
@@ -166,7 +166,7 @@ const main = () => {
   function log(t) { logEl.insertAdjacentHTML('afterbegin', `<div>${t}</div>`); }
   const syncBtn = () => { const b = box.querySelector('#otcBtn'); b.textContent = running ? 'STOP' : 'START'; b.style.background = running ? '#c22' : '#2a2'; };
   box.querySelector('#otcBtn').onclick = e => {
-    running = !running; step = 0;
+    running = !running;
     e.target.textContent = running ? 'STOP' : 'START';
     e.target.style.background = running ? '#c22' : '#2a2';
     if (running) loop();

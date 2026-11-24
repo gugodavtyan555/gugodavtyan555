@@ -54,14 +54,35 @@
   }
 
   // Պարզ ազդանշան՝ վերջին գների momentum; եթե գին չկա՝ պատահական
+  // Գնի սամփլեր՝ գտնում է այն թվային տարրը (1.84523 տիպի), որը ամենաշատ է փոխվում
+  const hist = new Map();
+  setInterval(() => {
+    all('span,div,p,text,tspan').forEach(e => {
+      if (e.children.length || !vis(e) || e.closest('#otcBox')) return;
+      const t = e.textContent.trim();
+      if (!/^\d{1,6}[.,]\d{3,6}$/.test(t)) return;
+      const h = hist.get(e) || []; h.push(parseFloat(t.replace(',', '.')));
+      hist.set(e, h.slice(-30));
+    });
+  }, 300);
+  function livePrices() {
+    let best = [], bu = 1;
+    hist.forEach((h, e) => {
+      if (!document.contains(e)) { hist.delete(e); return; }
+      const u = new Set(h).size;
+      if (u > bu) { bu = u; best = h; }
+    });
+    return best;
+  }
   function direction() {
-    const p = num($(CFG.sel.price)); if (!isNaN(p)) ticks.push(p);
-    ticks = ticks.slice(-20);
-    if (ticks.length >= 6) {
-      const a = ticks.slice(-3).reduce((x, y) => x + y) / 3;
-      const b = ticks.slice(-6, -3).reduce((x, y) => x + y) / 3;
+    const p = livePrices();
+    if (p.length >= 6) {
+      const k = Math.min(5, Math.floor(p.length / 2));
+      const a = p.slice(-k).reduce((x, y) => x + y) / k;
+      const b = p.slice(-2 * k, -k).reduce((x, y) => x + y) / k;
       if (a !== b) return a > b ? 'up' : 'down';
     }
+    log('⚠ գին չկա → պատահական');
     return Math.random() < 0.5 ? 'up' : 'down';
   }
 

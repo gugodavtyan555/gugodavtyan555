@@ -1,7 +1,6 @@
 // ==UserScript==
 // @name         OTC 10s Martingale Bot
-// @match        https://pocketoption.com/*
-// @match        https://*.pocketoption.com/*
+// @match        *://*/*
 // @grant        none
 // ==/UserScript==
 // Տեղադրում՝ Tampermonkey-ում։ Սկսիր DEMO հաշվով։
@@ -14,10 +13,10 @@
     expirySec: 10,
     // Սելեկտորներ (եթե կայքը փոխվի՝ ուղղիր այստեղ)
     sel: {
-      amount: '.block--bet-amount input[type=text], input.bet-amount, .value__val input',
-      up: '.btn-call, .action-high-low .btn-call',
-      down: '.btn-put, .action-high-low .btn-put',
-      balance: '.js-balance-demo, .js-balance-real, .balance-info-block__balance',
+      amount: '.block--bet-amount input[type=text], input.bet-amount, input.input-control__input, input[type=tel], .value__val input',
+      up: 'button.call-btn, .call-btn, .btn-call, .action-high-low .btn-call',
+      down: 'button.put-btn, .put-btn, .btn-put, .action-high-low .btn-put',
+      balance: '.usermenu__info-balance, .js-balance-demo, .js-balance-real, .balance-info-block__balance',
       price: '.current-symbol__price, .chart-price, .value__val-start', // ընտրովի
     },
   };

@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Keno · Hot Triple v9
+// @name         Keno · Hot Triple v10
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -27,7 +27,7 @@
   const CLEAR_LOOSE = /clear|очист|reset|сброс|մաքր|ջնջ/i;
   const KENO_RE = /keno|кено|կենո/i;
   const sleep = ms => new Promise(r => setTimeout(r, ms));
-  try { const kp = JSON.parse(localStorage.getItem('kenoPick') || 'null'); if (kp >= 1 && kp <= 10) CFG.pick = kp; } catch (_) {}
+  try { localStorage.removeItem('kenoPick'); } catch (_) {} // ընտրվող թվերի քանակը միշտ CFG.pick (3) է, RTP սկանը այն չի փոխում
   const rect = e => { try { return e.getBoundingClientRect(); } catch (_) { return { left: 0, top: 0, width: 0, height: 0 }; } };
   const vis = e => { const r = rect(e); return r.width > 0 && r.height > 0; };
   const cls = e => (e.getAttribute && e.getAttribute('class')) || '';
@@ -249,8 +249,7 @@
     if (!res.length) return log('⚠ RTP-ը չհաշվվեց');
     res.forEach(r => log('· ' + r.risk + ' k=' + r.k + ': RTP ' + (r.rtp * 100).toFixed(2) + '% · ստանդարտ շեղում ' + r.sd.toFixed(1) + '×'));
     const best = res.slice().sort((a, b) => b.rtp - a.rtp)[0];
-    store.set('kenoPick', best.k); CFG.pick = best.k;
-    log('✅ լավագույնը՝ ' + best.risk + ', ' + best.k + ' թիվ (RTP ' + (best.rtp * 100).toFixed(2) + '%)՝ պահվեց' + (best.rtp < 1 ? '. RTP < 100% նշանակում է՝ միջինում միշտ կորուստ է' : ''));
+    log('✅ լավագույնը՝ ' + best.risk + ', ' + best.k + ' թիվ (RTP ' + (best.rtp * 100).toFixed(2) + '%)՝ միայն տեղեկատվություն. ընտրությունը մնում է ' + CFG.pick + ' թիվ' + (best.rtp < 1 ? '. RTP < 100% նշանակում է՝ միջինում միշտ կորուստ է' : ''));
   }
 
   // ---------- UI ----------
@@ -266,7 +265,7 @@
     panel = document.createElement('div');
     panel.id = 'kenoPanel';
     panel.style.cssText = 'position:fixed;top:60px;right:8px;z-index:2147483647;background:#111;color:#fff;padding:8px;border-radius:8px;font:12px sans-serif;width:230px';
-    panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ v9</div>' +
+    panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ v10</div>' +
       '<button id="kBtn" style="width:100%;padding:8px;font-weight:bold;background:#2a2;color:#fff;border:0;border-radius:6px">START</button>' +
       '<div style="display:flex;gap:4px;margin-top:6px;align-items:center"><span style="flex:1">խաղադրույք ≤</span><input id="kBets" type="number" style="width:70px;' + INP + '"></div>' +
       '<label style="display:flex;gap:6px;margin-top:6px;align-items:center"><input id="kReal" type="checkbox"> թույլատրել իրական փողով (լռելյայն՝ միայն FUN)</label>' +

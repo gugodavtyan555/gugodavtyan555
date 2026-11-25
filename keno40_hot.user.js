@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Keno · Hot Triple v6
+// @name         Keno · Hot Triple v7
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -167,6 +167,21 @@
 
   // ---------- ընտրություն ----------
   const hist = () => store.get('kenoHist', []);
+  // Վիճակագրական թեստ. եկած թիվը հաջորդ փուլում կրկնվո՞ւմ է ավելի հաճախ, քան պատահականությունից է սպասվում (lag 1 և 2)
+  function analyze(N) {
+    const H = hist(), out = { n: 0, z1: 0, r1: 0, p0: 0, z2: 0, r2: 0, ok: false };
+    if (H.length < 8) return out;
+    const p0 = H.reduce((a, d) => a + d.length, 0) / H.length / N; out.p0 = p0;
+    const lag = L => { let hit = 0, tot = 0; for (let i = L; i < H.length; i++) { const prev = new Set(H[i - L]); H[i].forEach(n => { if (prev.has(n)) hit++; }); tot += H[i - L].length; } return { r: tot ? hit / tot : 0, z: tot ? (hit / tot - p0) / Math.sqrt(p0 * (1 - p0) / tot) : 0, tot }; };
+    const a = lag(1), b = lag(2);
+    out.n = a.tot; out.r1 = a.r; out.z1 = a.z; out.r2 = b.r; out.z2 = b.z; out.ok = a.tot >= 200;
+    return out;
+  }
+  function verdict(N) {
+    const A = analyze(N); if (!A.ok) return { A, dir: 0, text: '🔬 տվյալը քիչ է (փուլ ' + hist().length + '), թեստի համար պետք է ~25+ փուլ' };
+    const dir = A.z1 > 2.58 ? 1 : A.z1 < -2.58 ? -1 : 0;
+    return { A, dir, text: '🔬 եկած թիվը կրկնվում է ' + (A.r1 * 100).toFixed(1) + '% vs պատահական ' + (A.p0 * 100).toFixed(1) + '% (z=' + A.z1.toFixed(2) + ', n=' + A.n + ') → ' + (dir > 0 ? '✅ «տաք» էֆեկտ կա' : dir < 0 ? '⚠ հակառակ էֆեկտ (սառը)' : 'էֆեկտ չկա (պատահական)') };
+  }
   function choose(N) {
     const H = hist().slice(-CFG.window), score = {};
     for (let n = 1; n <= N; n++) score[n] = 0;
@@ -176,8 +191,9 @@
     const hot = nums.slice().sort((a, b) => score[b] - score[a] || j[b] - j[a]);
     const cold = nums.slice().sort((a, b) => score[a] - score[b] || j[a] - j[b]);
     const rnd = nums.slice().sort(() => Math.random() - 0.5);
-    const warm = H.length >= CFG.minRounds;
-    return { hot: (warm ? hot : rnd).slice(0, CFG.pick), cold: cold.slice(0, CFG.pick), rnd: rnd.slice(0, CFG.pick), warm };
+    const warm = H.length >= CFG.minRounds, v = verdict(N);
+    const main = (v.dir < 0 ? cold : hot); // եթե հաստատված է հակառակ էֆեկտ՝ ընտրում ենք սառը. այլապես՝ տաք (ավանդական)
+    return { hot: (warm ? main : rnd).slice(0, CFG.pick), cold: cold.slice(0, CFG.pick), rnd: rnd.slice(0, CFG.pick), warm, verdict: v.dir };
   }
 
   // ---------- վիճակագրություն ----------
@@ -197,11 +213,11 @@
     panel = document.createElement('div');
     panel.id = 'kenoPanel';
     panel.style.cssText = 'position:fixed;top:60px;right:8px;z-index:2147483647;background:#111;color:#fff;padding:8px;border-radius:8px;font:12px sans-serif;width:230px';
-    panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ v6</div>' +
+    panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ v7</div>' +
       '<button id="kBtn" style="width:100%;padding:8px;font-weight:bold;background:#2a2;color:#fff;border:0;border-radius:6px">START</button>' +
       '<div style="display:flex;gap:4px;margin-top:6px;align-items:center"><span style="flex:1">խաղադրույք ≤</span><input id="kBets" type="number" style="width:70px;' + INP + '"></div>' +
       '<label style="display:flex;gap:6px;margin-top:6px;align-items:center"><input id="kReal" type="checkbox"> թույլատրել իրական փողով (լռելյայն՝ միայն FUN)</label>' +
-      '<div style="display:flex;gap:4px;margin-top:6px"><button id="kDbg" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">🔍 Debug</button><button id="kRst" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">↺ Զրո</button></div>' +
+      '<div style="display:flex;gap:4px;margin-top:6px"><button id="kDbg" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">🔍 Debug</button><button id="kRst" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">↺ Զրո</button><button id="kTest" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">🔬 Թեստ</button></div>' +
       '<div id="kStat" style="margin-top:6px;font-weight:bold"></div><div id="kLog" style="margin-top:6px;max-height:160px;overflow:auto"></div>';
     document.body.appendChild(panel);
     logEl = panel.querySelector('#kLog'); statEl = panel.querySelector('#kStat'); btn = panel.querySelector('#kBtn');
@@ -216,6 +232,7 @@
     btn.onclick = () => { if (running) stop('կանգնեցված'); else start(); };
     panel.querySelector('#kRst').onclick = () => { store.set('kenoHist', []); S = { rounds: 0, hotHits: 0, coldHits: 0, rndHits: 0, expHits: 0, bets: 0 }; saveS(); showStats(); log('↺ պատմությունը և վիճակագրությունը մաքրվեց'); };
     panel.querySelector('#kDbg').onclick = debugDump;
+    panel.querySelector('#kTest').onclick = () => log(verdict(G && G.N || 40).text);
     showStats();
     log('✅ սքրիփթը աշխատում է (' + (window.top === window ? 'հիմնական էջ' : 'iframe') + ')');
     try { if (window.top !== window) window.top.postMessage({ __kenoPanel: 1 }, '*'); } catch (_) {}
@@ -363,6 +380,7 @@
     const hit = a => a.filter(n => drawn.includes(n)).length, hh = hit(pk.hot);
     S.rounds++; S.hotHits += hh; S.coldHits += hit(pk.cold); S.rndHits += hit(pk.rnd); S.expHits += CFG.pick * drawn.length / N; saveS();
     log('→ դուրս եկավ ' + drawn.length + ' թիվ (' + how + ') · հիթ ' + hh + '/' + CFG.pick);
+    if (S.rounds % 10 === 0) log(verdict(N).text);
     showStats();
   }
 

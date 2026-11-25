@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Keno · Hot Triple v8
+// @name         Keno · Hot Triple v9
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -224,18 +224,28 @@
     const risks = [['Low', /^low$/i], ['Medium', /^medium$/i], ['High', /^(risk:?\s*)?high$/i]].map(([n, re]) => [n, findBtn(re, null)]).filter(x => x[1]);
     if (!risks.length) risks.push(['ընթացիկ', null]);
     const res = []; log('📐 RTP սկան (N=' + N + ', դուրս եկած ' + D + ')…');
+    const clearBoard = async () => { // մաքրում՝ Clear կոճակով, ապա (եթե անհրաժեշտ է) ձեռքով հանելով
+      const clr = findClear();
+      if (clr) { tap(clr, MODE); await sleep(200); }
+      for (let t = 0; t < 2 && SELTOK && selectedNow(cells, N).length; t++) {
+        if (clr) await tapUntil(clr, () => selectedNow(cells, N).length === 0, 'Clear Table');
+        for (const n of selectedNow(cells, N)) await tapUntil(cells[n], () => !hasSel(cells[n]), 'հանել ' + n);
+      }
+    };
     for (const [rn, rb] of risks) {
       if (rb) { tap(rb, MODE); await sleep(350); }
-      for (let k = 1; k <= 10; k++) {
-        const clr = findClear(); if (clr) { tap(clr, MODE); await sleep(150); }
-        for (const n of selectedNow(cells, N)) await tapUntil(cells[n], () => !hasSel(cells[n]), 'հանել ' + n);
-        for (let n = 1; n <= k; n++) { const b = sig(cells[n]); await tapUntil(cells[n], () => (SELTOK ? hasSel(cells[n]) : sig(cells[n]) !== b), 'ընտրել ' + n); }
+      await clearBoard();
+      for (let k = 1; k <= 10; k++) { // աստիճանաբար՝ ամեն քայլին ավելացնում ենք ևս մեկ թիվ (մաքրում միջանկյալ չի պահանջվում)
+        const bt = tok(cells[k]), bs = sig(cells[k]);
+        await tapUntil(cells[k], () => (SELTOK ? hasSel(cells[k]) : sig(cells[k]) !== bs), 'ընտրել ' + k);
+        if (!SELTOK && sig(cells[k]) !== bs) { const added = Array.from(tok(cells[k])).filter(t => !bt.has(t)); if (added.length) SELTOK = new Set(added); }
         await sleep(250);
         const pay = readPayouts(); if (!pay) { log('⚠ մուլտիպլիկատորները չկարդացվեցին (k=' + k + ')'); continue; }
         const r = rtpOf(N, D, k, pay); res.push({ risk: rn, k, rtp: r.rtp, sd: r.sd });
       }
+      await clearBoard();
     }
-    const clr = findClear(); if (clr) tap(clr, MODE);
+    await clearBoard();
     if (!res.length) return log('⚠ RTP-ը չհաշվվեց');
     res.forEach(r => log('· ' + r.risk + ' k=' + r.k + ': RTP ' + (r.rtp * 100).toFixed(2) + '% · ստանդարտ շեղում ' + r.sd.toFixed(1) + '×'));
     const best = res.slice().sort((a, b) => b.rtp - a.rtp)[0];
@@ -256,7 +266,7 @@
     panel = document.createElement('div');
     panel.id = 'kenoPanel';
     panel.style.cssText = 'position:fixed;top:60px;right:8px;z-index:2147483647;background:#111;color:#fff;padding:8px;border-radius:8px;font:12px sans-serif;width:230px';
-    panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ v8</div>' +
+    panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ v9</div>' +
       '<button id="kBtn" style="width:100%;padding:8px;font-weight:bold;background:#2a2;color:#fff;border:0;border-radius:6px">START</button>' +
       '<div style="display:flex;gap:4px;margin-top:6px;align-items:center"><span style="flex:1">խաղադրույք ≤</span><input id="kBets" type="number" style="width:70px;' + INP + '"></div>' +
       '<label style="display:flex;gap:6px;margin-top:6px;align-items:center"><input id="kReal" type="checkbox"> թույլատրել իրական փողով (լռելյայն՝ միայն FUN)</label>' +

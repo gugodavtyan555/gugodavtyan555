@@ -1,0 +1,52 @@
+# Pixabay credits (Pixabay Content License)
+- c1 video 87172 "retro arcade" by SlimeyFox — https://pixabay.com/videos/id-87172/
+- c1 video 41939 "retro arcade" by 15219570 — https://pixabay.com/videos/id-41939/
+- c1 image 7284052 "retro arcade" by Pikurā — https://pixabay.com/illustrations/pixel-art-pixel-retro-classic-7284052/
+- c1 video 55571 "vintage computer" by tommyvideo — https://pixabay.com/videos/id-55571/
+- c1 video 223129 "vintage computer" by OWNFILTERS — https://pixabay.com/videos/id-223129/
+- c1 image 8245177 "vintage computer" by TheDigitalArtist — https://pixabay.com/illustrations/ai-generated-vintage-computer-8245177/
+- c1 video 123972 "old video game" by ImagesInMotion — https://pixabay.com/videos/id-123972/
+- c1 video 203449 "old video game" by JoshuaWoroniecki — https://pixabay.com/videos/id-203449/
+- c1 image 8738140 "old video game" by VanguardiaCreate — https://pixabay.com/illustrations/retro-classic-ancient-old-8738140/
+- c1 video 45085 "scotland city" by HotaruFilms — https://pixabay.com/videos/id-45085/
+- c1 video 262334 "scotland city" by City_at_Night — https://pixabay.com/videos/id-262334/
+- c1 image 4970689 "scotland city" by jackmac34 — https://pixabay.com/photos/scotland-edinburgh-facades-4970689/
+- c1 video 5161 "retro gaming" by tommyvideo — https://pixabay.com/videos/id-5161/
+- c1 video 71287 "retro gaming" by CreativeWorlds99 — https://pixabay.com/videos/id-71287/
+- c1 image 7284052 "retro gaming" by Pikurā — https://pixabay.com/illustrations/pixel-art-pixel-retro-classic-7284052/
+- c2 video 42489 "new york skyline" by DesignScape — https://pixabay.com/videos/id-42489/
+- c2 video 30978 "new york skyline" by netvega — https://pixabay.com/videos/id-30978/
+- c2 image 4352072 "new york skyline" by Leonhard_Niederwimmer — https://pixabay.com/photos/new-york-usa-nyc-ny-manhattan-4352072/
+- c2 video 7260 "brooklyn bridge" by Coverr-Free-Footage — https://pixabay.com/videos/id-7260/
+- c2 video 231167 "brooklyn bridge" by TungArt7 — https://pixabay.com/videos/id-231167/
+- c2 image 2098351 "brooklyn bridge" by 12019 — https://pixabay.com/photos/george-washington-bridge-2098351/
+- c2 video 202825 "miami beach" by Visual_Laurence — https://pixabay.com/videos/id-202825/
+- c2 video 6474 "miami beach" by MarcioRivera — https://pixabay.com/videos/id-6474/
+- c2 image 1198921 "miami beach" by tammon — https://pixabay.com/photos/miami-beach-water-ocean-south-1198921/
+- c2 video 205875 "las vegas strip" by JoshuaWoroniecki — https://pixabay.com/videos/id-205875/
+- c2 video 7405 "las vegas strip" by TalkshowMedia — https://pixabay.com/videos/id-7405/
+- c2 image 1116325 "las vegas strip" by suyashdixit — https://pixabay.com/photos/las-vegas-fountains-paris-1116325/
+- c2 video 18392 "san francisco bridge" by Nature-Stock-Footage — https://pixabay.com/videos/id-18392/
+- c2 video 30084 "san francisco bridge" by jdwork — https://pixabay.com/videos/id-30084/
+- c2 image 4271364 "san francisco bridge" by crispy-fotografie — https://pixabay.com/photos/golden-gate-bridge-san-francisco-4271364/
+- c3 video 6782 "new york night" by carl_watermark — https://pixabay.com/videos/id-6782/
+- c3 video 42489 "new york night" by DesignScape — https://pixabay.com/videos/id-42489/
+- c3 image 8081967 "new york night" by Paphop — https://pixabay.com/photos/park-little-island-usa-architecture-8081967/
+- c3 video 1366 "statue of liberty" by Activedia — https://pixabay.com/videos/id-1366/
+- c3 video 352716 "statue of liberty" by flutie8211 — https://pixabay.com/videos/id-352716/
+- c3 image 267948 "statue of liberty" by Ronile — https://pixabay.com/photos/statue-of-liberty-new-york-statue-267948/
+- c3 video 7260 "manhattan" by Coverr-Free-Footage — https://pixabay.com/videos/id-7260/
+- c3 video 30978 "manhattan" by netvega — https://pixabay.com/videos/id-30978/
+- c3 image 540807 "manhattan" by FrankyFromGermany — https://pixabay.com/photos/new-york-skyline-manhattan-hudson-540807/
+- c4 video 32848 "los angeles skyline" by Preditorcuts — https://pixabay.com/videos/id-32848/
+- c4 video 32859 "los angeles skyline" by Preditorcuts — https://pixabay.com/videos/id-32859/
+- c4 image 1868667 "los angeles skyline" by Pexels — https://pixabay.com/photos/architecture-building-business-city-1868667/
+- c4 video 219637 "hollywood" by KittyPark — https://pixabay.com/videos/id-219637/
+- c4 video 133077 "hollywood" by zillurrahman1 — https://pixabay.com/videos/id-133077/
+- c4 image 1598473 "hollywood" by 12019 — https://pixabay.com/photos/hollywood-sign-los-angeles-hollywood-1598473/
+- c4 video 29433 "santa monica" by EdgarAllanPoets — https://pixabay.com/videos/id-29433/
+- c4 video 80549 "santa monica" by mariohagen — https://pixabay.com/videos/id-80549/
+- c4 image 7754986 "santa monica" by maryannandco — https://pixabay.com/photos/losangeles-santamonica-rollercoaster-7754986/
+- c4 video 241574 "sports car city night" by doktorkleinmusic — https://pixabay.com/videos/id-241574/
+- c4 video 162670 "sports car city night" by Eartvideos — https://pixabay.com/videos/id-162670/
+- c4 image 893224 "sports car city night" by fancycrave1 — https://pixabay.com/photos/car-vehicle-parking-lot-auto-893224/

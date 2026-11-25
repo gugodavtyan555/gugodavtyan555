@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Keno · Hot Triple v5
+// @name         Keno · Hot Triple v6
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -14,10 +14,10 @@
     window: 12,       // քանի վերջին փուլն է հաշվվում
     decay: 0.85,      // նոր փուլերի կշիռը (1 = բոլորը հավասար)
     minRounds: 3,     // պատմության նվազագույն երկարություն՝ տաք ընտրության համար
-    quietMs: 1800,    // փուլի ավարտ = այսքան ժամանակ DOM-ում փոփոխություն չկա
-    startWaitMs: 900, // փուլի սկզբից նվազագույն սպասում
+    quietMs: 1100,    // փուլի ավարտ = այսքան ժամանակ DOM-ում փոփոխություն չկա
+    startWaitMs: 500, // փուլի սկզբից նվազագույն սպասում
     maxWaitMs: 25000, // փուլի առավելագույն սպասում
-    settleMs: 260,    // սեղմումից հետո սպասում՝ վիճակը ստուգելու համար
+    settleMs: 450,    // առավելագույն սպասում սեղմումից հետո (ստուգվում է ամեն 40 մվ)    // սեղմումից հետո սպասում՝ վիճակը ստուգելու համար
     maxBets: 40       // լռելյայն սահման՝ խաղադրույքների քանակ (փոխվում է պանելից)
   }, window.__KENO_CFG || {});
   const BET_EXACT = /^(bet|place bet|ставка|ставить|play|играть|start|խաղադրույք|խաղալ|սկսել)(\s+[\d.,]+\s*\w*)?$/i;
@@ -197,7 +197,7 @@
     panel = document.createElement('div');
     panel.id = 'kenoPanel';
     panel.style.cssText = 'position:fixed;top:60px;right:8px;z-index:2147483647;background:#111;color:#fff;padding:8px;border-radius:8px;font:12px sans-serif;width:230px';
-    panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ v5</div>' +
+    panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ v6</div>' +
       '<button id="kBtn" style="width:100%;padding:8px;font-weight:bold;background:#2a2;color:#fff;border:0;border-radius:6px">START</button>' +
       '<div style="display:flex;gap:4px;margin-top:6px;align-items:center"><span style="flex:1">խաղադրույք ≤</span><input id="kBets" type="number" style="width:70px;' + INP + '"></div>' +
       '<label style="display:flex;gap:6px;margin-top:6px;align-items:center"><input id="kReal" type="checkbox"> թույլատրել իրական փողով (լռելյայն՝ միայն FUN)</label>' +
@@ -254,14 +254,15 @@
       const maxBets = +inBets.value || CFG.maxBets;
       if (S.bets >= maxBets) { stop('սահմանաչափ՝ ' + maxBets + ' խաղադրույք'); break; }
       try { await playRound(); } catch (e) { log('⚠ ' + e.message); await sleep(1500); }
-      await sleep(500);
+      await sleep(150);
     }
   }
   // Սեղմում՝ մինչև պայմանը կատարվի (փորձում է հպման 3 տարբեր եղանակ)
   async function tapUntil(el, ok, what) {
     for (let k = 0; k < 3; k++) {
       const mode = (MODE + k) % 3;
-      tap(el, mode); await sleep(CFG.settleMs);
+      tap(el, mode);
+      for (let w = 0; w < CFG.settleMs; w += 40) { await sleep(40); if (ok()) break; }
       if (ok()) { if (mode !== MODE) { MODE = mode; store.set('kenoMode', MODE); log('ℹ հպման եղանակ՝ ' + mode); } return true; }
     }
     log('⚠ չհաջողվեց՝ ' + what);
@@ -273,7 +274,7 @@
     if (IDLE === null) learnInitial(cells, N);
     // 1) աղյուսակի մաքրում (նախորդ ընտրությունը)
     const clr = findClear();
-    if (clr) { tap(clr, MODE); await sleep(CFG.settleMs + 100); }
+    if (clr) { tap(clr, MODE); await sleep(150); }
     let sel = selectedNow(cells, N);
     if (sel.length) {
       if (clr) await tapUntil(clr, () => selectedNow(cells, N).length === 0, 'Clear Table');
@@ -289,7 +290,7 @@
       await tapUntil(cells[n], () => (SELTOK ? hasSel(cells[n]) : sig(cells[n]) !== beforeSig), 'ընտրել ' + n);
       if (!SELTOK && sig(cells[n]) !== beforeSig) { const added = Array.from(tok(cells[n])).filter(t => !beforeTok.has(t)); if (added.length) { SELTOK = new Set(added); log('ℹ «ընտրված» տեսքը սովորվեց՝ ' + added.join(' ').slice(0, 40)); } }
     }
-    await sleep(300);
+    await sleep(100);
     const isPicked = n => (SELTOK ? hasSel(cells[n]) : sig(cells[n]) !== clean[n]);
     const notPicked = pk.hot.filter(n => !isPicked(n));
     if (notPicked.length) throw new Error('թվերը չընտրվեցին (' + notPicked.join(',') + ')՝ խաղադրույք չեմ անում');
@@ -333,15 +334,14 @@
       const mode = (MODE + k) % 3;
       tap(bet, mode); if (k === 0) { S.bets++; saveS(); }
       const tEnd = Date.now() + 900;
-      while (Date.now() < tEnd) { await sleep(120); sample(); }
-      started = lastMut !== m0 || Object.keys(cur).some(n => cur[n] !== base[n]);
+      while (Date.now() < tEnd && !started) { await sleep(60); sample(); started = lastMut !== m0 || Object.keys(cur).some(n => cur[n] !== base[n]); }
       if (started && mode !== MODE) { MODE = mode; store.set('kenoMode', MODE); log('ℹ հպման եղանակ՝ ' + mode); }
       if (!started) log('⚠ խաղադրույքը չաշխատեց (եղանակ ' + mode + ')՝ փորձում եմ ուրիշը');
     }
     if (!started) { stopRec(); throw new Error('խաղադրույքի կոճակը չի արձագանքում'); }
     const t0 = Date.now(); lastChange = Date.now();
     while (Date.now() - t0 < CFG.maxWaitMs) {
-      await sleep(120);
+      await sleep(80);
       sample();
       if (Date.now() - t0 > CFG.startWaitMs && Date.now() - lastChange > CFG.quietMs && Date.now() - lastMut > CFG.quietMs) break;
     }

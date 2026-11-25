@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Keno · Hot Triple v4
+// @name         Keno · Hot Triple v5
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -18,8 +18,7 @@
     startWaitMs: 900, // փուլի սկզբից նվազագույն սպասում
     maxWaitMs: 25000, // փուլի առավելագույն սպասում
     settleMs: 260,    // սեղմումից հետո սպասում՝ վիճակը ստուգելու համար
-    maxBets: 40,      // լռելյայն սահման՝ խաղադրույքների քանակ (փոխվում է պանելից)
-    stopLossPct: 30   // լռելյայն սահման՝ մնացորդի կորուստ % (եթե մնացորդը կարդացվում է)
+    maxBets: 40       // լռելյայն սահման՝ խաղադրույքների քանակ (փոխվում է պանելից)
   }, window.__KENO_CFG || {});
   const BET_EXACT = /^(bet|place bet|ставка|ставить|play|играть|start|խաղադրույք|խաղալ|սկսել)(\s+[\d.,]+\s*\w*)?$/i;
   const BET_LOOSE = /ставк|ставить|играть|bet|play|start|խաղադրույք|խաղալ|սկսել/i;
@@ -116,6 +115,11 @@
     const k = e.firstElementChild;
     return cls(e) + '|' + (cs ? cs.backgroundColor + '|' + cs.color + '|' + cs.borderColor + '|' + cs.opacity : '') + '|' + (e.getAttribute('aria-pressed') || '') + '|' + (k ? cls(k) : '');
   }
+  function vsig(e) { // տեսողական ստորագրություն (առանց class-երի). անտեսանելի class-փոփոխությունները չեն խանգարում
+    let cs = null; try { cs = getComputedStyle(e); } catch (_) {}
+    const r = rect(e);
+    return (cs ? cs.backgroundColor + '|' + cs.borderTopColor + '|' + cs.opacity + '|' + (cs.backgroundImage || '').slice(0, 40) : '') + '|' + Math.round(r.width / 4) + 'x' + Math.round(r.height / 4) + '|' + ((e.textContent || '').trim() ? 1 : 0);
+  }
   const norm = s => s.replace(/\d+/g, '#');
   const snapshot = (cells, N) => { const o = {}; for (let n = 1; n <= N; n++) o[n] = sig(cells[n]); return o; };
   const tok = e => { // class-նշիչներ (բջիջ + առաջին երեխա)՝ թվերը նորմալացված
@@ -125,7 +129,7 @@
     const a = e.getAttribute('aria-pressed'); if (a) s.add('a:' + a);
     return s;
   };
-  let IDLE = null, SELTOK = null, IDLETOK = null; // «անգործուն» բջիջի նորմալացված ստորագրությունը և «ընտրված» նշիչները (սովորվում են)
+  let IDLE = null, SELTOK = null, IDLETOK = null, IDLEV = null; // «անգործուն» բջիջի նորմալացված ստորագրությունը և «ընտրված» նշիչները (սովորվում են)
   const hasSel = e => !!SELTOK && SELTOK.size > 0 && Array.from(SELTOK).every(t => tok(e).has(t));
   function learnInitial(cells, N) { // START-ի պահին՝ անգործուն տեսքը + (եթե կան նախապես նշված թվեր) «ընտրված» նշիչները
     const cnt = {}, snap = snapshot(cells, N), keys = {};
@@ -135,6 +139,7 @@
     for (let n = 1; n <= N; n++) { keys[n] = Array.from(tok(cells[n])).sort().join(' '); tc[keys[n]] = (tc[keys[n]] || 0) + 1; }
     const idleKey = Object.keys(tc).sort((a, b) => tc[b] - tc[a])[0], others = Object.keys(tc).filter(k => k !== idleKey);
     IDLETOK = new Set(idleKey.split(' ').filter(Boolean));
+    { const vc = {}; for (let n = 1; n <= N; n++) { const v = vsig(cells[n]); vc[v] = (vc[v] || 0) + 1; } IDLEV = Object.keys(vc).sort((a, b) => vc[b] - vc[a])[0]; } // անգործուն բջջի տեսողական տեսքը
     if (others.length === 1 && tc[others[0]] <= 12) { const idleSet = new Set(idleKey.split(' ')), diff = others[0].split(' ').filter(t => t && !idleSet.has(t)); if (diff.length) SELTOK = new Set(diff); }
   }
   const selectedNow = (cells, N) => { const o = []; if (!SELTOK) return o; for (let n = 1; n <= N; n++) if (hasSel(cells[n])) o.push(n); return o; };
@@ -180,7 +185,7 @@
   const saveS = () => store.set('kenoStats', S);
 
   // ---------- UI ----------
-  let logEl = null, statEl = null, btn = null, inBets = null, inLoss = null, inReal = null, running = false, G = null, startBal = null;
+  let logEl = null, statEl = null, btn = null, inBets = null, inReal = null, running = false, G = null, startBal = null;
   function log(t) { if (!logEl) return; const d = document.createElement('div'); d.textContent = t; logEl.insertBefore(d, logEl.firstChild); while (logEl.childNodes.length > 40) logEl.removeChild(logEl.lastChild); }
   function showStats() {
     if (!statEl) return;
@@ -192,18 +197,17 @@
     panel = document.createElement('div');
     panel.id = 'kenoPanel';
     panel.style.cssText = 'position:fixed;top:60px;right:8px;z-index:2147483647;background:#111;color:#fff;padding:8px;border-radius:8px;font:12px sans-serif;width:230px';
-    panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ v4</div>' +
+    panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ v5</div>' +
       '<button id="kBtn" style="width:100%;padding:8px;font-weight:bold;background:#2a2;color:#fff;border:0;border-radius:6px">START</button>' +
-      '<div style="display:flex;gap:4px;margin-top:6px;align-items:center"><span style="flex:1">խաղադրույք ≤</span><input id="kBets" type="number" style="width:60px;' + INP + '"><span style="flex:1;text-align:right">կորուստ %</span><input id="kLoss" type="number" style="width:50px;' + INP + '"></div>' +
+      '<div style="display:flex;gap:4px;margin-top:6px;align-items:center"><span style="flex:1">խաղադրույք ≤</span><input id="kBets" type="number" style="width:70px;' + INP + '"></div>' +
       '<label style="display:flex;gap:6px;margin-top:6px;align-items:center"><input id="kReal" type="checkbox"> թույլատրել իրական փողով (լռելյայն՝ միայն FUN)</label>' +
       '<div style="display:flex;gap:4px;margin-top:6px"><button id="kDbg" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">🔍 Debug</button><button id="kRst" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">↺ Զրո</button></div>' +
       '<div id="kStat" style="margin-top:6px;font-weight:bold"></div><div id="kLog" style="margin-top:6px;max-height:160px;overflow:auto"></div>';
     document.body.appendChild(panel);
     logEl = panel.querySelector('#kLog'); statEl = panel.querySelector('#kStat'); btn = panel.querySelector('#kBtn');
-    inBets = panel.querySelector('#kBets'); inLoss = panel.querySelector('#kLoss'); inReal = panel.querySelector('#kReal');
-    inBets.value = store.get('kenoMaxBets', CFG.maxBets); inLoss.value = store.get('kenoMaxLoss', CFG.stopLossPct); inReal.checked = !!store.get('kenoRealOK', false);
+    inBets = panel.querySelector('#kBets'); inReal = panel.querySelector('#kReal');
+    inBets.value = store.get('kenoMaxBets', CFG.maxBets); inReal.checked = !!store.get('kenoRealOK', false);
     inBets.onchange = () => store.set('kenoMaxBets', +inBets.value || CFG.maxBets);
-    inLoss.onchange = () => store.set('kenoMaxLoss', +inLoss.value || CFG.stopLossPct);
     inReal.onchange = () => store.set('kenoRealOK', !!inReal.checked);
     const grip = panel.querySelector('#kGrip'); let dx = 0, dy = 0, drag = false;
     grip.addEventListener('pointerdown', e => { drag = true; const r = panel.getBoundingClientRect(); dx = e.clientX - r.left; dy = e.clientY - r.top; try { grip.setPointerCapture(e.pointerId); } catch (_) {} e.preventDefault(); });
@@ -247,10 +251,8 @@
   }
   async function loop() {
     while (running) {
-      const maxBets = +inBets.value || CFG.maxBets, maxLoss = +inLoss.value || CFG.stopLossPct;
+      const maxBets = +inBets.value || CFG.maxBets;
       if (S.bets >= maxBets) { stop('սահմանաչափ՝ ' + maxBets + ' խաղադրույք'); break; }
-      const bal = readBalance();
-      if (startBal !== null && bal !== null && bal <= startBal * (1 - maxLoss / 100)) { stop('կորստի սահման՝ -' + maxLoss + '% (մնացորդ ' + bal + ')'); break; }
       try { await playRound(); } catch (e) { log('⚠ ' + e.message); await sleep(1500); }
       await sleep(500);
     }
@@ -302,6 +304,18 @@
       if (IDLETOK && IDLETOK.size) { const t = tok(cells[n]); for (const x of t) if (!IDLETOK.has(x) && !(SELTOK && SELTOK.has(x))) return true; return false; }
       return norm(sg) !== IDLE && !(pk.hot.includes(n) && sg === base[n]);
     };
+    const vsnap = () => { const o = {}; for (let n = 1; n <= N; n++) o[n] = vsig(cells[n]); return o; };
+    const modal = (vs, ns) => { const c = {}; ns.forEach(n => { c[vs[n]] = (c[vs[n]] || 0) + 1; }); return Object.keys(c).sort((a, b) => c[b] - c[a])[0]; };
+    const nonPick = []; for (let n = 1; n <= N; n++) if (!pk.hot.includes(n)) nonPick.push(n);
+    const baseV = vsnap(), bgV0 = (IDLEV && nonPick.some(n => baseV[n] === IDLEV)) ? IDLEV : modal(baseV, nonPick), stale = new Set(nonPick.filter(n => baseV[n] !== bgV0));
+    // ընտրվածների «հիթը»՝ class-նշիչներով (եթե հնարավոր է). տեսողականը շփոթվում է, երբ նախորդ փուլի նշումը հանվում է
+    const tokOK = () => !!(IDLETOK && IDLETOK.size);
+    const pickHit = (n, vs) => tokOK() ? (!!REC && REC.touched.has(n) && Array.from(tok(cells[n])).some(x => !IDLETOK.has(x) && !(SELTOK && SELTOK.has(x)))) : vs[n] !== baseV[n]; // փոփոխված և հիմա «նշված» (նաև նախորդ փուլի նույն նշումով դեպքում)
+    const dWith = (vs, bg) => { const d = nonPick.filter(n => vs[n] !== bg); pk.hot.forEach(n => { if (pickHit(n, vs)) d.push(n); }); return d; };
+    const plausible = d => d.length >= 3 && d.length <= N * 0.6;
+    // ֆոն՝ նախ՝ նախքան խաղադրույքը եղած անգործուն տեսքը (չի շփոթվում, երբ դուրս եկածները ~կեսն են). եթե անհավանական է՝ ընթացիկ ամենահաճախ տեսքը
+    const dOf = vs => { const a = dWith(vs, bgV0); if (plausible(a)) return a; const b = dWith(vs, modal(vs, nonPick)); return plausible(b) ? b : a; };
+    let bestD = [], finalD = [];
     startRec(cells, N);
     const m0 = lastMut;
     let lastChange = Date.now(), cur = base;
@@ -311,6 +325,8 @@
         if (!seen[n].has(cur[n])) { seen[n].add(cur[n]); lastChange = Date.now(); if (!allowed[n].has(cur[n])) fresh.add(n); }
         if (isHL(n, cur[n])) peak.add(n); // գոնե մեկ անգամ՝ «նշված» (դուրս եկած) վիճակում
       }
+      finalD = dOf(vsnap());
+      if (plausible(finalD) && finalD.length >= bestD.length) bestD = finalD.slice();
     };
     let started = false;
     for (let k = 0; k < 3 && !started; k++) {
@@ -331,14 +347,22 @@
     }
     const rec = stopRec();
     // դուրս եկած թվեր՝ ա) փոփոխված (mutation) և երբևէ «նշված» վիճակում եղած բջիջներ. բ) պահեստային՝ նոր ստորագրություն ստացածները
-    let drawn = rec ? Array.from(rec.touched).filter(n => peak.has(n)) : [];
-    if (drawn.length < 3 || drawn.length > N * 0.75) drawn = Array.from(fresh);
+    // ա) տեսողական վերլուծություն (նախապատվություն). բ) mutation+class. գ) նոր ստորագրություններ
+    const keep = n => !stale.has(n) || (rec && rec.touched.has(n)); // նախորդ փուլի մնացած նշումները չհաշվել (եթե չեն թարմացվել)
+    let drawn = (plausible(finalD) ? finalD : bestD).filter(keep);
+    let how = 'v';
+    if (!plausible(drawn)) { drawn = rec ? Array.from(rec.touched).filter(n => peak.has(n)) : []; how = 'm'; }
+    if (!plausible(drawn)) { drawn = Array.from(fresh); how = 'f'; }
     drawn.sort((a, b) => a - b);
-    if (drawn.length < 3 || drawn.length > N * 0.75) { log('⚠ դուրս եկած թվերը չկարդացվեցին (' + drawn.length + ')՝ տես 🔍 Debug'); return; }
+    if (!plausible(drawn)) {
+      const vs = vsnap(), c = {}; for (let n = 1; n <= N; n++) c[vs[n]] = (c[vs[n]] || 0) + 1;
+      log('⚠ դուրս եկած թվերը չկարդացվեցին (' + drawn.length + ')՝ տեսքերի խմբեր՝ ' + Object.keys(c).map(k => c[k]).sort((a, b) => b - a).join('/') + ' · տես 🔍 Debug');
+      return;
+    }
     const H = hist(); H.push(drawn); store.set('kenoHist', H.slice(-200));
     const hit = a => a.filter(n => drawn.includes(n)).length, hh = hit(pk.hot);
     S.rounds++; S.hotHits += hh; S.coldHits += hit(pk.cold); S.rndHits += hit(pk.rnd); S.expHits += CFG.pick * drawn.length / N; saveS();
-    log('→ դուրս եկավ ' + drawn.length + ' թիվ · հիթ ' + hh + '/' + CFG.pick);
+    log('→ դուրս եկավ ' + drawn.length + ' թիվ (' + how + ') · հիթ ' + hh + '/' + CFG.pick);
     showStats();
   }
 

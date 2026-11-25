@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Keno · Hot Triple v7
+// @name         Keno · Hot Triple v8
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -27,6 +27,7 @@
   const CLEAR_LOOSE = /clear|очист|reset|сброс|մաքր|ջնջ/i;
   const KENO_RE = /keno|кено|կենո/i;
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+  try { const kp = JSON.parse(localStorage.getItem('kenoPick') || 'null'); if (kp >= 1 && kp <= 10) CFG.pick = kp; } catch (_) {}
   const rect = e => { try { return e.getBoundingClientRect(); } catch (_) { return { left: 0, top: 0, width: 0, height: 0 }; } };
   const vis = e => { const r = rect(e); return r.width > 0 && r.height > 0; };
   const cls = e => (e.getAttribute && e.getAttribute('class')) || '';
@@ -200,6 +201,48 @@
   let S = store.get('kenoStats', { rounds: 0, hotHits: 0, coldHits: 0, rndHits: 0, expHits: 0, bets: 0 });
   const saveS = () => store.set('kenoStats', S);
 
+  // ---------- RTP-ի մաթեմատիկա (հիպերերկրաչափական բաշխում) ----------
+  const lnC = (n, k) => { if (k < 0 || k > n) return -Infinity; let r = 0; for (let i = 1; i <= k; i++) r += Math.log(n - k + i) - Math.log(i); return r; };
+  const pHit = (N, D, k, h) => Math.exp(lnC(D, h) + lnC(N - D, k - h) - lnC(N, k));
+  const drawSize = () => { const H = hist(); return H.length >= 5 ? Math.round(H.reduce((a, d) => a + d.length, 0) / H.length) : 10; };
+  const rtpOf = (N, D, k, pay) => { let r = 0, m2 = 0; for (let h = 0; h <= k; h++) { const p = pHit(N, D, k, h), m = pay[h] || 0; r += p * m; m2 += p * m * m; } return { rtp: r, sd: Math.sqrt(Math.max(0, m2 - r * r)) }; };
+  function readPayouts() { // «N×»-ի վերնագրերը և նրանց վերևի «x.xx x» արժեքները՝ x-կենտրոնով զուգակցված
+    const els = deepAll().filter(e => !e.children.length && vis(e)), labels = [], vals = [], cx = e => { const r = rect(e); return r.left + r.width / 2; };
+    for (const e of els) {
+      const t = (e.textContent || '').trim();
+      let m = t.match(/^(\d{1,2})\s?[×x]$/); if (m) { labels.push({ h: +m[1], x: cx(e), y: rect(e).top }); continue; }
+      m = t.match(/^(\d[\d\s]*[.,]\d+)\s?[xX×]$/); if (m) vals.push({ v: parseFloat(m[1].replace(/\s/g, '').replace(',', '.')), x: cx(e), y: rect(e).top });
+    }
+    if (labels.length < 2 || !vals.length) return null;
+    const pay = {};
+    for (const l of labels) { const c = vals.filter(v => v.y <= l.y + 4).sort((a, b) => Math.abs(a.x - l.x) - Math.abs(b.x - l.x))[0]; if (c && Math.abs(c.x - l.x) < 45) pay[l.h] = c.v; }
+    return Object.keys(pay).length >= 2 ? pay : null;
+  }
+  async function scanRTP() {
+    const g = findGrid(); if (!g.cells) return log('⚠ թվերի ցանցը չգտնվեց');
+    const cells = g.cells, N = g.N, D = drawSize(); learnInitial(cells, N);
+    const risks = [['Low', /^low$/i], ['Medium', /^medium$/i], ['High', /^(risk:?\s*)?high$/i]].map(([n, re]) => [n, findBtn(re, null)]).filter(x => x[1]);
+    if (!risks.length) risks.push(['ընթացիկ', null]);
+    const res = []; log('📐 RTP սկան (N=' + N + ', դուրս եկած ' + D + ')…');
+    for (const [rn, rb] of risks) {
+      if (rb) { tap(rb, MODE); await sleep(350); }
+      for (let k = 1; k <= 10; k++) {
+        const clr = findClear(); if (clr) { tap(clr, MODE); await sleep(150); }
+        for (const n of selectedNow(cells, N)) await tapUntil(cells[n], () => !hasSel(cells[n]), 'հանել ' + n);
+        for (let n = 1; n <= k; n++) { const b = sig(cells[n]); await tapUntil(cells[n], () => (SELTOK ? hasSel(cells[n]) : sig(cells[n]) !== b), 'ընտրել ' + n); }
+        await sleep(250);
+        const pay = readPayouts(); if (!pay) { log('⚠ մուլտիպլիկատորները չկարդացվեցին (k=' + k + ')'); continue; }
+        const r = rtpOf(N, D, k, pay); res.push({ risk: rn, k, rtp: r.rtp, sd: r.sd });
+      }
+    }
+    const clr = findClear(); if (clr) tap(clr, MODE);
+    if (!res.length) return log('⚠ RTP-ը չհաշվվեց');
+    res.forEach(r => log('· ' + r.risk + ' k=' + r.k + ': RTP ' + (r.rtp * 100).toFixed(2) + '% · ստանդարտ շեղում ' + r.sd.toFixed(1) + '×'));
+    const best = res.slice().sort((a, b) => b.rtp - a.rtp)[0];
+    store.set('kenoPick', best.k); CFG.pick = best.k;
+    log('✅ լավագույնը՝ ' + best.risk + ', ' + best.k + ' թիվ (RTP ' + (best.rtp * 100).toFixed(2) + '%)՝ պահվեց' + (best.rtp < 1 ? '. RTP < 100% նշանակում է՝ միջինում միշտ կորուստ է' : ''));
+  }
+
   // ---------- UI ----------
   let logEl = null, statEl = null, btn = null, inBets = null, inReal = null, running = false, G = null, startBal = null;
   function log(t) { if (!logEl) return; const d = document.createElement('div'); d.textContent = t; logEl.insertBefore(d, logEl.firstChild); while (logEl.childNodes.length > 40) logEl.removeChild(logEl.lastChild); }
@@ -213,11 +256,11 @@
     panel = document.createElement('div');
     panel.id = 'kenoPanel';
     panel.style.cssText = 'position:fixed;top:60px;right:8px;z-index:2147483647;background:#111;color:#fff;padding:8px;border-radius:8px;font:12px sans-serif;width:230px';
-    panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ v7</div>' +
+    panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ v8</div>' +
       '<button id="kBtn" style="width:100%;padding:8px;font-weight:bold;background:#2a2;color:#fff;border:0;border-radius:6px">START</button>' +
       '<div style="display:flex;gap:4px;margin-top:6px;align-items:center"><span style="flex:1">խաղադրույք ≤</span><input id="kBets" type="number" style="width:70px;' + INP + '"></div>' +
       '<label style="display:flex;gap:6px;margin-top:6px;align-items:center"><input id="kReal" type="checkbox"> թույլատրել իրական փողով (լռելյայն՝ միայն FUN)</label>' +
-      '<div style="display:flex;gap:4px;margin-top:6px"><button id="kDbg" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">🔍 Debug</button><button id="kRst" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">↺ Զրո</button><button id="kTest" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">🔬 Թեստ</button></div>' +
+      '<div style="display:flex;gap:4px;margin-top:6px"><button id="kDbg" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">🔍 Debug</button><button id="kRst" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">↺ Զրո</button><button id="kTest" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">🔬 Թեստ</button><button id="kRtp" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">📐 RTP</button></div>' +
       '<div id="kStat" style="margin-top:6px;font-weight:bold"></div><div id="kLog" style="margin-top:6px;max-height:160px;overflow:auto"></div>';
     document.body.appendChild(panel);
     logEl = panel.querySelector('#kLog'); statEl = panel.querySelector('#kStat'); btn = panel.querySelector('#kBtn');
@@ -232,6 +275,7 @@
     btn.onclick = () => { if (running) stop('կանգնեցված'); else start(); };
     panel.querySelector('#kRst').onclick = () => { store.set('kenoHist', []); S = { rounds: 0, hotHits: 0, coldHits: 0, rndHits: 0, expHits: 0, bets: 0 }; saveS(); showStats(); log('↺ պատմությունը և վիճակագրությունը մաքրվեց'); };
     panel.querySelector('#kDbg').onclick = debugDump;
+    panel.querySelector('#kRtp').onclick = () => { if (!running) scanRTP(); else log('⚠ նախ սեղմիր STOP'); };
     panel.querySelector('#kTest').onclick = () => log(verdict(G && G.N || 40).text);
     showStats();
     log('✅ սքրիփթը աշխատում է (' + (window.top === window ? 'հիմնական էջ' : 'iframe') + ')');

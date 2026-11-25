@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Keno · Hot Triple v2
+// @name         Keno · Hot Triple v3
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -38,7 +38,7 @@
     const out = [], stack = [document];
     while (stack.length) {
       const r = stack.pop(), els = r.querySelectorAll ? r.querySelectorAll('*') : [];
-      for (let i = 0; i < els.length; i++) { out.push(els[i]); if (els[i].shadowRoot) stack.push(els[i].shadowRoot); }
+      for (let i = 0; i < els.length; i++) { if (panel && (panel === els[i] || panel.contains(els[i]))) continue; out.push(els[i]); if (els[i].shadowRoot) stack.push(els[i].shadowRoot); } // սեփական պանելը չի ներառվում
     }
     return out;
   }
@@ -99,6 +99,7 @@
   try { new MutationObserver(() => { lastMut = Date.now(); }).observe(document.documentElement, { subtree: true, attributes: true, childList: true, characterData: true }); } catch (_) {}
 
   function readBalance() {
+    const pill = deepAll().filter(e => !e.children.length && /^\d[\d\s.,]*\s?(FUN|AMD|USD|EUR|RUB|GEL|₽|\$|€|դր)\.?$/i.test((e.textContent || '').trim()) && rect(e).top < 220);
     const cand = deepAll().filter(e => e.children.length < 3 && (e.textContent || '').length < 60 && /(баланс|balance|մնացորդ|balans)/i.test(e.textContent || ''));
     for (const e of cand) {
       for (const t of [e.textContent, e.nextElementSibling && e.nextElementSibling.textContent, e.parentElement && e.parentElement.textContent]) {
@@ -106,6 +107,7 @@
         if (m) return parseFloat(m[1].replace(',', '.'));
       }
     }
+    if (pill.length) { const m = (pill[0].textContent || '').replace(/\s/g, '').match(/(\d+(?:[.,]\d+)?)/); if (m) return parseFloat(m[1].replace(',', '.')); }
     return null;
   }
 
@@ -142,7 +144,7 @@
     panel.style.cssText = 'position:fixed;top:60px;right:8px;z-index:2147483647;background:#111;color:#fff;padding:8px;border-radius:8px;font:12px sans-serif;width:230px';
     panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ</div>' +
       '<button id="kBtn" style="width:100%;padding:8px;font-weight:bold;background:#2a2;color:#fff;border:0;border-radius:6px">START</button>' +
-      '<div style="display:flex;gap:4px;margin-top:6px;align-items:center"><span style="flex:1">խաղադրույք ≤</span><input id="kBets" type="number" style="width:60px"><span style="flex:1;text-align:right">կորուստ %</span><input id="kLoss" type="number" style="width:50px"></div>' +
+      '<div style="display:flex;gap:4px;margin-top:6px;align-items:center"><span style="flex:1">խաղադրույք ≤</span><input id="kBets" type="number" style="width:60px;background:#222;color:#fff;border:1px solid #555;border-radius:4px;padding:2px"><span style="flex:1;text-align:right">կորուստ %</span><input id="kLoss" type="number" style="width:50px;background:#222;color:#fff;border:1px solid #555;border-radius:4px;padding:2px"></div>' +
       '<div style="display:flex;gap:4px;margin-top:6px"><button id="kDbg" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">🔍 Debug</button><button id="kRst" style="flex:1;padding:6px;background:#345;color:#fff;border:0;border-radius:6px">↺ Զրո</button></div>' +
       '<div id="kStat" style="margin-top:6px;font-weight:bold"></div><div id="kLog" style="margin-top:6px;max-height:160px;overflow:auto"></div>';
     document.body.appendChild(panel);
@@ -160,6 +162,7 @@
     panel.querySelector('#kDbg').onclick = debugDump;
     showStats();
     log('✅ սքրիփթը աշխատում է (' + (window.top === window ? 'հիմնական էջ' : 'iframe') + ')');
+    try { if (window.top !== window) window.top.postMessage({ __kenoPanel: 1 }, '*'); } catch (_) {}
   }
   function debugDump() {
     const g = findGrid(), b = findBtn(BET_RE), k = findBtn(CLEAR_RE);
@@ -246,13 +249,15 @@
     } catch (_) {}
     return false;
   };
-  let tries = 0;
+  let tries = 0, waitTicks = 0, childPanel = false;
+  if (window.top === window) window.addEventListener('message', e => { if (e.data && e.data.__kenoPanel) childPanel = true; });
   const watcher = setInterval(() => {
     if (panel) return clearInterval(watcher);
     if (!document.body) return;
     tries++;
-    const g = findGrid();
-    if (g.cells || looksKeno() || g.numeric >= 25) build();
-    else if (tries > 90) clearInterval(watcher); // 3 րոպե՝ կարծես Կենո էջ չէ
+    const g = findGrid(), want = g.cells || looksKeno() || g.numeric >= 25;
+    if (!want) { if (tries > 90) clearInterval(watcher); return; }   // 3 րոպե՝ կարծես Կենո էջ չէ
+    if (g.cells || window.top !== window) build();                  // ցանցը այս շրջանակում է / iframe, որ Կենո է թվում
+    else if (++waitTicks > 5 && !childPanel) build();               // հիմնական էջ՝ պահեստային, եթե iframe-ի պանել չկա
   }, 2000);
 })();

@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Keno · Hot Triple v10
+// @name         Keno · Hot Triple v11
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -184,17 +184,19 @@
     return { A, dir, text: '🔬 եկած թիվը կրկնվում է ' + (A.r1 * 100).toFixed(1) + '% vs պատահական ' + (A.p0 * 100).toFixed(1) + '% (z=' + A.z1.toFixed(2) + ', n=' + A.n + ') → ' + (dir > 0 ? '✅ «տաք» էֆեկտ կա' : dir < 0 ? '⚠ հակառակ էֆեկտ (սառը)' : 'էֆեկտ չկա (պատահական)') };
   }
   function choose(N) {
-    const H = hist().slice(-CFG.window), score = {};
+    // Նոր տրամաբանություն՝ թեկնածուները ՄԻԱՅՆ նախորդ փուլի դուրս եկած թվերն են (10-ը), և դրանցից ընտրվում է ամենա«տաք» եռյակը
+    // (տաքություն = վերջին փուլերում հաճախականություն՝ նոր փուլերի ավելի մեծ կշռով). Հավասարության դեպքում՝ պատահական
+    const H = hist(), W = H.slice(-CFG.window), score = {};
     for (let n = 1; n <= N; n++) score[n] = 0;
-    H.slice().reverse().forEach((d, i) => { const w = Math.pow(CFG.decay, i); d.forEach(n => { if (score[n] !== undefined) score[n] += w; }); });
+    W.slice().reverse().forEach((d, i) => { const w = Math.pow(CFG.decay, i); d.forEach(n => { if (score[n] !== undefined) score[n] += w; }); });
     const nums = Object.keys(score).map(Number), j = {};
     nums.forEach(n => { j[n] = Math.random(); });
-    const hot = nums.slice().sort((a, b) => score[b] - score[a] || j[b] - j[a]);
-    const cold = nums.slice().sort((a, b) => score[a] - score[b] || j[a] - j[b]);
+    const byScore = (arr, desc) => arr.slice().sort((a, b) => (desc ? score[b] - score[a] : score[a] - score[b]) || j[b] - j[a]);
+    const last = H.length ? H[H.length - 1].filter(n => n >= 1 && n <= N) : [];
     const rnd = nums.slice().sort(() => Math.random() - 0.5);
-    const warm = H.length >= CFG.minRounds, v = verdict(N);
-    const main = (v.dir < 0 ? cold : hot); // եթե հաստատված է հակառակ էֆեկտ՝ ընտրում ենք սառը. այլապես՝ տաք (ավանդական)
-    return { hot: (warm ? main : rnd).slice(0, CFG.pick), cold: cold.slice(0, CFG.pick), rnd: rnd.slice(0, CFG.pick), warm, verdict: v.dir };
+    const warm = last.length >= CFG.pick && H.length >= CFG.minRounds;
+    const hot = warm ? byScore(last, true).slice(0, CFG.pick) : rnd.slice(0, CFG.pick);
+    return { hot, cold: byScore(nums, false).slice(0, CFG.pick), rnd: rnd.slice(0, CFG.pick), warm, verdict: 0 };
   }
 
   // ---------- վիճակագրություն ----------
@@ -265,7 +267,7 @@
     panel = document.createElement('div');
     panel.id = 'kenoPanel';
     panel.style.cssText = 'position:fixed;top:60px;right:8px;z-index:2147483647;background:#111;color:#fff;padding:8px;border-radius:8px;font:12px sans-serif;width:230px';
-    panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ v10</div>' +
+    panel.innerHTML = '<div id="kGrip" style="text-align:center;padding:6px;margin-bottom:6px;background:#333;border-radius:6px;cursor:move;touch-action:none;user-select:none">⠿ Կենո · տաք եռյակ v11</div>' +
       '<button id="kBtn" style="width:100%;padding:8px;font-weight:bold;background:#2a2;color:#fff;border:0;border-radius:6px">START</button>' +
       '<div style="display:flex;gap:4px;margin-top:6px;align-items:center"><span style="flex:1">խաղադրույք ≤</span><input id="kBets" type="number" style="width:70px;' + INP + '"></div>' +
       '<label style="display:flex;gap:6px;margin-top:6px;align-items:center"><input id="kReal" type="checkbox"> թույլատրել իրական փողով (լռելյայն՝ միայն FUN)</label>' +

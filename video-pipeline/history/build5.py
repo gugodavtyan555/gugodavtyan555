@@ -55,7 +55,7 @@ ST={k:_sub(_runs(k),EXCL.get(k,[])) for k in SC}
 RES={}
 for _k in ['G1','G3','SA','G4','G5','G5N','G3c','VCc']:   # footage reserved for the 'world growth' recap chapter (c12w)
     if not ST[_k]: continue
-    keep=6.5 if _k=='G3c' else 3.5; RES[_k]=[]
+    keep={'G3c':6.0,'VCc':5.0}.get(_k,3.5); RES[_k]=[]
     while keep>0.05 and ST[_k]:
         a_,b_=ST[_k][-1]
         if b_-a_<=keep+0.9: RES[_k].insert(0,[a_,b_]); keep-=(b_-a_); ST[_k].pop()
@@ -64,10 +64,10 @@ RPTR={k:0 for k in RES}; RPOS={k:RES[k][0][0] for k in RES if RES[k]}
 PTR={k:0 for k in SC}; POS={k:(ST[k][0][0] if ST[k] else 0) for k in SC}
 FB=['T','A','L','G5','RD2','X1','X2','X3','G5N']
 POOL={'intro':['T','A','L'],'c1':['G1b','G1'],'c2':['G1','G1b','G2b','G2c','LON'],'c3':['G2c','G2b','LON'],'c4':['G3','G3d','G3c'],'c5':['VC','VCc'],'c6':['SA','SAc','SAb'],'c6r':['G3c','SAb','VCc','G4c','VCb'],
- 'c7':['VCS','CW','LCS'],'c8':['G4','G4b'],'c9':['LAD','TBOGT'],'c10':['G5b','G5c','G5'],'c11':['GOLb','GOLc','GOL'],'c11m':['G5N','GOLc','GOL','G5b','T'],'c12w':['G5','G5N','T'],'c12':['G3c','VCc','SAc','T'],
+ 'c7':['VCS','CW','LCS'],'c8':['G4','G4b'],'c9':['LAD','TBOGT'],'c10':['G5b','G5c','G5'],'c11':['GOLb','GOLc','GOL'],'c11m':['G5N','GOLc','GOL','G5b','T'],'c12w':['G5','G5N','T'],'c12':['T'],
  'c13':['A'],'c14':['X1','X2','X3','L'],'outro':['L','X2','X3']}
 OVR={ # (chapter, phrase) -> source
- ('intro','родилась в маленькой студии в Шотландии'):'G1',('c12w','В первой игре'):'G1',('c12w','В ГТА три'):'G3c',('c12','две тысячи двадцать первом'):'G3c',('c12','встречен критикой'):'VCc',('c12w','В Сан-Андреасе'):'SA',('c12w','В ГТА четыре'):'G4',('c12w','в ГТА пять'):'G5',
+ ('intro','родилась в маленькой студии в Шотландии'):'G1',('c12w','В первой игре'):'G1',('c12w','В ГТА три'):'G3c',('c12','две тысячи двадцать первом'):['G3c','SAc','VCb','SAb'],('c12','встречен критикой'):['VCc','VCb','SAb'],('c12w','В Сан-Андреасе'):'SA',('c12w','В ГТА четыре'):'G4',('c12w','в ГТА пять'):'G5',
  ('c12w','следующего шага'):'T',('c13','Второй трейлер'):'T',('c13','Джейсона'):'T',('c13','штат Леониду'):'L',('c13','меняет правила'):'T',('outro','крошечных пикселей'):'G1',('outro','в Шотландии'):'G1',
  ('c11','Рокстар способна'):'RD2',('c6','Но это не помешало'):'SA',('c9','глазами других героев'):'TBOGT',('c9','несколько историй'):'TBOGT',('c7','стилем комикса'):'CW',('c7','на маленьком экране'):'VCS',('c2','например Лондон'):'LON',('c2','Позже вышли дополнения'):'LON',('c2','недалёком будущем'):'G2c',('c2','в девяносто девятом'):'G2b',('c11','две тысячи восемнадцатом'):'RD2'}
 FIXED={('intro','вышла ГТА шесть'):('L',24),('c14','этот день наступил'):('L',78),('outro','новые разборы'):('L',81)}
@@ -94,8 +94,12 @@ def take(src,need):
 OLD={'c1','c2','c4','c5','c6','c6r','c7','c8','c9','c10','c11'}
 def fill(sid,pref,need):
     out=[]
-    for src in ([pref] if pref else [])+POOL[sid]+([] if sid in OLD else FB):
-        c,need=(take_res(src,need) if sid in ('c12w','c12') and src in RES else take(src,need)); out+=c
+    for src in (pref if isinstance(pref,list) else ([pref] if pref else []))+POOL[sid]+([] if sid in OLD else FB):
+        if sid in ('c12w','c12') and src in RES:
+            c,need=take_res(src,need); out+=c
+            if need>0.05: c,need=take(src,need); out+=c
+        else:
+            c,need=take(src,need); out+=c
         if need<=0.05: break
     return out,need
 def crop_vf(src):
@@ -165,6 +169,7 @@ for sid in ORDER:
                 if left>0.05:
                     if isinstance(v,tuple) and v[0]=='card' and events and events[-1][0]==t0: events.pop()
                     fp=T+f'{sid}_{k}_{j}_f.png'; card(lastcard[0],lastcard[1],fp); fills+=1; FILL[sid]=FILL.get(sid,0)+left
+                if os.environ.get('PRINTPLAN') and sid in os.environ['PRINTPLAN'].split(','): print(sid,ph[:26],[(a,round(b,1),round(c,1)) for a,b,c in clips],pref)
                 for q,(s_,t_,l_) in enumerate(clips):
                     oo=T+f'{sid}_{k}_{j}_{q}.mp4'; jobs.append(('clip',s_,t_,l_,oo,pi)); parts.append(oo)
                 if left>0.05:

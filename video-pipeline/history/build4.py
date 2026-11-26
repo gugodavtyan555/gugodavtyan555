@@ -13,15 +13,20 @@ run=lambda *a: sp.run(a,check=True,stderr=sp.DEVNULL)
 dur=lambda f: float(sp.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','csv=p=0',f]))
 SC=json.load(open('scenes.json'))
 # scene pointers (mutable copies)
-def _merge(sc):
-    out=[]
-    for a,b,l,sd in sc:
-        if l<32 or sd<11 or b-a<1.0: continue
-        a2,b2=a+0.15,b-0.2
-        if out and abs(out[-1][1]+0.35-a2)<0.05+0.35: out[-1][1]=b2
-        else: out.append([a2,b2])
+LU=json.load(open('lums.json'))
+def _runs(k):
+    l,sd=LU[k]['lum'],LU[k]['sd']; ok=[l[i]>=34 and sd[i]>=12 and (i==0 or abs(l[i]-l[i-1])<18) for i in range(len(l))]
+    out=[]; i=0
+    while i<len(ok):
+        if ok[i]:
+            j=i
+            while j+1<len(ok) and ok[j+1]: j+=1
+            a,b=i*0.25+0.2,(j+1)*0.25-0.25
+            if b-a>=0.9: out.append([a,b])
+            i=j+1
+        else: i+=1
     return out
-ST={k:_merge(v['scenes']) for k,v in SC.items()}
+ST={k:_runs(k) for k in SC}
 PTR={k:0 for k in SC}; POS={k:(ST[k][0][0] if ST[k] else 0) for k in SC}
 FB=['T','A','L','G5','RD2','X1','X2','X3','G5N']
 POOL={'intro':['T','A','L'],'c1':['G1'],'c2':['G1'],'c3':['T'],'c4':['G3'],'c5':['VC'],'c6':['SA'],'c6r':['VC','SA','G3'],'c7':['VC','SA','G3','G1'],'c8':['G4'],'c9':['G4','G5'],

@@ -29,7 +29,10 @@ def _runs(k):
 EXCL={'G1':[(0,1.6),(19.5,24.2),(34.4,40.6),(50.9,55.6),(61.4,67.6),(84,99)],'G3':[(0,8.7),(18.0,22.5),(43.4,44.8),(52.4,54.2),(58.4,73)],
  'VC':[(0,7.4),(9.0,13.4),(14.8,16.2),(19.4,24.0),(64.4,75)],'SA':[(0,7.6),(9.0,13.6),(61.4,66)],'G4':[(0,1.6),(4.0,5.4),(11.5,13.5),(32.4,34.2),(47.0,63)],
  'G5':[(0,6.6),(11.5,16.2),(27.0,31.6),(71.4,85)],'G5N':[(0,7.6),(11.9,13.6),(19.4,22.5),(29.9,31.5),(32.9,36.5),(39.4,43.5),(49.4,56.0),(67.4,71)],
- 'RD2':[(0,8.0),(51.5,53.8),(57.0,69)],'T':[(0,4.0),(68.5,77),(152.5,160)],'A':[(0,2.5),(14.0,18.4),(39.0,41.8),(56.5,59.5),(76.5,90)],'L':[(0,1.6),(14.0,17.8),(21.0,25.5),(76.5,90)]}
+ 'RD2':[(0,8.0),(51.5,53.8),(57.0,69)],'T':[(0,4.0),(68.5,77),(152.5,160)],'A':[(0,2.5),(14.0,18.4),(39.0,41.8),(56.5,59.5),(76.5,90)],'L':[(0,1.6),(14.0,17.8),(21.0,25.5),(76.5,90)],
+ 'G3b':[(0,999)],'G3c':[(0,10.2),(14.0,17.5),(55.5,61)],'VCb':[(0,0.6),(3.5,10.8),(55.5,61)],'VCc':[(0,10.5),(55.5,61)],'SAb':[(0,8.2),(9.5,13.5),(59.5,66)],
+ 'SAc':[(0,11),(27.5,36),(53,60)],'G4b':[(0,6),(55.5,64)],'G4c':[(0,5.5),(69.5,78)],'LAD':[(0,14),(17,19.5),(41.5,44),(59.5,68)],'TBOGT':[(0,15.5),(77,86.2)],
+ 'LCS':[(0,15),(17,19.5),(62,68)],'VCS':[(0,3.8),(11.5,14),(57,65)],'CW':[(0,10),(21.5,24),(29.5,34),(47,53)],'G2':[(0,2.2),(26.5,31)],'GOL':[(0,9.5),(11.5,14),(53.5,62)]}
 def _sub(runs,ex):
     out=[]
     for a,b in runs:
@@ -45,17 +48,36 @@ def _sub(runs,ex):
         out+=[list(t) for t in segs]
     return out
 AUTO={k:[(0,6.0),(SC[k]['dur']-7.0,SC[k]['dur'])] for k in ['G3b','G3c','VCb','VCc','SAb','SAc','G4b','G4c','LAD','TBOGT','LCS','VCS','CW','G2','GOL']}
-ST={k:_sub(_runs(k),EXCL.get(k,[])+AUTO.get(k,[])) for k in SC}
+ST={k:_sub(_runs(k),EXCL.get(k,[])) for k in SC}
+RES={}
+for _k in ['G1','G3','SA','G4','G5','G5N']:   # footage reserved for the 'world growth' recap chapter (c12w)
+    if not ST[_k]: continue
+    keep=3.5; RES[_k]=[]
+    while keep>0.05 and ST[_k]:
+        a_,b_=ST[_k][-1]
+        if b_-a_<=keep+0.9: RES[_k].insert(0,[a_,b_]); keep-=(b_-a_); ST[_k].pop()
+        else: RES[_k].insert(0,[b_-keep,b_]); ST[_k][-1][1]=b_-keep-0.1; keep=0
+RPTR={k:0 for k in RES}; RPOS={k:RES[k][0][0] for k in RES if RES[k]}
 PTR={k:0 for k in SC}; POS={k:(ST[k][0][0] if ST[k] else 0) for k in SC}
 FB=['T','A','L','G5','RD2','X1','X2','X3','G5N']
-POOL={'intro':['T','A','L'],'c1':['G1'],'c2':['G1','G2'],'c3':['T'],'c4':['G3','G3b','G3c'],'c5':['VC','VCb','VCc'],'c6':['SA','SAb','SAc'],'c6r':['VCc','SAc','G3c','VCb'],
- 'c7':['LCS','VCS','CW'],'c8':['G4','G4b','G4c'],'c9':['LAD','TBOGT'],'c10':['G5','G5N'],'c11':['GOL','G5N'],'c11m':['G5N','RD2','GOL'],'c12w':['G5N','RD2'],'c12':['G3c','VCc','SAc','T'],
+POOL={'intro':['T','A','L'],'c1':['G1'],'c2':['G1','G2'],'c3':['VCb','SAb'],'c4':['G3','G3c'],'c5':['VC','VCc'],'c6':['SA','SAc'],'c6r':['G4c'],
+ 'c7':['VCS','CW','LCS'],'c8':['G4','G4b'],'c9':['LAD','TBOGT'],'c10':['G5'],'c11':['GOL','G5N'],'c11m':['G5N','GOL','T'],'c12w':['G5','G5N','T'],'c12':['G3c','VCc','SAc','T'],
  'c13':['A'],'c14':['X1','X2','X3','L'],'outro':['L','X2','X3']}
 OVR={ # (chapter, phrase) -> source
  ('intro','родилась в маленькой студии в Шотландии'):'G1',('c12w','В первой игре'):'G1',('c12w','В ГТА три'):'G3',('c12w','В Сан-Андреасе'):'SA',('c12w','В ГТА четыре'):'G4',('c12w','в ГТА пять'):'G5',
  ('c12w','следующего шага'):'T',('c13','Второй трейлер'):'T',('c13','Джейсона'):'T',('c13','штат Леониду'):'L',('c13','меняет правила'):'T',('outro','крошечных пикселей'):'G1',('outro','в Шотландии'):'G1',
- ('c11','Рокстар способна'):'RD2',('c6','Но это не помешало'):'SA',('c2','недалёком будущем'):'G2',('c2','в девяносто девятом'):'G2',('c9','глазами других героев'):'TBOGT',('c9','несколько историй'):'TBOGT',('c7','стилем комикса'):'CW',('c7','на маленьком экране'):'VCS'}
+ ('c11','Рокстар способна'):'RD2',('c6','Но это не помешало'):'SA',('c2','недалёком будущем'):'G2',('c2','в девяносто девятом'):'G2',('c9','глазами других героев'):'TBOGT',('c9','несколько историй'):'TBOGT',('c7','стилем комикса'):'CW',('c7','на маленьком экране'):'VCS',('c11','две тысячи восемнадцатом'):'RD2'}
 FIXED={('intro','вышла ГТА шесть'):('L',24),('c14','этот день наступил'):('L',78),('outro','новые разборы'):('L',81)}
+def take_res(src,need):
+    clips=[]; st=RES.get(src,[])
+    while need>0.05 and RPTR.get(src,0)<len(st):
+        a,b=st[RPTR[src]]; pos=max(RPOS[src],a); room=b-pos
+        if room<0.5: RPTR[src]+=1; continue
+        use=min(need,room); clips.append((src,pos,use)); need-=use; RPOS[src]=pos+use
+        if b-RPOS[src]<0.5:
+            RPTR[src]+=1
+            if RPTR[src]<len(st): RPOS[src]=st[RPTR[src]][0]
+    return clips,need
 def take(src,need):
     clips=[]; st=ST[src]
     while need>0.05 and PTR[src]<len(st):
@@ -70,7 +92,7 @@ OLD={'c1','c2','c4','c5','c6','c6r','c7','c8','c9','c10','c11'}
 def fill(sid,pref,need):
     out=[]
     for src in ([pref] if pref else [])+POOL[sid]+([] if sid in OLD else FB):
-        c,need=take(src,need); out+=c
+        c,need=(take_res(src,need) if sid=='c12w' and src in RES else take(src,need)); out+=c
         if need<=0.05: break
     return out,need
 def crop_vf(src):
@@ -136,7 +158,7 @@ for sid in ORDER:
             if (sid,ph) in FIXED:
                 s_,t_=FIXED[(sid,ph)]; jobs.append(('clip',s_,t_,pdur,o,pi)); parts.append(o)
             else:
-                pref=OVR.get((sid,ph)); clips,left=fill(sid,pref if not (isinstance(v,tuple) and v[0]=='card') else None,pdur)
+                pref=OVR.get((sid,ph)); clips,left=fill(sid,pref,pdur)
                 if left>0.05:
                     if isinstance(v,tuple) and v[0]=='card' and events and events[-1][0]==t0: events.pop()
                     fp=T+f'{sid}_{k}_{j}_f.png'; card(lastcard[0],lastcard[1],fp); fills+=1; FILL[sid]=FILL.get(sid,0)+left

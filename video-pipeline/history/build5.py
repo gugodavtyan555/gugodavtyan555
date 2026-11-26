@@ -146,7 +146,7 @@ def badge(path):
     x1=W-60; x0=x1-tw-50; d.rounded_rectangle((x0,50,x1,120),radius=16,fill=(110,40,190,235)); d.text(((x0+x1)/2,86),t,font=f,fill=(255,255,255),anchor='mm'); im.save(path)
 def filler(title,path):
     card(title,'',path)
-names0={'c1':'1995','c2':'1997'}; FILL={}; GAP=0.3; MIN=1.4; PIECE=2.0; lens={}; jobs=[]; meta=[]; cutlog=[]; fills=0
+names0={'c1':'1995','c2':'1997'}; FILL={}; GAP=0.3; MIN=1.8; PIECE=3.0; lens={}; jobs=[]; meta=[]; cutlog=[]; fills=0
 badge(T+'badge.png')
 for sid in ORDER:
     mp3=f'tts/{sid}.mp3'; D=dur(mp3)+GAP; lens[sid]=D
@@ -187,7 +187,7 @@ def render2(job):
         run('ffmpeg','-y','-loop','1','-i',a,'-vf',f"scale=3840:2160,zoompan=z='min(1.0+0.0005*on,1.2)':d={n}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={W}x{H}:fps=30",'-t',f'{c:.3f}','-an','-c:v','libx264','-preset','veryfast','-crf','17','-pix_fmt','yuv420p',o)
     else:
         w,h,x,y=SC[a]['crop']; sharp=',unsharp=5:5:0.6' if w<700 else ''
-        vf=f"crop={w}:{h}:{x}:{y},scale={W}:{H}:flags=lanczos{sharp},fps=30,"+zf.rstrip(',')
+        vf=f"crop={w}:{h}:{x}:{y},scale={W}:{H}:flags=lanczos{sharp},fps=30"   # no zoom: static framing (zoom caused sub-pixel jitter)
         run('ffmpeg','-y','-ss',f'{b:.2f}','-t',f'{c:.3f}','-i',SC[a]['path'],'-vf',vf,'-an','-c:v','libx264','-preset','veryfast','-crf','17','-pix_fmt','yuv420p',o)
 with ThreadPoolExecutor(3) as ex: list(ex.map(render2,jobs))
 segv=[];sega=[];sfx_ev=[];off=0.0

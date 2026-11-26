@@ -181,12 +181,12 @@ total=dur(T+'video.mp4'); tA=sum(lens[k] for k in ORDER[:11])
 def load(name):
     p=T+name+'.wav'; run('ffmpeg','-y','-i',SFX+name+'.mp3','-ar','44100','-ac','1',p); w=wave.open(p); return np.frombuffer(w.readframes(w.getnframes()),np.int16).astype(float)/32768
 wh=[load('whoosh1'),load('whoosh2')[::-1]]; im_=load('impact')
-SR=44100; tr=np.zeros(int((total+3)*SR))
+imf=im_.copy(); _n=int(0.02*44100); imf[:_n]*=np.linspace(0,1,_n); imf[-int(0.3*44100):]*=np.linspace(1,0,int(0.3*44100)); SR=44100; tr=np.zeros(int((total+3)*SR))
 def put(x,t,g):
     i=int(max(0,t)*SR); e=min(len(tr),i+len(x)); tr[i:e]+=x[:e-i]*g
 for n,(k,t) in enumerate(sorted(sfx_ev,key=lambda z:z[1])):
-    if k=='whoosh': put(wh[n%2],t-0.18,0.30)
-    else: put(im_,t-0.05,0.65)
+    if k=='whoosh': continue   # per-cut whooshes removed (heard as ticking)
+    else: put(imf,t-0.05,0.5)
 tr=np.clip(tr,-1,1); w=wave.open(T+'sfx.wav','wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((tr*32767).astype(np.int16).tobytes()); w.close()
 names={'intro':'Вступление','c1':'1995: Данди и DMA Design','c2':'1997: первая GTA','c3':'Рождение Rockstar','c4':'2001: GTA III','c5':'2002: Vice City','c6':'2004: San Andreas','c6r':'Радио и сатира','c7':'Портативные части','c8':'2008: GTA IV','c9':'Дополнения к GTA IV','c10':'2013: GTA V','c11':'GTA Online','c11m':'Сообщество и моды','c12w':'Как рос открытый мир','c12':'2021–2022: годы ожидания','c13':'2023: первый трейлер','c14':'2025–2026: переносы и релиз','outro':'Финал'}
 t=0; ch=[]

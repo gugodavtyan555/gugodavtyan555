@@ -44,3 +44,9 @@ Vice City (2002) set in 1986, inspired by Miami Vice/Scarface; 17.5 M copies (Ta
 
 ## Open items
 Story series «13 лет ожидания» parts 2–3 not made; daily routine needs repo source; PR #2 still open (base `claude/earn-one-dram-per-second-1narbb`); optional Netlify link for full-quality map guide; user may want a 2K version of the Vice City story (was 1080p for the 55 MB limit).
+
+## Update (26 Nov 2026)
+- Done: Short «5 вещей в GTA 6» (`five/`), long 16:9 «История GTA: от 1997 до GTA 6» 10:07 (`history/`: script.json, tts.py, fetch*.py Pixabay b-roll, build2.py, thumb.py, chapters.txt, credits*.md). Shot index list `history/nlist.txt`.
+- ElevenLabs: NEW free account (key via request_credential, proxy-injected); v3 TTS ≈0.58 credit/char; **music generation also eats credits** (≈13/s) — avoid. Free tier ≠ commercial use. Generated music in `dl/music/{retro,epic}.mp3` (gone in new container; regenerate via `/v1/music`, `force_instrumental`).
+- Netlify account is out of credits (deploys blocked) → full-quality big files cannot be hosted; deliver ≤55 MB (720p ≈0.6 Mbps for 10 min) via SendUserFile.
+- Trailer assets: A=Trailer1 (card «ROCKSTAR GAMES PRESENTS»+black frames at ~14–18.3 s → use ≥18.4), L=Launch (black at 66.75–67 s).

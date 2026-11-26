@@ -3,7 +3,7 @@ Sources (scenes.json from prep.py): G1 G3 VC SA G4 G5 G5N RD2 (official trailers
 import sys, os, json, subprocess as sp
 from concurrent.futures import ThreadPoolExecutor
 sys.path.insert(0,'../doc')
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import cover
 from cues import CUES, ORDER
 cover.W,cover.H=1920,1080

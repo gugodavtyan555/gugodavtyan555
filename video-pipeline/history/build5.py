@@ -64,7 +64,7 @@ RPTR={k:0 for k in RES}; RPOS={k:RES[k][0][0] for k in RES if RES[k]}
 PTR={k:0 for k in SC}; POS={k:(ST[k][0][0] if ST[k] else 0) for k in SC}
 FB=['T','A','L','G5','RD2','X1','X2','X3','G5N']
 POOL={'intro':['T','A','L'],'c1':['G1b','G1'],'c2':['G1','G1b','G2b','G2c','LON'],'c3':['G2c','G2b','LON'],'c4':['G3','G3d','G3c'],'c5':['VC','VCc'],'c6':['SA','SAc','SAb'],'c6r':['G3c','SAb','VCc','G4c','VCb'],
- 'c7':['VCS','CW','LCS'],'c8':['G4','G4b'],'c9':['LAD','TBOGT'],'c10':['G5b','G5c','G5'],'c11':['GOLb','GOLc','GOL'],'c11m':['G5N','GOLc','GOL','G5b','T'],'c12w':['G5','G5N','T'],'c12':['T'],
+ 'c7':['VCS','CW','LCS'],'c8':['G4','G4b','G4c'],'c9':['LAD','TBOGT'],'c10':['G5b','G5c','G5'],'c11':['GOLb','GOLc','GOL'],'c11m':['G5N','GOLc','GOL','G5b','T'],'c12w':['G5','G5N','T'],'c12':['T'],
  'c13':['A'],'c14':['X1','X2','X3','L'],'outro':['L','X2','X3']}
 OVR={ # (chapter, phrase) -> source
  ('intro','родилась в маленькой студии в Шотландии'):'G1',('c12w','В первой игре'):'G1',('c12w','В ГТА три'):'G3c',('c12','две тысячи двадцать первом'):['G3c','SAc','VCb','SAb'],('c12','встречен критикой'):['VCc','VCb','SAb'],('c12w','В Сан-Андреасе'):'SA',('c12w','В ГТА четыре'):'G4',('c12w','в ГТА пять'):'G5',
@@ -155,7 +155,7 @@ for sid in ORDER:
         i=txt.find(ph.lower(),last); last=i; times.append(max(0.0,stt[i]-0.12))
     times[0]=0.0
     for k in range(1,len(times)): times[k]=max(times[k],times[k-1]+MIN)
-    keep=[k for k in range(len(times)) if times[k]<D-0.8]; parts=[]; events=[]; cuts=[]; tcur=0.0; pi=0; lastcard=(names0.get(sid,''),'')
+    keep=[k for k in range(len(times)) if times[k]<D-0.8]; parts=[]; events=[]; cuts=[]; tcur=0.0; pi=0; carry=0.0; lastcard=(names0.get(sid,''),'')
     for n,k in enumerate(keep):
         t0=times[k]; t1=times[keep[n+1]] if n+1<len(keep) else D; ph,v=CUES[sid][k]
         if isinstance(v,tuple) and v[0]=='card': events.append((t0,v[1],v[2])); lastcard=(v[1],v[2])
@@ -165,20 +165,25 @@ for sid in ORDER:
             if (sid,ph) in FIXED:
                 s_,t_=FIXED[(sid,ph)]; jobs.append(('clip',s_,t_,pdur,o,pi)); parts.append(o)
             else:
-                pref=OVR.get((sid,ph)); clips,left=fill(sid,pref,pdur)
+                pref=OVR.get((sid,ph)); need_p=pdur+carry; carry=0.0; clips,left=fill(sid,pref,need_p)
+                stretch=1.0
+                if 0.05<left<1.2:
+                    if not (n==len(keep)-1 and j==npc-1): carry=left; left=0.0
+                    elif clips:
+                        _l=sum(c_[2] for c_ in clips); stretch=(_l+left)/_l; left=0.0
                 if left>0.05:
                     if isinstance(v,tuple) and v[0]=='card' and events and events[-1][0]==t0: events.pop()
                     fp=T+f'{sid}_{k}_{j}_f.png'; card(lastcard[0],lastcard[1],fp); fills+=1; FILL[sid]=FILL.get(sid,0)+left
                 if os.environ.get('PRINTPLAN') and sid in os.environ['PRINTPLAN'].split(','): print(sid,ph[:26],[(a,round(b,1),round(c,1)) for a,b,c in clips],pref)
                 for q,(s_,t_,l_) in enumerate(clips):
-                    oo=T+f'{sid}_{k}_{j}_{q}.mp4'; jobs.append(('clip',s_,t_,l_,oo,pi)); parts.append(oo)
+                    oo=T+f'{sid}_{k}_{j}_{q}.mp4'; jobs.append(('clip',s_,t_,l_,oo,pi,stretch)); parts.append(oo)
                 if left>0.05:
                     oo=T+f'{sid}_{k}_{j}_fill.mp4'; jobs.append(('card',fp,0,left,oo,pi)); parts.append(oo)
             cuts.append(t0+j*pdur); pi+=1
     meta.append((sid,parts,D,mp3,events,cuts))
 print('fillers',fills,{k:round(v,1) for k,v in FILL.items()}); import sys as _s; _s.exit() if os.environ.get('PLANONLY') else None
 def render2(job):
-    kind,a,b,c,o,pi=job
+    kind,a,b,c,o,pi=job[:6]; stretch=job[6] if len(job)>6 else 1.0
     if os.path.exists(o): return
     z0,z1=(1.0,1.08) if pi%2==0 else (1.08,1.0)
     zf=f"scale=w='trunc({W}*({z0}+({z1}-{z0})*t/{c:.3f})/2)*2':h=-2:eval=frame:flags=bilinear,crop={W}:{H},"
@@ -187,8 +192,8 @@ def render2(job):
         run('ffmpeg','-y','-loop','1','-i',a,'-vf',f"scale=3840:2160,zoompan=z='min(1.0+0.0005*on,1.2)':d={n}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={W}x{H}:fps=30",'-t',f'{c:.3f}','-an','-c:v','libx264','-preset','veryfast','-crf','17','-pix_fmt','yuv420p',o)
     else:
         w,h,x,y=SC[a]['crop']; sharp=',unsharp=5:5:0.6' if w<700 else ''
-        vf=f"crop={w}:{h}:{x}:{y},scale={W}:{H}:flags=lanczos{sharp},fps=30"   # no zoom: static framing (zoom caused sub-pixel jitter)
-        run('ffmpeg','-y','-ss',f'{b:.2f}','-t',f'{c:.3f}','-i',SC[a]['path'],'-vf',vf,'-an','-c:v','libx264','-preset','veryfast','-crf','17','-pix_fmt','yuv420p',o)
+        vf=f"crop={w}:{h}:{x}:{y},scale={W}:{H}:flags=lanczos{sharp},fps=30"+(f",setpts={stretch:.4f}*PTS" if stretch>1.0001 else '')   # no zoom: static framing (zoom caused sub-pixel jitter)
+        run('ffmpeg','-y','-ss',f'{b:.2f}','-t',f'{c:.3f}','-i',SC[a]['path'],'-vf',vf,'-t',f'{c*stretch:.3f}','-an','-c:v','libx264','-preset','veryfast','-crf','17','-pix_fmt','yuv420p',o)
 with ThreadPoolExecutor(3) as ex: list(ex.map(render2,jobs))
 segv=[];sega=[];sfx_ev=[];off=0.0
 for sid,parts,D,mp3,events,cuts in meta:

@@ -15,7 +15,7 @@ SC=json.load(open('scenes.json'))
 # scene pointers (mutable copies)
 LU=json.load(open('lums.json'))
 def _runs(k):
-    l,sd=LU[k]['lum'],LU[k]['sd']; ok=[l[i]>=17 and sd[i]>=8 and (i==0 or abs(l[i]-l[i-1])<18) for i in range(len(l))]
+    l,sd=LU[k]['lum'],LU[k]['sd']; dk=LU[k].get('dk'); br=LU[k].get('br'); ok=[l[i]>=17 and sd[i]>=8 and (i==0 or abs(l[i]-l[i-1])<18) and not (dk and dk[i]>0.55 and br[i]>0.003) for i in range(len(l))]
     out=[]; i=0
     while i<len(ok):
         if ok[i]:
@@ -44,15 +44,17 @@ def _sub(runs,ex):
             segs=nxt
         out+=[list(t) for t in segs]
     return out
-ST={k:_sub(_runs(k),EXCL.get(k,[])) for k in SC}
+AUTO={k:[(0,6.0),(SC[k]['dur']-7.0,SC[k]['dur'])] for k in ['G3b','G3c','VCb','VCc','SAb','SAc','G4b','G4c','LAD','TBOGT','LCS','VCS','CW','G2','GOL']}
+ST={k:_sub(_runs(k),EXCL.get(k,[])+AUTO.get(k,[])) for k in SC}
 PTR={k:0 for k in SC}; POS={k:(ST[k][0][0] if ST[k] else 0) for k in SC}
 FB=['T','A','L','G5','RD2','X1','X2','X3','G5N']
-POOL={'intro':['T','A','L'],'c1':['G1'],'c2':['G1'],'c3':['T'],'c4':['G3'],'c5':['VC'],'c6':['SA'],'c6r':['VC','SA','G3'],'c7':['VC','SA','G3','G1'],'c8':['G4'],'c9':['G4','G5'],
- 'c10':['G5'],'c11':['G5N','G5'],'c11m':['G5N','RD2','G5'],'c12w':['G5N','RD2'],'c12':['G3','VC','SA','T'],'c13':['A'],'c14':['X1','X2','X3','L'],'outro':['L','X1','X2','X3']}
+POOL={'intro':['T','A','L'],'c1':['G1'],'c2':['G1','G2'],'c3':['T'],'c4':['G3','G3b','G3c'],'c5':['VC','VCb','VCc'],'c6':['SA','SAb','SAc'],'c6r':['VCc','SAc','G3c','VCb'],
+ 'c7':['LCS','VCS','CW'],'c8':['G4','G4b','G4c'],'c9':['LAD','TBOGT'],'c10':['G5'],'c11':['GOL','G5N'],'c11m':['G5N','RD2','GOL'],'c12w':['G5N','RD2'],'c12':['G3c','VCc','SAc','T'],
+ 'c13':['A'],'c14':['X1','X2','X3','L'],'outro':['L','X2','X3']}
 OVR={ # (chapter, phrase) -> source
  ('intro','родилась в маленькой студии в Шотландии'):'G1',('c12w','В первой игре'):'G1',('c12w','В ГТА три'):'G3',('c12w','В Сан-Андреасе'):'SA',('c12w','В ГТА четыре'):'G4',('c12w','в ГТА пять'):'G5',
  ('c12w','следующего шага'):'T',('c13','Второй трейлер'):'T',('c13','Джейсона'):'T',('c13','штат Леониду'):'L',('c13','меняет правила'):'T',('outro','крошечных пикселей'):'G1',('outro','в Шотландии'):'G1',
- ('c11','Рокстар способна'):'RD2',('c6','Но это не помешало'):'SA'}
+ ('c11','Рокстар способна'):'RD2',('c6','Но это не помешало'):'SA',('c2','недалёком будущем'):'G2',('c2','в девяносто девятом'):'G2',('c9','глазами других героев'):'TBOGT',('c9','несколько историй'):'TBOGT',('c7','стилем комикса'):'CW',('c7','на маленьком экране'):'VCS'}
 FIXED={('intro','вышла ГТА шесть'):('L',24),('c14','этот день наступил'):('L',78),('outro','новые разборы'):('L',81)}
 def take(src,need):
     clips=[]; st=ST[src]
@@ -71,7 +73,7 @@ def fill(sid,pref,need):
         if need<=0.05: break
     return out,need
 def crop_vf(src):
-    w,h,x,y=SC[src]['crop']; sharp=',unsharp=5:5:0.6' if src in('G1','SA') else ''
+    w,h,x,y=SC[src]['crop']; sharp=',unsharp=5:5:0.6' if w<700 else ''
     return f"crop={w}:{h}:{x}:{y},scale={W}:{H}:flags=lanczos{sharp},fps=30"
 FD='/usr/share/fonts/opentype/inter/InterDisplay-Black.otf'
 def card(big,sub,path):

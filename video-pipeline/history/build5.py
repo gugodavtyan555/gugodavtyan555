@@ -102,15 +102,15 @@ import numpy as np, wave
 SFX='../../dl/sfx/'
 def plate_png(big,sub,path):
     im=Image.new('RGBA',(W,H),(0,0,0,0)); d=ImageDraw.Draw(im); x=110
-    s=118; f=ImageFont.truetype(FD,s)
+    s=152; f=ImageFont.truetype(FD,s)
     while d.textlength(big,font=f)>W-2*x and s>50: s-=4; f=ImageFont.truetype(FD,s)
-    y=H-300
+    y=H-250
     sh=Image.new('RGBA',(W,H),(0,0,0,0)); ImageDraw.Draw(sh).text((x,y),big,font=f,fill=(0,0,0,255),anchor='ls',stroke_width=16,stroke_fill=(0,0,0,255)); im.alpha_composite(sh.filter(ImageFilter.GaussianBlur(8)))
     d.text((x,y),big,font=f,fill=(255,255,255),anchor='ls',stroke_width=7,stroke_fill=(20,8,48))
     if sub:
-        s2=46; f2=ImageFont.truetype(FD,s2)
+        s2=56; f2=ImageFont.truetype(FD,s2)
         while d.textlength(sub,font=f2)>W-2*x-60 and s2>26: s2-=2; f2=ImageFont.truetype(FD,s2)
-        tw=d.textlength(sub,font=f2); d.rounded_rectangle((x,y+22,x+tw+60,y+22+76),radius=18,fill=(236,40,140)); d.text((x+30,y+22+38),sub,font=f2,fill=(255,255,255),anchor='lm')
+        tw=d.textlength(sub,font=f2); d.rounded_rectangle((x,y+22,x+tw+60,y+22+92),radius=20,fill=(236,40,140)); d.text((x+30,y+22+46),sub,font=f2,fill=(255,255,255),anchor='lm')
     im.save(path)
 def badge(path):
     im=Image.new('RGBA',(W,H),(0,0,0,0)); d=ImageDraw.Draw(im); f=ImageFont.truetype(FD,40); t='GTA ГИД'; tw=d.textlength(t,font=f)
@@ -138,6 +138,7 @@ for sid in ORDER:
             else:
                 pref=OVR.get((sid,ph)); clips,left=fill(sid,pref if not (isinstance(v,tuple) and v[0]=='card') else None,pdur)
                 if left>0.05:
+                    if isinstance(v,tuple) and v[0]=='card' and events and events[-1][0]==t0: events.pop()
                     fp=T+f'{sid}_{k}_{j}_f.png'; card(lastcard[0],lastcard[1],fp); fills+=1; FILL[sid]=FILL.get(sid,0)+left
                 for q,(s_,t_,l_) in enumerate(clips):
                     oo=T+f'{sid}_{k}_{j}_{q}.mp4'; jobs.append(('clip',s_,t_,l_,oo,pi)); parts.append(oo)
@@ -167,7 +168,7 @@ for sid,parts,D,mp3,events,cuts in meta:
     ins=['-i',base,'-loop','1','-t',f'{D:.3f}','-i',T+'badge.png']; fc='[0:v][1:v]overlay=0:0[v0];'; last='v0'
     for e,(t0,big,sub) in enumerate(events):
         pp=T+f'{sid}_pl{e}.png'; plate_png(big,sub,pp); ins+=['-loop','1','-t',f'{D:.3f}','-i',pp]
-        t1=min(D-0.2,t0+3.2); fc+=f"[{last}][{e+2}:v]overlay=x=0:y='if(lt(t-{t0:.2f},0.25),70*(1-(t-{t0:.2f})/0.25),0)':enable='between(t,{t0:.2f},{t1:.2f})'[v{e+1}];"; last=f'v{e+1}'
+        nxt=events[e+1][0] if e+1<len(events) else D; t1=min(D-0.2,t0+3.2,nxt-0.1); fc+=f"[{last}][{e+2}:v]overlay=x=0:y='if(lt(t-{t0:.2f},0.25),70*(1-(t-{t0:.2f})/0.25),0)':enable='between(t,{t0:.2f},{t1:.2f})'[v{e+1}];"; last=f'v{e+1}'
         sfx_ev.append(('impact',off+t0))
     run('ffmpeg','-y',*ins,'-filter_complex',fc.rstrip(';'),'-map',f'[{last}]','-t',f'{D:.3f}','-c:v','libx264','-preset','veryfast','-crf','17','-pix_fmt','yuv420p',v)
     a_=T+f'{sid}_a.wav'; run('ffmpeg','-y','-i',mp3,'-af',f'apad=whole_dur={D:.3f}','-t',f'{D:.3f}','-ar','44100','-ac','2',a_); sega.append(a_)
@@ -201,6 +202,6 @@ def bed(track,need,out):
     run('ffmpeg','-y',*ins,'-filter_complex',chain+f'{last}atrim=0:{need:.2f}[o]','-map','[o]',out)
 bed('retro.mp3',tA+3,T+'bedA.wav'); bed('epic.mp3',total-tA+3,T+'bedB.wav')
 run('ffmpeg','-y','-i',T+'video.mp4','-i',T+'voice.wav','-i',T+'bedA.wav','-i',T+'bedB.wav','-i',T+'sfx.wav','-filter_complex',
- f"[1:a]asplit[vo][sc];[2:a][3:a]acrossfade=d=3[mx];[mx]volume=0.30,afade=t=in:d=1,afade=t=out:st={total-3:.2f}:d=3[m];[m][sc]sidechaincompress=threshold=0.03:ratio=6:attack=20:release=400[md];[vo][md][4:a]amix=inputs=3:duration=first:normalize=0[a]",
+ f"[1:a]asplit[vo][sc];[2:a][3:a]acrossfade=d=3[mx];[mx]volume=0.30,afade=t=in:d=1,afade=t=out:st={total-3:.2f}:d=3[m];[m][sc]sidechaincompress=threshold=0.03:ratio=6:attack=20:release=400[md];[vo][md][4:a]amix=inputs=3:duration=first:normalize=0,alimiter=limit=0.89[a]",
  '-map','0:v','-map','[a]','-t',f'{total:.2f}','-c:v','libx264','-preset','medium','-crf','20','-maxrate','3500k','-bufsize','7000k','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-movflags','+faststart',OUT)
 print(total)

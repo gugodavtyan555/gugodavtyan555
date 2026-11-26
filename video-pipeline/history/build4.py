@@ -15,7 +15,7 @@ SC=json.load(open('scenes.json'))
 # scene pointers (mutable copies)
 LU=json.load(open('lums.json'))
 def _runs(k):
-    l,sd=LU[k]['lum'],LU[k]['sd']; ok=[l[i]>=34 and sd[i]>=12 and (i==0 or abs(l[i]-l[i-1])<18) for i in range(len(l))]
+    l,sd=LU[k]['lum'],LU[k]['sd']; ok=[l[i]>=17 and sd[i]>=8 and (i==0 or abs(l[i]-l[i-1])<18) for i in range(len(l))]
     out=[]; i=0
     while i<len(ok):
         if ok[i]:
@@ -26,7 +26,25 @@ def _runs(k):
             i=j+1
         else: i+=1
     return out
-ST={k:_runs(k) for k in SC}
+EXCL={'G1':[(0,1.6),(19.5,24.2),(34.4,40.6),(50.9,55.6),(61.4,67.6),(84,99)],'G3':[(0,8.7),(18.0,22.5),(43.4,44.8),(52.4,54.2),(58.4,73)],
+ 'VC':[(0,7.4),(9.0,13.4),(14.8,16.2),(19.4,24.0),(64.4,75)],'SA':[(0,7.6),(9.0,13.6),(61.4,66)],'G4':[(0,1.6),(4.0,5.4),(11.5,13.5),(32.4,34.2),(47.0,63)],
+ 'G5':[(0,6.6),(11.5,16.2),(27.0,31.6),(71.4,85)],'G5N':[(0,7.6),(11.9,13.6),(19.4,22.5),(29.9,31.5),(32.9,36.5),(39.4,43.5),(49.4,56.0),(67.4,71)],
+ 'RD2':[(0,8.0),(51.5,53.8),(57.0,69)],'T':[(0,4.0),(68.5,77),(152.5,160)],'A':[(0,2.5),(14.0,18.4),(39.0,41.8),(56.5,59.5),(76.5,90)],'L':[(0,1.6),(14.0,17.8),(21.0,25.5),(76.5,90)]}
+def _sub(runs,ex):
+    out=[]
+    for a,b in runs:
+        segs=[(a,b)]
+        for x0,x1 in ex:
+            nxt=[]
+            for p,q in segs:
+                if x1<=p or x0>=q: nxt.append((p,q))
+                else:
+                    if x0-p>=0.9: nxt.append((p,x0-0.1))
+                    if q-x1>=0.9: nxt.append((x1+0.1,q))
+            segs=nxt
+        out+=[list(t) for t in segs]
+    return out
+ST={k:_sub(_runs(k),EXCL.get(k,[])) for k in SC}
 PTR={k:0 for k in SC}; POS={k:(ST[k][0][0] if ST[k] else 0) for k in SC}
 FB=['T','A','L','G5','RD2','X1','X2','X3','G5N']
 POOL={'intro':['T','A','L'],'c1':['G1'],'c2':['G1'],'c3':['T'],'c4':['G3'],'c5':['VC'],'c6':['SA'],'c6r':['VC','SA','G3'],'c7':['VC','SA','G3','G1'],'c8':['G4'],'c9':['G4','G5'],

@@ -412,11 +412,11 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   const v13 = rows.slice(at11 + PINS11.length + PINS12.length, at11 + PINS11.length + PINS12.length + PINS13.length);
   const n14 = rows.slice(rows.length - PINS14.length - PINS15.length, rows.length - PINS15.length);
   while (v13.length || n14.length) { if (v13.length) order.push(v13.shift()); for (let k = 0; k < 2 && n14.length; k++) order.push(n14.shift()); }
-  // Batch 15: one coloring / chore pin every 4 pins from queue position 100 (79 were sent on Nov 28).
-  const START15 = 100;
+  // Batch 15: one coloring / chore pin every 3 pins from queue position 80 (79 were sent when this was set).
+  const START15 = 80;
   const f15 = rows.slice(rows.length - PINS15.length);
   const r15 = order.splice(START15);
-  while (f15.length || r15.length) { if (f15.length) order.push(f15.shift()); for (let k = 0; k < 3 && r15.length; k++) order.push(r15.shift()); }
+  while (f15.length || r15.length) { if (f15.length) order.push(f15.shift()); for (let k = 0; k < 2 && r15.length; k++) order.push(r15.shift()); }
   fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
     title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
     alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,

@@ -52,6 +52,8 @@ const BOARDS = {
   'holiday-party-mega-bundle': 'Christmas Party Ideas',
   'valentines-day-party-games': 'Valentine Party Ideas',
   'big-game-football-party-games': 'Game Day Party',
+  'mandala-coloring-pages': 'Coloring Pages',
+  'kids-chore-reward-charts': 'Kids Chore Charts',
 };
 
 // [product or article id, headline, small line above, description, keywords]
@@ -276,6 +278,20 @@ const PINS14 = [
   ['blog:50-30-20-budget-rule', 'The 50/30/20 Rule for Your 2027 Budget', 'Simple budgeting', 'Needs, wants and savings: how to split your take-home pay, with a free checker.', '50 30 20 budget, budgeting for beginners, budget rule, personal finance'],
 ];
 
+// Batch 15 (Nov 28, 2026): mandala coloring pages and kids chore / reward charts.
+const PINS15 = [
+  ['mandala-coloring-pages', 'Mandala Coloring Pages for Adults', '40 printable designs', 'Relaxing mandalas from easy to detailed, plus winter snowflake designs. Print at home and unwind.', 'mandala coloring pages, adult coloring pages, printable coloring, relaxing activities'],
+  ['kids-chore-reward-charts', 'Chore Charts for Kids Ages 3–12', 'Ready to print', 'Weekly chore charts by age, routine checklists, sticker charts and reward coupons.', 'chore chart for kids, kids chores by age, printable chore chart, parenting tips'],
+  ['mandala-coloring-pages', 'Winter Snowflake Mandalas to Color', 'Cozy winter activity', '10 snowflake mandalas plus 30 more designs. Perfect for snowy evenings and handmade cards.', 'winter coloring pages, snowflake coloring, christmas coloring pages, mandala'],
+  ['kids-chore-reward-charts', 'Morning and Bedtime Routine Charts', 'No more nagging', 'Simple step-by-step checklists that help kids get ready on their own.', 'morning routine chart, bedtime routine for kids, kids routine printable, toddler routine'],
+  ['mandala-coloring-pages', 'Easy Mandalas for Kids and Beginners', 'Bold lines', 'Big spaces and thick lines that are easy to color with crayons and markers.', 'easy mandala, coloring pages for kids, beginner coloring, kids activities'],
+  ['kids-chore-reward-charts', 'Printable Reward Chart: 10, 20 and 30 Stars', 'Sticker charts', 'Color in a star for every good job and choose a reward together. Plus 12 reward coupons.', 'reward chart printable, sticker chart, behavior chart for kids, positive parenting'],
+  ['mandala-coloring-pages', 'Coloring for Stress Relief', 'Mindful printable', 'Slow down with detailed mandalas for fine-tip pens and colored pencils.', 'stress relief coloring, mindfulness activities, self care ideas, adult coloring'],
+  ['kids-chore-reward-charts', 'Age-Appropriate Chores for Kids', 'Ages 3–5 · 6–8 · 9–12', 'Not sure what your child can do? Ready-filled chore charts for three age groups.', 'age appropriate chores, chores for kids, chore list by age, kids responsibility'],
+  ['mandala-coloring-pages', 'Printable Coloring Book: 40 Mandalas', 'Instant download', 'Print single pages or the whole book on Letter or A4. A color test page is included.', 'printable coloring book, mandala book, coloring pages pdf, gift for her'],
+  ['kids-chore-reward-charts', 'Kids Chore Money Tracker: Earn, Save, Share', 'Money habits', 'Teach kids about money with a simple tracker for chore earnings.', 'kids money tracker, allowance chart, teach kids money, chore money'],
+];
+
 const THEMES = [
   { bg: '#EEF4F0', ink: '#1F2A37', accent: '#2F7D5B', band: '#2F7D5B', bandInk: '#FFFFFF' },
   { bg: '#FBF3E8', ink: '#2B2118', accent: '#B5622E', band: '#2B2118', bandInk: '#FBF3E8' },
@@ -308,7 +324,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1000, height: 1500 }, deviceScaleFactor: 1 });
   const rows = [];
-  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8, ...PINS9, ...PINS10, ...PINS11, ...PINS12, ...PINS13, ...PINS14];
+  const ALL = [...PINS, ...PINS2, ...PINS3, ...PINS4, ...PINS5, ...PINS6, ...PINS7, ...PINS8, ...PINS9, ...PINS10, ...PINS11, ...PINS12, ...PINS13, ...PINS14, ...PINS15];
   for (let i = 0; i < ALL.length; i++) {
     const [ref, headline, , description, keywords] = ALL[i];
     const file = `pin-${String(i + 1).padStart(2, '0')}-${ref.replace('blog:', '')}.jpg`;
@@ -375,7 +391,7 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   // Batch 11 + seasonal push (Nov 11): 11 pins were already sent. Add the free downloads, then move
   // Thanksgiving and Christmas/New Year pins to the front of the unsent queue while people search for them.
   const START11 = 11;
-  const at11 = rows.length - PINS11.length - PINS12.length - PINS13.length - PINS14.length;
+  const at11 = rows.length - PINS11.length - PINS12.length - PINS13.length - PINS14.length - PINS15.length;
   order.push(...rows.slice(at11, at11 + PINS11.length + PINS12.length));
   const unsent = order.splice(START11);
   const kind = (r) => /thanksgiving/i.test(r.link + r.title) ? 'T'
@@ -394,8 +410,13 @@ h1{position:absolute;left:70px;right:70px;top:150px;font-size:${headline.length 
   // Batch 13: Valentine's / game day pins go to the end of the queue.
   // Batch 14 (New Year money) is mixed in: 1 Valentine/game-day pin, then 2 New Year money pins.
   const v13 = rows.slice(at11 + PINS11.length + PINS12.length, at11 + PINS11.length + PINS12.length + PINS13.length);
-  const n14 = rows.slice(rows.length - PINS14.length);
+  const n14 = rows.slice(rows.length - PINS14.length - PINS15.length, rows.length - PINS15.length);
   while (v13.length || n14.length) { if (v13.length) order.push(v13.shift()); for (let k = 0; k < 2 && n14.length; k++) order.push(n14.shift()); }
+  // Batch 15: one coloring / chore pin every 4 pins from queue position 100 (79 were sent on Nov 28).
+  const START15 = 100;
+  const f15 = rows.slice(rows.length - PINS15.length);
+  const r15 = order.splice(START15);
+  while (f15.length || r15.length) { if (f15.length) order.push(f15.shift()); for (let k = 0; k < 3 && r15.length; k++) order.push(r15.shift()); }
   fs.writeFileSync(path.join(OUT, 'pins.json'), JSON.stringify(order.map((r) => ({
     title: r.title, description: r.description, link: r.link, image_url: r.media, board: r.board,
     alt_text: r.title + ' - ' + r.description.split('. ')[0] + '.', keywords: r.keywords,

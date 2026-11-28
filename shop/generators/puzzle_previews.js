@@ -55,6 +55,10 @@ const items = {
     [['vh-04.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['vb-12.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['vc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
   'big-game-football-party-games': page('Big Game Football Party Games', '9 printable games for game day: squares, predictions, bingo and more.', ['Squares pool', 'Predictions', 'Bingo', '64 pages'],
     [['gs-04.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['gb-15.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['gc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
+  'mandala-coloring-pages': page('Mandala Coloring Pages', '40 relaxing designs: easy, detailed and winter snowflakes.', ['40 designs', 'Adults + kids', 'Letter + A4'],
+    [['mdc-03.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['mdl-14.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['mdc-01.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
+  'kids-chore-reward-charts': page('Kids Chore & Reward Charts', 'Chore charts, routines, sticker charts and reward coupons for ages 3–12.', ['Ages 3–12', 'Routines', 'Sticker charts', '15 pages'],
+    [['kc-12.png', 'right:-20px;top:380px;transform:rotate(7deg);width:460px'], ['kc-08.png', 'right:190px;top:300px;transform:rotate(1deg);width:460px'], ['kc-04.png', 'right:400px;top:170px;transform:rotate(-6deg);width:460px']]),
 };
 
 (async () => {
